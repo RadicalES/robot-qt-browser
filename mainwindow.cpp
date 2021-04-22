@@ -48,13 +48,17 @@
 #include <QStatusBar>
 //#include <QWidgetAction>
 #include <QHBoxLayout>
+#include <QProgressDialog>
+#include "digitalclock.h"
 
 MainWindow::MainWindow(bool landscape)
     : m_page(new WebPage(this))
     , m_toolBar(0)
-    , urlEdit(0)
+    , m_urlEdit(0)
     , m_debugger(nullptr)
     , m_landscape(landscape)
+    , m_wifiProcess(nullptr)
+    , progressDialog(nullptr)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     if (qgetenv("QTTESTBROWSER_USE_ARGB_VISUALS").toInt() == 1)
@@ -77,10 +81,12 @@ void MainWindow::buildUI(bool isLandscape)
     QPixmap hpix(m_imagesdir + "/home.png");
     QPixmap spix(m_imagesdir + "/store.png");
     QPixmap ipix(m_imagesdir + "/info.png");
+    QPixmap wpix(m_imagesdir + "/wifi.png");
 
     QAction* homeAction = m_toolBar->addAction(QIcon(hpix), "");
     QAction* remoteAction = m_toolBar->addAction(QIcon(spix), "");
     QAction* backAction = m_toolBar->addAction(QIcon(bpix), "");
+    QAction* wifiAction = m_toolBar->addAction(QIcon(wpix), "");
     m_toolBar->addSeparator();
     QAction* infoAction = m_toolBar->addAction(QIcon(ipix), "");
 
@@ -93,6 +99,12 @@ void MainWindow::buildUI(bool isLandscape)
     connect(remoteAction, SIGNAL(triggered()), this, SLOT(changeLocationRemote()));
     connect(infoAction, SIGNAL(triggered()), this, SLOT(changeLocationAbout()));
     connect(backAction, SIGNAL(triggered()), this, SLOT(pageBack()));
+    connect(wifiAction, SIGNAL(triggered()), this, SLOT(wifiRestart()));
+
+    QWidget *spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_toolBar->addWidget(spacer);
+    m_toolBar->addWidget(new DigitalClock(m_toolBar));
 
  #ifndef QT_NO_INPUTDIALOG
     if(!isLandscape) {
@@ -101,36 +113,39 @@ void MainWindow::buildUI(bool isLandscape)
         // landscape only has toolbar at the bottom
         // portrait has toolbar top and status bar at the bottom
 
-        if(!urlEdit) {
-            urlEdit = new LocationEdit(statusBar());
-            urlEdit->setSizePolicy(QSizePolicy::Expanding, urlEdit->sizePolicy().verticalPolicy());
-            connect(urlEdit, SIGNAL(returnPressed()), SLOT(changeLocation()));
+        if(!m_urlEdit) {
+            statusBar()->setMaximumHeight(30);
+            m_urlEdit = new LocationEdit(statusBar());
+            m_urlEdit->setSizePolicy(QSizePolicy::Expanding, m_urlEdit->sizePolicy().verticalPolicy());
+            //m_urlEdit->setFixedHeight(30);
+            connect(m_urlEdit, SIGNAL(returnPressed()), SLOT(changeLocation()));
             QCompleter* completer = new QCompleter(statusBar());
-            urlEdit->setCompleter(completer);
+            m_urlEdit->setCompleter(completer);
             completer->setModel(&urlModel);
-            statusBar()->addWidget(urlEdit, 1);
+            statusBar()->addWidget(m_urlEdit, 1);
+            statusBar()->setStyleSheet("font-size: 10px");
         }
 
         addToolBar(Qt::TopToolBarArea, m_toolBar);
     }
     else {
-       // if(urlEdit) {
-           // delete urlEdit;
+       // if(m_urlEdit) {
+           // delete m_urlEdit;
       //  }
 
-        urlEdit = new LocationEdit(m_toolBar);
-        urlEdit->setSizePolicy(QSizePolicy::Expanding, urlEdit->sizePolicy().verticalPolicy());
-        connect(urlEdit, SIGNAL(returnPressed()), SLOT(changeLocation()));
+        m_urlEdit = new LocationEdit(m_toolBar);
+        m_urlEdit->setSizePolicy(QSizePolicy::Expanding, m_urlEdit->sizePolicy().verticalPolicy());
+        connect(m_urlEdit, SIGNAL(returnPressed()), SLOT(changeLocation()));
         QCompleter* completer = new QCompleter(m_toolBar);
-        urlEdit->setCompleter(completer);
+        m_urlEdit->setCompleter(completer);
         completer->setModel(&urlModel);
         m_toolBar->addSeparator();
-        m_toolBar->addWidget(urlEdit);
+        m_toolBar->addWidget(m_urlEdit);
         addToolBar(Qt::BottomToolBarArea, m_toolBar);
     }
 
     connect(page()->mainFrame(), SIGNAL(urlChanged(QUrl)), this, SLOT(setAddressUrl(QUrl)));
-    connect(page(), SIGNAL(loadProgress(int)), urlEdit, SLOT(setProgress(int)));
+    connect(page(), SIGNAL(loadProgress(int)), m_urlEdit, SLOT(setProgress(int)));
 #endif
 
     connect(page()->mainFrame(), SIGNAL(loadStarted()), this, SLOT(onLoadStarted()));
@@ -195,7 +210,7 @@ void MainWindow::setAddressUrl(const QString& url)
 {
 #ifndef QT_NO_INPUTDIALOG
     if (!url.contains("about:"))
-        urlEdit->setText(url);
+        m_urlEdit->setText(url);
 #endif
 }
 
@@ -251,7 +266,7 @@ void MainWindow::load(const QUrl& url)
 QString MainWindow::addressUrl() const
 {
 #ifndef QT_NO_INPUTDIALOG
-    return urlEdit->text();
+    return m_urlEdit->text();
 #endif
     return QString();
 }
@@ -259,7 +274,7 @@ QString MainWindow::addressUrl() const
 void MainWindow::changeLocation()
 {
 #ifndef QT_NO_INPUTDIALOG
-    QString string = urlEdit->text();
+    QString string = m_urlEdit->text();
     QUrl mainFrameURL = page()->mainFrame()->url();
 
     if (mainFrameURL.isValid() && string == mainFrameURL.toString()) {
@@ -311,6 +326,65 @@ void MainWindow::pageBack()
     page()->triggerAction(QWebPage::Back);
 }
 
+void MainWindow::freeProcess()
+{
+    qDebug() << "Process done!" << endl;
+    if(m_wifiProcess != NULL) {
+       // qDebug() << m_wifiProcess->readAllStandardOutput();
+        delete m_wifiProcess;
+    }
+
+    progressDialog->close();
+    delete progressDialog;
+
+    progressDialog = NULL;
+    m_wifiProcess = NULL;
+
+}
+
+void MainWindow::outputProcess()
+{
+    if(m_wifiProcess != NULL) {
+        qDebug() << m_wifiProcess->readAllStandardOutput();
+    }
+}
+
+void MainWindow::wifiRestart()
+{
+    QString f = "/home/root/RobotBrowser/restartwifi.sh";
+    progressDialog = new QProgressDialog();
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setRange(0,0);
+
+
+    QLabel *lbl = new QLabel("Restarting Wifi!");
+    //progressDialog->setLabelText("Restarting Wifi!");
+    QFont font = lbl->font();
+    //QFont f( "Arial", 10, QFont::Bold);
+    font.setPointSize(8);
+    font.setBold(true);
+    lbl->setFont(font);
+    progressDialog->setLabel(lbl);
+    progressDialog->setCancelButton(0);
+
+    QString style =
+           "QProgressBar:horizontal {"
+               "border: 1px solid gray;"
+               "border-radius: 3px;"
+                "background: white;"
+                "padding: 1px;"
+            "height: 20px;"
+           "}";
+
+    progressDialog->setStyleSheet(style);
+
+    m_wifiProcess = new QProcess(this);
+    connect (m_wifiProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(outputProcess()));  // connect process signals with your code
+    connect( m_wifiProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(freeProcess()));
+    m_wifiProcess->start(f);
+    progressDialog->exec();
+}
+
 void MainWindow::openFile()
 {
 #ifndef QT_NO_FILEDIALOG
@@ -332,22 +406,22 @@ void MainWindow::openFile()
 void MainWindow::openLocation()
 {
 #ifndef QT_NO_INPUTDIALOG
-    urlEdit->selectAll();
-    urlEdit->setFocus();
+    m_urlEdit->selectAll();
+    m_urlEdit->setFocus();
 #endif
 }
 
 void MainWindow::onIconChanged()
 {
 #ifndef QT_NO_INPUTDIALOG
-    urlEdit->setPageIcon(page()->mainFrame()->icon());
+    m_urlEdit->setPageIcon(page()->mainFrame()->icon());
 #endif
 }
 
 void MainWindow::onLoadStarted()
 {
 #ifndef QT_NO_INPUTDIALOG
-    urlEdit->setPageIcon(QIcon());
+    m_urlEdit->setPageIcon(QIcon());
 #endif
 }
 

@@ -80,6 +80,7 @@ private:
     void applyProxy();
     void sendWSMessage(QString message);
     void resetDialog();
+    void rebootDialog();
 
     MainWindow *m_mainWindow;
     QString m_userAgent;

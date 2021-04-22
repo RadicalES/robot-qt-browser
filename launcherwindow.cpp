@@ -112,12 +112,7 @@ LauncherWindow::LauncherWindow(WindowOptions* data, QGraphicsScene* sharedScene)
     m_keyboard->setFocusPolicy(Qt::NoFocus);
     m_keyboard->setProperty("width", m_windowOptions.screenGeometry.width());
 
-    if(m_windowOptions.screenGeometry.width() == 800) {
-        m_keyboard->setProperty("height", 140);
-    }
-    else {
-        m_keyboard->setProperty("height", 160);
-    }
+
 
     m_keyboard->setSource(QUrl::fromLocalFile("keyboard.qml"));
     m_keyboard->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -128,16 +123,21 @@ LauncherWindow::LauncherWindow(WindowOptions* data, QGraphicsScene* sharedScene)
     inputPanel = (QObject *)m_keyboard->rootObject();
     if (inputPanel) {
             inputPanel->setProperty("width", m_windowOptions.screenGeometry.width());
-            int panelOffset = 0;
             if(m_windowOptions.screenGeometry.width() == 800) {
-                inputPanel->setProperty("height", 140);
-                panelOffset = 70;
+                inputPanel->setProperty("height", 190);
+                inputPanel->setProperty("designHeight", 600);
             }
             else {
-                inputPanel->setProperty("height", 160);
+                inputPanel->setProperty("height", 300);
+                inputPanel->setProperty("designHeight", 1600);
             }
+    }
 
-            inputPanel->setProperty("panelOffset", panelOffset);
+    if(m_windowOptions.screenGeometry.width() == 800) {
+        m_keyboard->setProperty("height", 190);
+    }
+    else {
+        m_keyboard->setProperty("height", 300);
     }
 
     connect(inputPanel, SIGNAL(activated(bool)), this, SLOT(onKeyboardActiveChanged(bool)));
@@ -268,8 +268,25 @@ void LauncherWindow::initializeView()
 
     applyPrefs();
 
+    //QWidget* urlEdit = static_cast<QWidget*>(m_urlEdit);
+
+    //if(!m_landscape) {
+       // splitter->addWidget((QWidget *)m_urlEdit);
+   // }
     splitter->addWidget(m_keyboard);
+//    QList<int> Sizes;
+//    Sizes.append(600);
+//    Sizes.append(30);
+//    Sizes.append(120);
+//    splitter->setSizes(Sizes);
+//    splitter->setStretchFactor(0,1);
+//    splitter->setStretchFactor(1,0);
+//    splitter->setStretchFactor(2,0);
+
+
     //splitter->addWidget(m_inspector);
+       //addWidget(m_keyboard);
+
     m_inspector->setPage(page());
     m_inspector->hide();
 

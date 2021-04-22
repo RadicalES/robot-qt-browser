@@ -45,6 +45,7 @@ HEADERS = \
    $$PWD/webinspector.h \
    $$PWD/webpage.h \
    $$PWD/webview.h \
+   digitalclock.h \
    eventcontroller.h \
    keyboardwidget.h \
    websockserver.h
@@ -60,11 +61,12 @@ SOURCES = \
    $$PWD/utils.cpp \
    $$PWD/webpage.cpp \
    $$PWD/webview.cpp \
+   digitalclock.cpp \
    eventcontroller.cpp \
    keyboardwidget.cpp \
    websockserver.cpp
 
-WEBKIT_SOURCE_DIR = /home/janz/yocto/git/webkit
+WEBKIT_SOURCE_DIR = /home/janz/data/yocto/git/webkit
 WEBKIT_DIR = $$WEBKIT_SOURCE_DIR/Source/WebKit
 WEBKIT2_DIR = $$WEBKIT_SOURCE_DIR/Source/WebKit2
 WTF_DIR = $$WEBKIT_SOURCE_DIR/Source/WTF

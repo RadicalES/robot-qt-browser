@@ -45,6 +45,7 @@
 #endif
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QLabel>
 #include <QLayout>
 #include <QFont>
@@ -92,6 +93,7 @@ WebPage::WebPage(MainWindow* parent)
     //QWebSettings::
 
     //connect(this->mainFrame(), SIGNAL(loadFinished(bool)), this, SLOT(injectJavascriptHelpers(bool)));
+    //networkAccessManager()->networkAccessible()
 }
 
 void WebPage::frameCreated(QWebFrame * frame) {
@@ -161,9 +163,23 @@ void WebPage::applyProxy()
 
 bool WebPage::acceptNavigationRequest(QWebFrame* frame, const QNetworkRequest& request, NavigationType type)
 {
-    QObject* view = parent();
+    QObject* viewer = parent();
 
-    QVariant value = view->property("keyboardModifiers");
+    if((networkAccessManager()->networkAccessible() != QNetworkAccessManager::Accessible) && (!request.url().matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded))) {
+        QMessageBox box(view());
+        QFont f = box.font();
+        f.setPointSize(6);
+        box.setFont(f);
+        box.setWindowTitle(tr("Network Alert - %1").arg(mainFrame()->url().host()));
+        box.setTextFormat(Qt::PlainText);
+        box.setText("Network not Online! ");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+
+        return false;
+    }
+
+    QVariant value = viewer->property("keyboardModifiers");
 
     if (!value.isNull()) {
         Qt::KeyboardModifiers modifiers = Qt::KeyboardModifiers(value.toInt());
@@ -302,16 +318,17 @@ void WebPage::infoDialog()
 
     QLabel* messageLabel = new QLabel(dialog);
     //messageLabel->setWordWrap(true);
-    QString messageStr = QString("RobotBrowser Version 1.0");
+    QString messageStr = QString("RobotBrowser Version 1.5");
     messageLabel->setText(messageStr);
     QFont font = messageLabel->font();
     font.setPointSize(6);
     messageLabel->setFont(font);
     layout->addWidget(messageLabel, 0, 1);
 
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::RestoreDefaults, Qt::Horizontal, dialog);
-    QPushButton* resetButton = buttonBox->button(QDialogButtonBox::RestoreDefaults);
-
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::RestoreDefaults | QDialogButtonBox::Reset, Qt::Horizontal, dialog);
+    QPushButton* restoreButton = buttonBox->button(QDialogButtonBox::RestoreDefaults);
+    QPushButton* resetButton = buttonBox->button(QDialogButtonBox::Reset);
+    resetButton->setText("Reboot");
 
     buttonBox->setObjectName("button");
 
@@ -340,7 +357,10 @@ void WebPage::infoDialog()
 
 void WebPage::resetDefaultsPressed(QAbstractButton *button)
 {
-    if (button->text() != tr("OK")) {
+    if (button->text() == tr("Reboot")) {
+        rebootDialog();
+    }
+    else if (button->text() != tr("OK")) {
         resetDialog();
     }
 }
@@ -395,7 +415,61 @@ void WebPage::resetDialog()
         //QProcess *process = new QProcess(this);
        // process->start(f);
         //process.startDetached("/bin/sh", QStringList()<< "/home/pi/update.sh");
+        //setCursorVisible(true);
+
         QProcess::execute("/bin/sh", QStringList()<< f);
+
+        //QApplication::setCursorVisible(false);
+    }
+
+    delete dialog;
+}
+
+void WebPage::rebootDialog()
+{
+    QDialog* dialog = new QDialog(QApplication::activeWindow());
+    dialog->setWindowTitle("Reboot Device");
+
+    dialog->setObjectName("dialog");
+    dialog->setStyleSheet("#dialog{"
+                          "border:2px solid black;"
+                          "background-color: red;"
+                          "font-size: 6px;"
+                          "}");
+
+
+    QGridLayout* layout = new QGridLayout(dialog);
+    dialog->setLayout(layout);
+
+    QLabel* messageLabel = new QLabel(dialog);
+    //messageLabel->setWordWrap(true);
+    QString messageStr = QString("OK to restart?\nYour device will restart safely.");
+    messageLabel->setText(messageStr);
+    QFont font = messageLabel->font();
+    font.setPointSize(6);
+    messageLabel->setFont(font);
+    layout->addWidget(messageLabel, 0, 1);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
+  //  QPushButton* resetButton = buttonBox->button(QDialogButtonBox::RestoreDefaults);
+
+
+    buttonBox->setObjectName("button");
+
+    QList<QWidget*> wl = buttonBox->findChildren<QWidget*>();
+    foreach(QWidget *w, wl) {
+        QFont f = w->font();
+        f.setPointSize(6);
+        w->setFont(f);
+    }
+
+    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    layout->addWidget(buttonBox, 3, 1);
+
+    if(dialog->exec() == QDialog::Accepted) {
+        QProcess::execute("/sbin/reboot");
     }
 
     delete dialog;

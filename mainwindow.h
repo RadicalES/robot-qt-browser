@@ -38,6 +38,8 @@
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QToolBar>
+#include <QProcess>
+#include <QProgressDialog>
 #include "websockserver.h"
 
 class LocationEdit;
@@ -60,6 +62,10 @@ public:
     void setDebugger(WebsockServer *debugger);
     void setLandscape(bool isLandscape);
 
+private Q_SLOTS:
+    void freeProcess();
+    void outputProcess();
+
 protected Q_SLOTS:
     void setAddressUrl(const QString&);
     void setAddressUrl(const QUrl&);
@@ -70,6 +76,7 @@ protected Q_SLOTS:
     void changeLocationRemote();
     void changeLocationAbout();
     void pageBack();
+    void wifiRestart();
     void onIconChanged();
     void onLoadStarted();
     void onTitleChanged(const QString&);
@@ -79,19 +86,21 @@ protected:
     void setRemoteURL(QUrl url);
     void setLocalURL(QUrl url);
     void setImagesDir(QString dir);
+    LocationEdit* m_urlEdit;
+    bool m_landscape;
+    QProgressDialog *progressDialog;
+    QProcess *m_wifiProcess;
 
 private:
     void buildUI(bool isLandscape);
     WebPage* m_page;
     QToolBar* m_toolBar;
     QStringListModel urlModel;
-    QStringList urlList;
-    LocationEdit* urlEdit;    
+    QStringList urlList;    
     QUrl m_localURL;
     QUrl m_remoteURL;
     QString m_imagesdir;
-    WebsockServer *m_debugger;
-    bool m_landscape;
+    WebsockServer *m_debugger;    
 };
 
 #endif

@@ -333,6 +333,7 @@ int main(int argc, char **argv)
     QString appdir = app.applicationDirPath();
     app.setAutoSipEnabled(true);
     app.setStyle(new MyProxyStyle());    
+   // QApplication::setOverrideCursor(Qt::BlankCursor);
     QScreen* screen = app.primaryScreen();
     windowOptions.screenGeometry = screen->geometry();
 
