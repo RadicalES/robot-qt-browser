@@ -40,7 +40,10 @@
 #include <QToolBar>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QPointer>
+#include <QSocketNotifier>
 #include "websockserver.h"
+#include "wpa_supplicant/wpa_ctrl.h"
 
 class LocationEdit;
 
@@ -49,6 +52,7 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(bool landscape);
+    ~MainWindow();
 
     void addCompleterEntry(const QUrl&);
 
@@ -63,8 +67,8 @@ public:
     void setLandscape(bool isLandscape);
 
 private Q_SLOTS:
-    void freeProcess();
-    void outputProcess();
+    void receiveWpaMsgs();
+    void refreshWifiStatus();
 
 protected Q_SLOTS:
     void setAddressUrl(const QString&);
@@ -75,8 +79,8 @@ protected Q_SLOTS:
     void changeLocationHome();
     void changeLocationRemote();
     void changeLocationAbout();
-    void pageBack();
-    void wifiRestart();
+    void pageBack();    
+    void wifiDialog();
     void onIconChanged();
     void onLoadStarted();
     void onTitleChanged(const QString&);
@@ -88,11 +92,14 @@ protected:
     void setImagesDir(QString dir);
     LocationEdit* m_urlEdit;
     bool m_landscape;
-    QProgressDialog *progressDialog;
-    QProcess *m_wifiProcess;
 
 private:
     void buildUI(bool isLandscape);
+    void setupWPA( void );
+    void processWpaMsg(char* msg);
+    int wpaCtrlRequest(const QString& cmd, char* buf, const size_t buflen);
+    void wpaShowStatus(const char *buf);
+    void wifiRestart();
     WebPage* m_page;
     QToolBar* m_toolBar;
     QStringListModel urlModel;
@@ -101,6 +108,13 @@ private:
     QUrl m_remoteURL;
     QString m_imagesdir;
     WebsockServer *m_debugger;    
+    QLabel *m_wifiIcon;
+
+    QTimer *m_wpaTimer;
+    struct wpa_ctrl* m_wpaMonConn;
+    QString m_wpaCtrlRequestResult;
+    QPointer<QSocketNotifier>  m_wpaMsgNotifier;
+
 };
 
 #endif

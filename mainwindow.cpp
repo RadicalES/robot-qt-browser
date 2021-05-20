@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdlib>
+
 #include "mainwindow.h"
 
 #include "locationedit.h"
@@ -49,7 +51,9 @@
 //#include <QWidgetAction>
 #include <QHBoxLayout>
 #include <QProgressDialog>
+#include <QDialogButtonBox>
 #include "digitalclock.h"
+
 
 MainWindow::MainWindow(bool landscape)
     : m_page(new WebPage(this))
@@ -57,14 +61,35 @@ MainWindow::MainWindow(bool landscape)
     , m_urlEdit(0)
     , m_debugger(nullptr)
     , m_landscape(landscape)
-    , m_wifiProcess(nullptr)
-    , progressDialog(nullptr)
+    , m_wpaTimer(nullptr)
+    , m_wpaMonConn(nullptr)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     if (qgetenv("QTTESTBROWSER_USE_ARGB_VISUALS").toInt() == 1)
         setAttribute(Qt::WA_TranslucentBackground);
 
     buildUI(landscape);
+
+    /* Wifi timer */
+    m_wpaTimer = new QTimer();
+    m_wpaTimer->setInterval(1000);
+    connect(m_wpaTimer,&QTimer::timeout,this,&MainWindow::refreshWifiStatus);
+    m_wpaTimer->start();
+
+}
+
+MainWindow::~MainWindow()
+{
+    delete m_wpaMsgNotifier;
+
+    if (m_wpaMonConn) {
+        wpa_ctrl_detach(m_wpaMonConn);
+        wpa_ctrl_close(m_wpaMonConn);
+    }
+
+    if(m_wpaTimer) {
+        m_wpaTimer->stop();
+    }
 }
 
 void MainWindow::buildUI(bool isLandscape)
@@ -81,13 +106,14 @@ void MainWindow::buildUI(bool isLandscape)
     QPixmap hpix(m_imagesdir + "/home.png");
     QPixmap spix(m_imagesdir + "/store.png");
     QPixmap ipix(m_imagesdir + "/info.png");
-    QPixmap wpix(m_imagesdir + "/wifi.png");
+    QPixmap wpix(m_imagesdir + "/wifi-settings.png");
+    QPixmap dpix(m_imagesdir + "/wifi-off.png");
 
     QAction* homeAction = m_toolBar->addAction(QIcon(hpix), "");
     QAction* remoteAction = m_toolBar->addAction(QIcon(spix), "");
     QAction* backAction = m_toolBar->addAction(QIcon(bpix), "");
-    QAction* wifiAction = m_toolBar->addAction(QIcon(wpix), "");
     m_toolBar->addSeparator();
+    QAction* wifiAction = m_toolBar->addAction(QIcon(wpix), "");
     QAction* infoAction = m_toolBar->addAction(QIcon(ipix), "");
 
     homeAction->setCheckable(false);
@@ -99,11 +125,15 @@ void MainWindow::buildUI(bool isLandscape)
     connect(remoteAction, SIGNAL(triggered()), this, SLOT(changeLocationRemote()));
     connect(infoAction, SIGNAL(triggered()), this, SLOT(changeLocationAbout()));
     connect(backAction, SIGNAL(triggered()), this, SLOT(pageBack()));
-    connect(wifiAction, SIGNAL(triggered()), this, SLOT(wifiRestart()));
+    connect(wifiAction, SIGNAL(triggered()), this, SLOT(wifiDialog()));
 
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     m_toolBar->addWidget(spacer);
+
+    m_wifiIcon = new QLabel(this);
+    m_wifiIcon->setPixmap(dpix);
+    m_toolBar->addWidget(m_wifiIcon);
     m_toolBar->addWidget(new DigitalClock(m_toolBar));
 
  #ifndef QT_NO_INPUTDIALOG
@@ -153,6 +183,158 @@ void MainWindow::buildUI(bool isLandscape)
     connect(page()->mainFrame(), SIGNAL(titleChanged(QString)), this, SLOT(onTitleChanged(QString)));
     connect(page(), SIGNAL(windowCloseRequested()), this, SLOT(close()));
     //connect(page()->mainFrame(), SIGNAL(javaScriptWindowObjectCleared), this, SLOT(loadJavaScript()));
+
+}
+
+void MainWindow::refreshWifiStatus()
+{
+    size_t len(2048);
+    char buf[len];
+
+    if(m_wpaMonConn == NULL) {
+        setupWPA();
+    }
+    else {
+        if(wpaCtrlRequest("SIGNAL_POLL", buf, len) >= 0) {
+            wpaShowStatus(buf);
+        }
+        else {
+            QPixmap *wpix = new QPixmap(m_imagesdir + "/wifi-off.png");
+            m_wifiIcon->setPixmap(*wpix);
+            delete m_wpaMsgNotifier;
+            wpa_ctrl_detach(m_wpaMonConn);
+            wpa_ctrl_close(m_wpaMonConn);
+            m_wpaMonConn = NULL;
+        }
+    }
+}
+
+void MainWindow::processWpaMsg(char* msg)
+{
+    qDebug() << msg;
+}
+
+void MainWindow::receiveWpaMsgs()
+{
+    char buf[256];
+    size_t len;
+
+    qDebug() << "receiveMsgs() >>>";
+
+    while (m_wpaMonConn && wpa_ctrl_pending(m_wpaMonConn) > 0) {
+        len = sizeof(buf) - 1;
+        if (wpa_ctrl_recv(m_wpaMonConn, buf, &len) == 0) {
+            buf[len] = '\0';
+            processWpaMsg(buf);
+        }
+    }
+
+    //debug("receiveMsgs() >>>>>>");
+    //updateStatus(tally.contains(StatusNeedsUpdate) || tally.contains(NetworkNeedsUpdate));
+    //debug("receiveMsgs() <<<<<<");
+}
+
+void MainWindow::wpaShowStatus(const char *buf)
+{
+    QHash<QString, QString> status;
+    QStringList lines = QString(buf).split('\n');
+   // qDebug() << "wpaShowStatus" << (buf);
+
+    foreach(QString line, lines) {
+        QString key = line.section('=', 0, 0);
+        QString val = line.section('=', 1, 1);
+        status.insert(key, val);
+       // qDebug() << line;
+    }
+
+    /*
+        "RSSI=-46"
+        "LINKSPEED=0"
+        "NOISE=-256"
+        "FREQUENCY=0"
+     */
+
+    int rssi = atoi(status.value("RSSI").toUtf8());
+    QPixmap *wpix = new QPixmap(m_imagesdir + "/wifi-off.png");
+
+    if (rssi >= -60)
+        wpix = new QPixmap(m_imagesdir + "/wifi-4.png");
+    else if (rssi >= -68)
+        wpix = new QPixmap(m_imagesdir + "/wifi-3.png");
+    else if (rssi >= -76)
+        wpix = new QPixmap(m_imagesdir + "/wifi-2.png");
+    else if (rssi >= -84)
+        wpix = new QPixmap(m_imagesdir + "/wifi-1.png");
+    else
+        wpix = new QPixmap(m_imagesdir + "/wifi-0.png");
+
+    m_wifiIcon->setPixmap(*wpix);
+}
+
+int MainWindow::wpaCtrlRequest(const QString& cmd, char* buf, const size_t buflen)
+{
+    size_t len = buflen;
+    int stat;
+
+    if (m_wpaMonConn == NULL) {
+        stat = -3;
+        return stat;
+    }
+
+    stat = wpa_ctrl_request(m_wpaMonConn
+                                                , cmd.toLocal8Bit().constData()
+                                                , strlen(cmd.toLocal8Bit().constData())
+                                                , buf, &len, NULL);
+
+    if (stat == -2)
+        qDebug("'%s' command timed out.", cmd.toLocal8Bit().constData());
+    else if (stat < 0)
+        qDebug("'%s' command failed.", cmd.toLocal8Bit().constData());
+
+    buf[len] = '\0';
+    m_wpaCtrlRequestResult = QString(buf);
+    m_wpaCtrlRequestResult.remove(QRegExp("^\""));
+    m_wpaCtrlRequestResult.remove(QRegExp("\"$"));
+
+    if (m_wpaCtrlRequestResult.startsWith("FAIL\n")) {
+        m_wpaCtrlRequestResult.clear();
+        stat = -1;
+    }
+    else {
+      //  qDebug() << m_wpaCtrlRequestResult;
+    }
+
+    return stat;
+}
+
+void MainWindow::setupWPA()
+{
+    m_wpaMonConn = wpa_ctrl_open("/var/run/wpa_supplicant/wlan0");
+
+    if(m_wpaMonConn != NULL) {
+        if(wpa_ctrl_attach(m_wpaMonConn)) {
+            qDebug() << "Failed to attached WPA";
+            wpa_ctrl_close(m_wpaMonConn);
+            m_wpaMonConn = NULL;
+        }
+        else {
+            qDebug() << "WPA OK!";
+            m_wpaMsgNotifier = new QSocketNotifier(wpa_ctrl_get_fd(m_wpaMonConn), QSocketNotifier::Read, this);
+            connect(m_wpaMsgNotifier, SIGNAL(activated(int)), SLOT(receiveWpaMsgs()));
+            size_t len(2048); char buf[len];
+            //if (wpaCtrlRequest("STATUS", buf, len) < 0) {
+            if(wpaCtrlRequest("SIGNAL_POLL", buf, len) < 0) {;
+                qDebug() << "WPA STATUS FAILED!";
+            }
+            else {
+                wpaShowStatus(buf);
+            }
+
+        }
+    }
+    else {
+        qDebug() << "Failed to setup WPA";
+    }
 
 }
 
@@ -326,63 +508,73 @@ void MainWindow::pageBack()
     page()->triggerAction(QWebPage::Back);
 }
 
-void MainWindow::freeProcess()
+
+void MainWindow::wifiDialog()
 {
-    qDebug() << "Process done!" << endl;
-    if(m_wifiProcess != NULL) {
-       // qDebug() << m_wifiProcess->readAllStandardOutput();
-        delete m_wifiProcess;
+    QDialog* dialog = new QDialog(QApplication::activeWindow());
+    dialog->setWindowTitle("Restart Wifi");
+
+    dialog->setObjectName("dialog");
+    dialog->setStyleSheet("#dialog{"
+                          "border:2px solid black;"
+                          "background-color: yellow;"
+                          "font-size: 6px;"
+                          "}");
+
+
+    QGridLayout* layout = new QGridLayout(dialog);
+    dialog->setLayout(layout);
+
+    QLabel* messageLabel = new QLabel(dialog);
+    //messageLabel->setWordWrap(true);
+    QString messageStr = QString("OK to restart Wifi Connection?");
+    messageLabel->setText(messageStr);
+    QFont font = messageLabel->font();
+    font.setPointSize(6);
+    messageLabel->setFont(font);
+    layout->addWidget(messageLabel, 0, 1);
+
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
+  //  QPushButton* resetButton = buttonBox->button(QDialogButtonBox::RestoreDefaults);
+
+
+    buttonBox->setObjectName("button");
+
+    QList<QWidget*> wl = buttonBox->findChildren<QWidget*>();
+    foreach(QWidget *w, wl) {
+        QFont f = w->font();
+        f.setPointSize(6);
+        w->setFont(f);
     }
 
-    progressDialog->close();
-    delete progressDialog;
+    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
 
-    progressDialog = NULL;
-    m_wifiProcess = NULL;
+    layout->addWidget(buttonBox, 3, 1);
 
-}
-
-void MainWindow::outputProcess()
-{
-    if(m_wifiProcess != NULL) {
-        qDebug() << m_wifiProcess->readAllStandardOutput();
+    if(dialog->exec() == QDialog::Accepted) {
+        QProcess::execute("/usr/sbin/wpa_cli", QStringList() << "-iwlan0" << "reconf");
     }
+
+    delete dialog;
 }
+
 
 void MainWindow::wifiRestart()
 {
-    QString f = "/home/root/RobotBrowser/restartwifi.sh";
-    progressDialog = new QProgressDialog();
-    progressDialog->setWindowModality(Qt::WindowModal);
-    progressDialog->setRange(0,0);
+   char cmdbuf[256];
+   char cmdresult[256]; // set an appropriate length to store each line of output
+   bzero(cmdbuf, 256);
+   bzero(cmdresult, 256);
+   sprintf(cmdbuf, "wpa_cli -iwlan0 reconf");
+   FILE *pp = popen(cmdbuf, "r"); // Create Pipeline
+   fgets(cmdresult, sizeof(cmdresult), pp); //""
+   pclose(pp);
 
-
-    QLabel *lbl = new QLabel("Restarting Wifi!");
-    //progressDialog->setLabelText("Restarting Wifi!");
-    QFont font = lbl->font();
-    //QFont f( "Arial", 10, QFont::Bold);
-    font.setPointSize(8);
-    font.setBold(true);
-    lbl->setFont(font);
-    progressDialog->setLabel(lbl);
-    progressDialog->setCancelButton(0);
-
-    QString style =
-           "QProgressBar:horizontal {"
-               "border: 1px solid gray;"
-               "border-radius: 3px;"
-                "background: white;"
-                "padding: 1px;"
-            "height: 20px;"
-           "}";
-
-    progressDialog->setStyleSheet(style);
-
-    m_wifiProcess = new QProcess(this);
-    connect (m_wifiProcess, SIGNAL(readyReadStandardOutput()), this, SLOT(outputProcess()));  // connect process signals with your code
-    connect( m_wifiProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(freeProcess()));
-    m_wifiProcess->start(f);
-    progressDialog->exec();
+   if(strstr(cmdresult, "FAIL"))
+       qDebug() << "Wifi restart failed!";
+   else
+       qDebug() << "Wifi restart OK!";
 }
 
 void MainWindow::openFile()

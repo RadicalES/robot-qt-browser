@@ -318,7 +318,7 @@ void WebPage::infoDialog()
 
     QLabel* messageLabel = new QLabel(dialog);
     //messageLabel->setWordWrap(true);
-    QString messageStr = QString("RobotBrowser Version 1.5");
+    QString messageStr = QString("RobotBrowser Version 1.6");
     messageLabel->setText(messageStr);
     QFont font = messageLabel->font();
     font.setPointSize(6);

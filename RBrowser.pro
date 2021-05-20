@@ -25,6 +25,10 @@ DEFINES += QT_WEBKITWIDGETS_LIB
 DEFINES += QT_WEBKIT_LIB
 DEFINES += QT_WIDGETS_LIB
 DEFINES += BUILDING_WTF
+
+# WPA
+DEFINES += CONFIG_CTRL_IFACE_UNIX
+DEFINES += CONFIG_CTRL_IFACE
 #DEFINES += QT_NO_INPUTDIALOG
 
 #QT_VIRTUALKEYBOARD_LAYOUT_PATH
@@ -48,7 +52,9 @@ HEADERS = \
    digitalclock.h \
    eventcontroller.h \
    keyboardwidget.h \
-   websockserver.h
+   websockserver.h \
+   wpa_supplicant/includes.h \
+   wpa_supplicant/wpa_ctrl.h
 
 SOURCES = \
    $$PWD/cookiejar.cpp \
@@ -64,7 +70,9 @@ SOURCES = \
    digitalclock.cpp \
    eventcontroller.cpp \
    keyboardwidget.cpp \
-   websockserver.cpp
+   websockserver.cpp \
+   wpa_supplicant/os_unix.c \
+   wpa_supplicant/wpa_ctrl.c
 
 WEBKIT_SOURCE_DIR = /home/janz/data/yocto/git/webkit
 WEBKIT_DIR = $$WEBKIT_SOURCE_DIR/Source/WebKit
@@ -90,4 +98,7 @@ LIBS += -L"$$WEBKIT_SOURCE_DIR/WebKitBuild/ReleaseThud/lib" -lQt5WebKit -lQt5Web
 
 RESOURCES += \
     RBrowser.qrc
+
+DISTFILES += \
+    wifi.txt
 
