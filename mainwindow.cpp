@@ -255,7 +255,7 @@ void MainWindow::wpaShowStatus(const char *buf)
      */
 
     int rssi = atoi(status.value("RSSI").toUtf8());
-    QPixmap *wpix = new QPixmap(m_imagesdir + "/wifi-off.png");
+    QPixmap *wpix;
 
     if (rssi >= -60)
         wpix = new QPixmap(m_imagesdir + "/wifi-4.png");
@@ -269,6 +269,7 @@ void MainWindow::wpaShowStatus(const char *buf)
         wpix = new QPixmap(m_imagesdir + "/wifi-0.png");
 
     m_wifiIcon->setPixmap(*wpix);
+    delete wpix;
 }
 
 int MainWindow::wpaCtrlRequest(const QString& cmd, char* buf, const size_t buflen)
@@ -443,6 +444,8 @@ void MainWindow::load(const QUrl& url)
     setAddressUrl(url.toString());
     page()->setAppDir(m_imagesdir);
     page()->mainFrame()->load(url);
+    QWebSettings::clearMemoryCaches();
+    //webView->history()->clear();
 }
 
 QString MainWindow::addressUrl() const
