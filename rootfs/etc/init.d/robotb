@@ -1,0 +1,160 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: Robot Kiosk Web Browser Startup daemon 
+# Required-Start:    
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Robot Kiosk Browser Daemon Service
+# Description:       Robot Kiosk Web Browser Daemon Service
+### END INIT INFO
+
+# (C) 2017-2020, Radical Electronic Systems
+# Author:
+# Jan Zwiegers, jan@radicalsystems.co.za
+#
+
+# set -e
+
+# PATH should only include /usr/* if it runs after the mountnfs.sh script
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="Robot Kiosk Web Browser"
+NAME=wbRobot
+
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+DAEMON=/home/root/RobotBrowser/RBrowser
+# default startup page
+DAEMON_ARGS="http://127.0.0.1"
+CHUID=root
+
+# default 
+#WB_LAYOUT=portrait
+WB_ANGLE=270
+
+# source settings
+. /etc/formfactor/appconfig
+
+# source function library
+. /etc/init.d/functions
+
+
+if [ $WB_LAYOUT = "portrait" ]; then
+	WB_ANGLE=270
+else
+	WB_ANGLE=0
+fi
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+	res=$(cat /sys/class/drm/card0/*/modes | tr -d '\n')
+	
+	# Check if touchscreen is available
+	if [ -x /usr/bin/ts_calibrate ]; then
+
+		if [ -e /sys/class/graphics/fb0/modes ]; then
+			head -1 /sys/class/graphics/fb0/modes > /sys/class/graphics/fb0/mode
+		fi
+
+		# setup touchscreen calibration
+		rm -f /etc/pointercal
+		if [ ! -f /etc/pointercal-${res} ]; then
+			TSLIB_TSDEVICE=/dev/input/touchscreen0 /usr/bin/ts_calibrate
+			mv /etc/pointercal /etc/pointercal-${res}
+		fi
+    
+		ln -sf /etc/pointercal-${res} /etc/pointercal
+		export QT_QPA_EVDEV_KEYBOARD_PARAMETERS=/dev/input/keyboard0;grab=1
+		export QT_QPA_GENERIC_PLUGINS=tslib:/dev/input/touchscreen0
+		export QT_QPA_PLATFORM=linuxfb:rotation=$WB_ANGLE
+		export TSLIB_ROTATE=$WB_ANGLE
+		export QT_IM_MODULE=qtvirtualkeyboard
+		export QT_VIRTUALKEYBOARD_LAYOUT_PATH=/home/root/RobotBrowser/layouts
+	else
+		export QT_QPA_GENERIC_PLUGINS=evdevkeyboard:/dev/input/keyboard0
+	fi
+	
+	# Run all profiles
+	. /etc/profile
+	
+	# Start Robot Kiosk Browser
+	DAEMON_ARGS="$WB_LOAD_URL"
+	cd /home/root/RobotBrowser
+	#status = $($DAEMON $DAEMON_ARGS)
+	status=$(/sbin/start-stop-daemon -S --chuid $CHUID -q --background --pidfile $PIDFILE --make-pidfile --exec $DAEMON -- $DAEMON_ARGS)
+	
+	return $status
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+
+   status=$(start-stop-daemon -K -q --pidfile $PIDFILE --exec $DAEMON) 
+   # Many daemons don't delete their pidfiles when they exit.
+   rm -f $PIDFILE
+   return $status
+}
+
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+   start-stop-daemon -K -q --signal 1 --quiet --pidfile $PIDFILE --name $NAME
+   return 0
+}
+
+
+case "$1" in
+  start)
+   echo -e -n "Starting $DESC: "
+   do_start
+   case "$?" in
+	  0) echo -e "${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}" ;;
+	  1) echo -e "${BRACKET}[${WARNING} RUNNING ${BRACKET}]${NORMAL}" ;;
+	  2) echo -e "${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}" ;;
+	  *) echo -e "${BRACKET}[${FAILURE} FAIL = $? ${BRACKET}]${NORMAL}" ;;
+   esac
+   ;;
+
+  stop)
+   echo -e -n "Stopping $DESC: "
+   do_stop
+   case "$?" in
+	  0|1) echo -e "${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}" ;;
+	  2) echo -e "${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}" ;;
+   esac
+   ;;
+
+  restart|force-reload)
+
+   echo -e -n "Restarting $DESC"
+   do_stop
+   case "$?" in
+	 0|1)
+	  do_start
+	  case "$?" in
+		 0) echo -e "${BRACKET}[${SUCCESS}  OK  ${BRACKET}]${NORMAL}" ;;
+		 1) echo -e "${BRACKET}[${WARNING} RUNNING ${BRACKET}]${NORMAL}" ;; # Old process is still running
+		 *) echo -e "${BRACKET}[${FAILURE} FAIL ${BRACKET}]${NORMAL}" ;;
+	  esac
+	  ;;
+	 *)
+		# Failed to stop
+	  echo failure
+	  ;;
+   esac
+   ;;
+  *)
+   
+   echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+   exit 3
+   ;;
+esac
+

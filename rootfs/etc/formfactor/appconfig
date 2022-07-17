@@ -1,0 +1,7 @@
+# Robot-T410 Application Settings
+# (C) 2017-2020, Radical Electronic Systems # http://www.radicalsystems.co.za info@radicalsystems.co.za
+# Window Manager Settings
+WB_LOAD_URL=file:///home/root/RobotWsTTY/test/wstest.html
+WB_LAYOUT=portrait
+
+
