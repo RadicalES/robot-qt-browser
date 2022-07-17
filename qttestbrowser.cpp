@@ -36,6 +36,7 @@
 #include "launcherwindow.h"
 #include "urlloader.h"
 #include "websockserver.h"
+#include "unixsignalnotifier.h"
 
 #if HAVE(QTTESTSUPPORT)
 #include "QtTestSupport.h"
@@ -388,7 +389,9 @@ int main(int argc, char **argv)
         newWindow->load(urls.at(0));
     //}
 
-
+    QObject::connect(UnixSignalNotifier::instance(), SIGNAL(unixSignal(int)), &app, SLOT(quit()));
+    UnixSignalNotifier::instance()->installSignalHandler(SIGINT);
+    UnixSignalNotifier::instance()->installSignalHandler(SIGTERM);
 
     //window->setAttribute(QT::WA)
     window->show();

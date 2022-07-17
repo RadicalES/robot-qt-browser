@@ -54,7 +54,8 @@ HEADERS = \
    keyboardwidget.h \
    websockserver.h \
    wpa_supplicant/includes.h \
-   wpa_supplicant/wpa_ctrl.h
+   wpa_supplicant/wpa_ctrl.h \
+    unixsignalnotifier.h
 
 SOURCES = \
    $$PWD/cookiejar.cpp \
@@ -72,7 +73,8 @@ SOURCES = \
    keyboardwidget.cpp \
    websockserver.cpp \
    wpa_supplicant/os_unix.c \
-   wpa_supplicant/wpa_ctrl.c
+   wpa_supplicant/wpa_ctrl.c \
+    unixsignalnotifier.cpp
 
 WEBKIT_SOURCE_DIR = /home/janz/data/yocto/git/webkit
 WEBKIT_DIR = $$WEBKIT_SOURCE_DIR/Source/WebKit
