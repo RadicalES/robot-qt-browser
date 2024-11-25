@@ -99,6 +99,7 @@ private:
     void processWpaMsg(char* msg);
     int wpaCtrlRequest(const QString& cmd, char* buf, const size_t buflen);
     void wpaShowStatus(const char *buf);
+    void wpaShowPoll(const char *buf);
     void wifiRestart();
     WebPage* m_page;
     QToolBar* m_toolBar;

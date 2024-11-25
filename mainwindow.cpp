@@ -196,7 +196,7 @@ void MainWindow::refreshWifiStatus()
     }
     else {
         if(wpaCtrlRequest("SIGNAL_POLL", buf, len) >= 0) {
-            wpaShowStatus(buf);
+            wpaShowPoll(buf);
         }
         else {
             QPixmap *wpix = new QPixmap(m_imagesdir + "/wifi-off.png");
@@ -238,7 +238,30 @@ void MainWindow::wpaShowStatus(const char *buf)
 {
     QHash<QString, QString> status;
     QStringList lines = QString(buf).split('\n');
-   // qDebug() << "wpaShowStatus" << (buf);
+ //   qDebug() << "wpaShowStatus\n" << (buf);
+
+    foreach(QString line, lines) {
+        QString key = line.section('=', 0, 0);
+        QString val = line.section('=', 1, 1);
+        status.insert(key, val);
+       // qDebug() << line;
+    }
+
+    /*
+        "RSSI=-46"
+        "LINKSPEED=0"
+        "NOISE=-256"
+        "FREQUENCY=0"
+     */
+
+
+}
+
+void MainWindow::wpaShowPoll(const char *buf)
+{
+    QHash<QString, QString> status;
+    QStringList lines = QString(buf).split('\n');
+  //  qDebug() << "wpaShowPoll\n" << (buf);
 
     foreach(QString line, lines) {
         QString key = line.section('=', 0, 0);
@@ -323,8 +346,8 @@ void MainWindow::setupWPA()
             m_wpaMsgNotifier = new QSocketNotifier(wpa_ctrl_get_fd(m_wpaMonConn), QSocketNotifier::Read, this);
             connect(m_wpaMsgNotifier, SIGNAL(activated(int)), SLOT(receiveWpaMsgs()));
             size_t len(2048); char buf[len];
-            //if (wpaCtrlRequest("STATUS", buf, len) < 0) {
-            if(wpaCtrlRequest("SIGNAL_POLL", buf, len) < 0) {;
+            if (wpaCtrlRequest("STATUS", buf, len) < 0) {
+            //if(wpaCtrlRequest("SIGNAL_POLL", buf, len) < 0) {;
                 qDebug() << "WPA STATUS FAILED!";
             }
             else {
