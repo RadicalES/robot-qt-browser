@@ -1,0 +1,11 @@
+# Robot Kiosk Browser - input device symlinks
+# Creates /dev/input/touchscreen0 and /dev/input/keyboard0
+# Adjust ATTRS{name} values to match your hardware
+
+# Touchscreen (update name to match your device: cat /proc/bus/input/devices)
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="*touch*", SYMLINK+="input/touchscreen0"
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="*Touch*", SYMLINK+="input/touchscreen0"
+
+# Keyboard
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="*keyboard*", SYMLINK+="input/keyboard0"
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="*Keyboard*", SYMLINK+="input/keyboard0"

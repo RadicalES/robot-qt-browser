@@ -1,12 +1,22 @@
 [Unit]
-Description=Robot Web Browser
-After=network.target
+Description=Robot Kiosk Web Browser
+After=network-online.target NetworkManager.service
+Wants=network-online.target
 
 [Service]
 Type=simple
 SyslogIdentifier=robotbrowser
-ExecStart= /home/root/RobotBrowser/robotbrowser.sh
-TimeoutSec=10
+ExecStart=/home/root/RobotBrowser/robotbrowser.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Run as root (direct framebuffer access)
+User=root
+
+# Allow framebuffer and input device access
+SupplementaryGroups=video input
 
 [Install]
 WantedBy=multi-user.target

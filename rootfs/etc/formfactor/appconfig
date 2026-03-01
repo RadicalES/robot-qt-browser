@@ -1,7 +1,9 @@
-# Robot-T410 Application Settings
-# (C) 2017-2020, Radical Electronic Systems # http://www.radicalsystems.co.za info@radicalsystems.co.za
-# Window Manager Settings
+# Robot Kiosk Application Settings
+# (C) 2017-2025, Radical Electronic Systems
+# http://www.radicalsystems.co.za  info@radicalsystems.co.za
+
+# URL to load on startup (remote transaction URL)
 WB_LOAD_URL=file:///home/root/RobotWsTTY/test/wstest.html
+
+# Display orientation: portrait or landscape
 WB_LAYOUT=portrait
-
-
