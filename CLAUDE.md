@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kiosk-style browser application for the RadicalES Robot-T410 embedded Linux platform. Built with Qt 5 and QtWebKit 5.212 (custom build). Includes WiFi management via wpa_supplicant, a virtual keyboard, WebSocket debug server, and touchscreen support.
+Kiosk-style browser application for the RadicalES Robot-T410 embedded Linux platform (ARM64). Built with Qt 5.9 LTS and QtWebKit 5.212 (custom build). Includes WiFi management via wpa_supplicant, a virtual keyboard, WebSocket debug server, and touchscreen support.
+
+## Qt Version
+
+Target SDK: **Qt 5.9 LTS** (built via Yocto). Minimum compile requirement: Qt 5.4.0 (for `QOpenGLWidget`). Code uses C++11 only. QtWebKit 5.212 is the last open-source WebKit release and was commonly paired with Qt 5.9 in Yocto. Note: `keyboardwidget.cpp` has an ARM64 touchscreen workaround for [QTBUG-67018](https://bugreports.qt.io/browse/QTBUG-67018), a Qt 5.9 LTS regression in qdeclarative.
 
 ## Build Commands
 
