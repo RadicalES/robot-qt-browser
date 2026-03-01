@@ -4,11 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kiosk-style browser application for the RadicalES Robot-T410 embedded Linux platform (ARM64). Built with Qt 5.9 LTS and QtWebKit 5.212 (custom build). Includes WiFi management via wpa_supplicant, a virtual keyboard, WebSocket debug server, and touchscreen support.
-
-## Qt Version
-
-Target SDK: **Qt 5.9 LTS** (built via Yocto). Minimum compile requirement: Qt 5.4.0 (for `QOpenGLWidget`). Code uses C++11 only. QtWebKit 5.212 is the last open-source WebKit release and was commonly paired with Qt 5.9 in Yocto. Note: `keyboardwidget.cpp` has an ARM64 touchscreen workaround for [QTBUG-67018](https://bugreports.qt.io/browse/QTBUG-67018), a Qt 5.9 LTS regression in qdeclarative.
+Kiosk-style browser application for embedded Linux (BeagleBone Black, Raspberry Pi CM4). Displays two web pages (a local URL and a remote transaction URL) with minimal desktop functions: WiFi status, network setup, reboot, system info. Built with Qt 5.15 LTS, QML UI shell, and QtWebKit 5.212 for web rendering. Targets Debian 12 (Bookworm).
 
 ## Build Commands
 
@@ -21,40 +17,73 @@ The .pro file expects QtWebKit 5.212 headers at `/home/janz/data/yocto/git/webki
 
 ## Architecture
 
-**Entry point:** `qttestbrowser.cpp` — creates `LauncherApplication`, starts a `WebsockServer` (port 7070), and opens a `LauncherWindow`.
+**Hybrid layout:** QWebView (widget) underneath a transparent QQuickWidget overlay for the QML shell.
 
-**Class hierarchy:**
-- `LauncherApplication` (QApplication) — parses CLI args, applies WebKit defaults
-- `LauncherWindow` extends `MainWindow` (QMainWindow) — main browser window with toolbar, address bar, status bar
-- `WebPage` (QWebPage) — manages navigation, auth, JS console, user agents
-- View layer: `WebViewTraditional` (QWebView) or `WebViewGraphicsBased` (QGraphicsView) with `GraphicsWebView`
+```
+main.cpp
+├── QApplication + QWebSettings global config
+├── QStackedLayout (StackAll mode)
+│   ├── QQuickWidget (transparent overlay) ← qml/main.qml
+│   └── QWebView (QtWebKit rendering)     ← WebPageController
+│
+├── C++ Controllers (registered as QML context properties)
+│   ├── WebPageController  — loadLocal(), loadRemote(), reload(), goBack()
+│   ├── WpaController      — signalLevel, connected, ssid, restartWifi()
+│   ├── SystemController   — reboot(), resetDefaults(), systemInfo()
+│   └── WebsockServer      — debug WebSocket server (port 7070)
+│
+└── QML UI (qml/)
+    ├── main.qml         — root overlay with bottom bar, popups, virtual keyboard
+    ├── BottomBar.qml    — [Home] [Remote] [Back] | WiFi icon | Clock | [Info]
+    ├── WifiPopup.qml    — WiFi restart confirmation
+    ├── RebootPopup.qml  — Reboot confirmation
+    └── InfoPopup.qml    — System info + reset defaults + reboot
+```
 
-**Key subsystems:**
-- **WiFi/WPA:** `mainwindow.cpp` integrates with `wpa_supplicant/wpa_ctrl.c` via Unix socket. Polls signal strength on a 1-second QTimer. WiFi status icons: `wifi-*.png`.
-- **WebSocket debug server:** `websockserver.{h,cpp}` — listens on port 8001, broadcasts debug messages to connected clients.
-- **Virtual keyboard:** `keyboardwidget.{h,cpp}` + `keyboard.qml` with layouts in `layouts/` directory.
-- **Unix signals:** `unixsignalnotifier.{h,cpp}` — singleton that converts SIGINT/SIGTERM to Qt signals for clean systemd shutdown.
-- **Cookie persistence:** `cookiejar.{h,cpp}` — disk-backed cookie storage.
-- **URL automation:** `urlloader.{h,cpp}` — batch loads URLs from file (robotized mode via `-r` flag).
+**Entry point:** `main.cpp` — sets up QApplication, global QWebSettings, registers C++ controllers to QML context, creates hybrid stacked layout, shows fullscreen.
 
-**All source files live in the project root** (no src/ subdirectory).
+**Key C++ classes:**
+- `WebPageController` (`webpagecontroller.h/.cpp`) — wraps QWebView + WebPage + CookieJar. Exposes load/reload/back as Q_INVOKABLE, URL and loading state as Q_PROPERTY.
+- `WebPage` (`webpage.h/.cpp`) — simplified QWebPage subclass. Handles navigation request with network check, proxy from `http_proxy` env, HTTP auth dialog, JS console/alert forwarding to debug server.
+- `WpaController` (`wpacontroller.h/.cpp`) — **stubbed**, pending NetworkManager D-Bus implementation. Will poll WiFi signal strength and provide restartWifi().
+- `SystemController` (`systemcontroller.h/.cpp`) — reboot, factory reset, system info string.
+- `TestBrowserCookieJar` (`cookiejar.h/.cpp`) — disk-persisted cookies at `~/.cache/RobotBrowser/cookieJar`, 10-second debounced writes.
+- `WebsockServer` (`websockserver.h/.cpp`) — WebSocket server for remote debug, JS console and alert messages broadcast to connected clients.
+- `UnixSignalNotifier` (`unixsignalnotifier.h/.cpp`) — singleton converting SIGINT/SIGTERM to Qt signals for systemd shutdown.
 
-## Qt Modules Used
+**All C++ source files live in the project root. QML files in `qml/`.**
 
-core, gui, widgets, network, opengl, virtualkeyboard, quickwidgets, websockets, webkit, webkitwidgets
+## Qt Modules
 
-## Deployment
+core, gui, widgets, network, quickwidgets, quickcontrols2, virtualkeyboard, websockets + QtWebKit 5.212 (external)
 
-Target runs on Linux framebuffer (`QT_QPA_PLATFORM=linuxfb`). Startup script: `rootfs/home/root/RobotBrowser/robotbrowser.sh`. Systemd unit: `rootfs/etc/systemd/system/browser.service`. App config (default URL, layout): `rootfs/etc/formfactor/appconfig`.
+Enable `dbus` module when implementing NetworkManager WiFi support.
 
 ## CLI Arguments
 
-`-graphicsbased`, `-maximize`, `-show-fps`, `-robot-timeout <sec>`, `-inspector-url <url>`, `-local-storage-enabled`, `-no-disk-cookies`, `-r <urlfile>` — see `qttestbrowser.cpp` for full list.
+```
+RBrowser <remote_url> [local_url]
+```
+
+Defaults to `http://127.0.0.1` for both if not provided.
+
+## Resources (RBrowser.qrc)
+
+Icons aliased under `qrc:/images/` (home, store, back, info, wifi-off, wifi-0 through wifi-4). QML files under `qrc:/qml/`.
+
+## Deployment
+
+Target: Debian 12 on BBB/RPi CM4, Linux framebuffer (`QT_QPA_PLATFORM=linuxfb`). Startup script: `rootfs/home/root/RobotBrowser/robotbrowser.sh`. Systemd unit: `rootfs/etc/systemd/system/browser.service`. App config: `rootfs/etc/formfactor/appconfig` (WB_LOAD_URL, WB_LAYOUT).
+
+## Pending Work
+
+- `WpaController`: implement NetworkManager D-Bus polling for WiFi signal strength, connection status, SSID, and restart
+- Virtual keyboard layout path may need updating for Debian 12 Qt packages
 
 ## Code Conventions
 
-- C++11 standard
-- Qt signal/slot connections (both old-style SIGNAL/SLOT macros and direct connections)
-- `Qt::WA_DeleteOnClose` for window lifecycle management
-- QTimer-based periodic tasks (WPA polling, FPS measurement)
-- QPointer for preventing dangling pointer access
+- C++14 standard
+- Qt signal/slot connections (prefer new-style `connect(&obj, &Class::signal, ...)`)
+- C++ controllers expose state to QML via Q_PROPERTY with NOTIFY signals
+- QML actions call C++ via Q_INVOKABLE methods
+- No address bar — kiosk mode with two fixed URLs only
