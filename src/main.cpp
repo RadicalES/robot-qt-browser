@@ -8,7 +8,7 @@
 #include <QDebug>
 
 #include "webpagecontroller.h"
-#include "wpacontroller.h"
+#include "networkcontroller.h"
 #include "systemcontroller.h"
 #include "websockserver.h"
 #include "unixsignalnotifier.h"
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
     WebsockServer debugSvr(7070, false, &app);
 
     // C++ backend controllers
-    WpaController wpaController;
+    NetworkController networkController;
     SystemController systemController;
     WebPageController webPageController;
     webPageController.init(localUrl, remoteUrl, &debugSvr);
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     qmlOverlay->setAttribute(Qt::WA_AlwaysStackOnTop);
     qmlOverlay->setAttribute(Qt::WA_TranslucentBackground);
     qmlOverlay->rootContext()->setContextProperty("webPageController", &webPageController);
-    qmlOverlay->rootContext()->setContextProperty("wpaController", &wpaController);
+    qmlOverlay->rootContext()->setContextProperty("networkController", &networkController);
     qmlOverlay->rootContext()->setContextProperty("systemController", &systemController);
     qmlOverlay->setSource(QUrl("qrc:/qml/main.qml"));
 

@@ -37,7 +37,7 @@ Rectangle {
         Image {
             id: wifiIcon
             source: {
-                var level = wpaController.signalLevel;
+                var level = networkController.signalLevel;
                 if (level < 0) return "qrc:/images/wifi-off.png";
                 return "qrc:/images/wifi-" + level + ".png";
             }

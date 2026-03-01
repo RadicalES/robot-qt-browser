@@ -1,5 +1,4 @@
-QT += core gui widgets network quickwidgets quickcontrols2 virtualkeyboard websockets webkit webkitwidgets
-# QT += dbus  # enable when implementing NetworkManager WiFi support
+QT += core gui widgets network quickwidgets quickcontrols2 virtualkeyboard websockets webkit webkitwidgets dbus
 
 DEFINES += QT_DEPRECATED_WARNING
 DEFINES += QT_NO_DEBUG
@@ -11,7 +10,7 @@ HEADERS = \
     cookiejar.h \
     websockserver.h \
     unixsignalnotifier.h \
-    wpacontroller.h \
+    networkcontroller.h \
     webpagecontroller.h \
     systemcontroller.h
 
@@ -21,7 +20,7 @@ SOURCES = \
     cookiejar.cpp \
     websockserver.cpp \
     unixsignalnotifier.cpp \
-    wpacontroller.cpp \
+    networkcontroller.cpp \
     webpagecontroller.cpp \
     systemcontroller.cpp
 
