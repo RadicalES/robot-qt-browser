@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=Robot Kiosk Browser on Wayland
+Exec=/usr/bin/labwc-rbrowser
