@@ -16,14 +16,16 @@ docker run --rm \
     -v "$PROJECT_DIR/build-bbb:/build" \
     "$IMAGE_NAME" \
     sh -c '
-        cp -r /src/* /build/ 2>/dev/null || true
+        # Redirect qmake to armhf Qt paths (qt.conf must sit next to real qmake binary)
+        cat > /usr/lib/qt5/bin/qt.conf <<QTCONF
+[Paths]
+Prefix = /usr/lib/arm-linux-gnueabihf/qt5
+Headers = /usr/include/arm-linux-gnueabihf/qt5
+Libraries = /usr/lib/arm-linux-gnueabihf
+QTCONF
+
         cd /build
-        qmake /src/RBrowser.pro \
-            -spec linux-arm-gnueabihf-g++ \
-            "QMAKE_CC=arm-linux-gnueabihf-gcc" \
-            "QMAKE_CXX=arm-linux-gnueabihf-g++" \
-            "QMAKE_LINK=arm-linux-gnueabihf-g++" \
-            "QMAKE_LINK_SHLIB=arm-linux-gnueabihf-g++"
+        /usr/lib/qt5/bin/qmake /src/RBrowser.pro -spec linux-arm-gnueabihf-g++
         make -j$(nproc)
     '
 
