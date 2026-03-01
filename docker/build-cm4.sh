@@ -25,7 +25,7 @@ Libraries = /usr/lib/aarch64-linux-gnu
 QTCONF
 
         cd /build
-        /usr/lib/qt5/bin/qmake /src/RBrowser.pro -spec linux-aarch64-gnu-g++
+        /usr/lib/qt5/bin/qmake /src/src/RBrowser.pro -spec linux-aarch64-gnu-g++
         make -j$(nproc)
     '
 

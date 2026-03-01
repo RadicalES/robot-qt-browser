@@ -25,7 +25,7 @@ Libraries = /usr/lib/arm-linux-gnueabihf
 QTCONF
 
         cd /build
-        /usr/lib/qt5/bin/qmake /src/RBrowser.pro -spec linux-arm-gnueabihf-g++
+        /usr/lib/qt5/bin/qmake /src/src/RBrowser.pro -spec linux-arm-gnueabihf-g++
         make -j$(nproc)
     '
 
