@@ -1,28 +1,26 @@
 #!/bin/sh
-# (C) 2017-2022, Radical Electronic Systems
+# (C) 2017-2024, Radical Electronic Systems
 # Author:
 # Jan Zwiegers, jan@radicalsystems.co.za
 
 # App itself
 DAEMON=/home/root/RobotBrowser/RBrowser
-# default startup page
-DAEMON_ARGS="http://127.0.0.1"
 
-# default 
+# default
 #WB_LAYOUT=portrait
 WB_ANGLE=270
 
 # source settings
 . /etc/formfactor/appconfig
 
-if [ $WB_LAYOUT = "portrait" ]; then
+if [ "$WB_LAYOUT" = "portrait" ]; then
 	WB_ANGLE=270
 else
 	WB_ANGLE=0
 fi
 
 res=$(cat /sys/class/drm/card0/*/modes | tr -d '\n')
-	
+
 # Check if touchscreen is available
 if [ -x /usr/bin/ts_calibrate ]; then
 
@@ -52,8 +50,6 @@ fi
 . /etc/profile
 
 # Start Robot Kiosk Browser
-DAEMON_ARGS="$WB_LOAD_URL"
+# Args: <remote_url> [local_url]
 cd /home/root/RobotBrowser
-status = $($DAEMON $DAEMON_ARGS)
-
-return status
+exec $DAEMON $WB_LOAD_URL

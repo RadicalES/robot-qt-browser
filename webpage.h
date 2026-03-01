@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies)
- * Copyright (C) 2009 Girish Ramakrishnan <girish@forwardbias.in>
  * Copyright (C) 2006 George Staikos <staikos@kde.org>
  * Copyright (C) 2006 Dirk Mueller <mueller@kde.org>
  * Copyright (C) 2006 Zack Rusin <zack@kde.org>
@@ -33,61 +32,35 @@
 #ifndef webpage_h
 #define webpage_h
 
-#include <QAbstractButton>
 #include <qwebframe.h>
 #include <qwebpage.h>
 #include "websockserver.h"
-
-
-class MainWindow;
 
 class WebPage : public QWebPage {
     Q_OBJECT
 
 public:
-    WebPage(MainWindow* parent);
+    WebPage(QObject* parent = nullptr);
 
     QWebPage* createWindow(QWebPage::WebWindowType) override;
-    QObject* createPlugin(const QString&, const QUrl&, const QStringList&, const QStringList&) override;
-
     bool acceptNavigationRequest(QWebFrame*, const QNetworkRequest&, NavigationType) override;
-
     QString userAgentForUrl(const QUrl&) const override;
-    void setInterruptingJavaScriptEnabled(bool enabled) { m_interruptingJavaScriptEnabled = enabled; }
 
-    bool shouldInterruptJavaScript() override;
+    void javaScriptConsoleMessage(const QString& message, int lineNumber, const QString& sourceID) override;
+    void javaScriptAlert(QWebFrame* frame, const QString& msg) override;
 
-    void javaScriptConsoleMessage(const QString &message, int lineNumber, const QString &sourceID) override;
-    void javaScriptAlert(QWebFrame * frame, const QString & msg) override;
-    void setDebugger(WebsockServer *debugger);
-    void setAppDir(QString dirname);    
+    void setDebugger(WebsockServer* debugger) { m_debugServer = debugger; }
+    void setUserAgent(const QString& ua) { m_userAgent = ua; }
 
 public Q_SLOTS:
-    void initialLayout();
-    void frameCreated(QWebFrame * frame);
-    void loadJavascriptPatches();
-    void openUrlInDefaultBrowser(const QUrl& = QUrl());
-    void setUserAgent(const QString& ua) { m_userAgent = ua; }
     void authenticationRequired(QNetworkReply*, QAuthenticator*);
     void requestPermission(QWebFrame*, QWebPage::Feature);
-    void featurePermissionRequestCanceled(QWebFrame*, QWebPage::Feature);
-    void requestFullScreen(QWebFullScreenRequest);
-    void infoDialog();
-    void resetDefaultsPressed(QAbstractButton *button);
-
 
 private:
     void applyProxy();
-    void sendWSMessage(QString message);
-    void resetDialog();
-    void rebootDialog();
 
-    MainWindow *m_mainWindow;
     QString m_userAgent;
-    bool m_interruptingJavaScriptEnabled;
-    WebsockServer *m_debugServer;
-    QString m_homedir;
-
+    WebsockServer* m_debugServer;
 };
 
 #endif
