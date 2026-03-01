@@ -59,14 +59,14 @@ src/main.cpp
 │
 ├── C++ Controllers (registered as QML context properties)
 │   ├── WebPageController  — loadLocal(), loadRemote(), reload(), goBack()
-│   ├── WpaController      — signalLevel, connected, ssid, restartWifi()
+│   ├── NetworkController  — WiFi management via NetworkManager D-Bus
 │   ├── SystemController   — reboot(), resetDefaults(), systemInfo()
 │   └── WebsockServer      — debug WebSocket server (port 7070)
 │
 └── QML UI (src/qml/)
     ├── main.qml         — root overlay with bottom bar, popups, virtual keyboard
     ├── BottomBar.qml    — [Home] [Remote] [Back] | WiFi icon | Clock | [Info]
-    ├── WifiPopup.qml    — WiFi restart confirmation
+    ├── WifiPopup.qml    — WiFi config: scan, connect, forget, signal, restart
     ├── RebootPopup.qml  — Reboot confirmation
     └── InfoPopup.qml    — System info + reset defaults + reboot
 ```
@@ -74,7 +74,7 @@ src/main.cpp
 **Key C++ classes (all in `src/`):**
 - `WebPageController` — wraps QWebView + WebPage + CookieJar. Exposes load/reload/back as Q_INVOKABLE, URL and loading state as Q_PROPERTY.
 - `WebPage` — simplified QWebPage subclass. Navigation network check, proxy, HTTP auth dialog, JS console/alert forwarding to debug server.
-- `WpaController` — **stubbed**, pending NetworkManager D-Bus implementation. Will poll WiFi signal strength and provide restartWifi().
+- `NetworkController` — WiFi management via NetworkManager D-Bus (system bus). Exposes signalLevel, connected, ssid, ipAddress, scanning, networks (QVariantList), error as Q_PROPERTY. Provides scan(), connectToNetwork(ssid, password), disconnectWifi(), forgetNetwork(ssid), restartWifi() as Q_INVOKABLE. Uses 5-second polling + PropertiesChanged/AccessPointAdded/Removed D-Bus signals. Registered as `networkController` QML context property.
 - `SystemController` — reboot, factory reset, system info string.
 - `TestBrowserCookieJar` (`cookiejar.h/.cpp`) — disk-persisted cookies, 10-second debounced writes.
 - `WebsockServer` — WebSocket server for remote debug, JS console and alert broadcast.
@@ -82,9 +82,7 @@ src/main.cpp
 
 ## Qt Modules
 
-core, gui, widgets, network, quickwidgets, quickcontrols2, virtualkeyboard, websockets + QtWebKit 5.212 (external)
-
-Enable `dbus` module when implementing NetworkManager WiFi support.
+core, gui, widgets, network, quickwidgets, quickcontrols2, virtualkeyboard, websockets, dbus + QtWebKit 5.212 (external)
 
 ## CLI Arguments
 
@@ -106,7 +104,6 @@ Icons aliased under `qrc:/images/` (home, store, back, info, wifi-off, wifi-0 th
 
 ## Pending Work
 
-- `WpaController`: implement NetworkManager D-Bus polling for WiFi signal strength, connection status, SSID, and restart
 - Virtual keyboard layout path may need updating for Debian 12 Qt packages
 
 ## Code Conventions
