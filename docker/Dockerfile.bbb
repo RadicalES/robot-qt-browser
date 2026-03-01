@@ -1,0 +1,24 @@
+FROM debian:12
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Enable armhf foreign architecture
+RUN dpkg --add-architecture armhf && \
+    apt-get update && apt-get install -y \
+    crossbuild-essential-armhf \
+    pkg-config \
+    # Qt 5.15 dev packages for armhf cross-compilation
+    qtbase5-dev:armhf \
+    qtdeclarative5-dev:armhf \
+    qtquickcontrols2-5-dev:armhf \
+    libqt5websockets5-dev:armhf \
+    libqt5webkit5-dev:armhf \
+    libqt5virtualkeyboard5-dev:armhf \
+    qtvirtualkeyboard-plugin:armhf \
+    # Host tools (qmake runs on host)
+    qtbase5-dev-tools \
+    qtdeclarative5-dev-tools \
+    qt5-qmake \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build

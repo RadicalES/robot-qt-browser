@@ -43,6 +43,7 @@
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkProxy>
+#include <QtNetwork/QNetworkInterface>
 
 WebPage::WebPage(QObject* parent)
     : QWebPage(parent)
@@ -67,8 +68,16 @@ void WebPage::applyProxy()
 
 bool WebPage::acceptNavigationRequest(QWebFrame* frame, const QNetworkRequest& request, NavigationType type)
 {
-    if (networkAccessManager()->networkAccessible() != QNetworkAccessManager::Accessible
-        && !request.url().matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded)) {
+    bool networkUp = false;
+    for (const QNetworkInterface& iface : QNetworkInterface::allInterfaces()) {
+        if (iface.flags().testFlag(QNetworkInterface::IsUp)
+            && !iface.flags().testFlag(QNetworkInterface::IsLoopBack)
+            && !iface.addressEntries().isEmpty()) {
+            networkUp = true;
+            break;
+        }
+    }
+    if (!networkUp && !request.url().matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded)) {
         QMessageBox box(view());
         QFont f = box.font();
         f.setPointSize(6);

@@ -2,7 +2,7 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QSysInfo>
-#include <QNetworkAccessManager>
+#include <QNetworkInterface>
 #include <QDebug>
 
 SystemController::SystemController(QObject* parent)
@@ -12,13 +12,14 @@ SystemController::SystemController(QObject* parent)
 
 void SystemController::reboot()
 {
-    QProcess::execute("/sbin/reboot");
+    QProcess::execute("/sbin/reboot", QStringList());
 }
 
 void SystemController::resetDefaults()
 {
     QProcess::execute("/bin/sh", QStringList() << "/home/root/RobotBrowser/resetDefaults.sh");
 }
+
 
 QString SystemController::systemInfo() const
 {
@@ -33,6 +34,12 @@ QString SystemController::systemInfo() const
 
 bool SystemController::networkAvailable() const
 {
-    QNetworkAccessManager nam;
-    return nam.networkAccessible() != QNetworkAccessManager::NotAccessible;
+    for (const QNetworkInterface& iface : QNetworkInterface::allInterfaces()) {
+        if (iface.flags().testFlag(QNetworkInterface::IsUp)
+            && !iface.flags().testFlag(QNetworkInterface::IsLoopBack)
+            && !iface.addressEntries().isEmpty()) {
+            return true;
+        }
+    }
+    return false;
 }
