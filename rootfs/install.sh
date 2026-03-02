@@ -1,5 +1,5 @@
 #!/bin/sh
-# (C) 2017-2025, Radical Electronic Systems
+# (C) 2017-2026, Radical Electronic Systems
 # Install robot-browser and runtime dependencies on Debian 12
 # Run as root on the target device
 set -e
@@ -19,6 +19,7 @@ apt-get install -y --no-install-recommends \
     libqt5webkit5 \
     libqt5websockets5 \
     libqt5virtualkeyboard5 \
+    libqt5dbus5 \
     qml-module-qtquick2 \
     qml-module-qtquick-controls2 \
     qml-module-qtquick-layouts \
@@ -30,39 +31,48 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 
 echo "=== Installing application files ==="
-mkdir -p /home/root/RobotBrowser
-mkdir -p /etc/formfactor
-
-# Copy binary (caller must place robot-browser in same directory as this script)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-if [ -f "$SCRIPT_DIR/home/root/RobotBrowser/robot-browser" ]; then
-    cp "$SCRIPT_DIR/home/root/RobotBrowser/robot-browser" /home/root/RobotBrowser/
-    chmod +x /home/root/RobotBrowser/robot-browser
+# Binary
+mkdir -p /usr/bin
+if [ -f "$SCRIPT_DIR/usr/bin/robot-browser" ]; then
+    cp "$SCRIPT_DIR/usr/bin/robot-browser" /usr/bin/
+    chmod 755 /usr/bin/robot-browser
 fi
 
-cp "$SCRIPT_DIR/home/root/RobotBrowser/robotbrowser.sh" /home/root/RobotBrowser/
-chmod +x /home/root/RobotBrowser/robotbrowser.sh
+# Startup script
+mkdir -p /usr/lib/robot-browser
+cp "$SCRIPT_DIR/usr/lib/robot-browser/robotbrowser.sh" /usr/lib/robot-browser/
+chmod 755 /usr/lib/robot-browser/robotbrowser.sh
 
-# Copy layouts if present
-if [ -d "$SCRIPT_DIR/home/root/RobotBrowser/layouts" ]; then
-    cp -r "$SCRIPT_DIR/home/root/RobotBrowser/layouts" /home/root/RobotBrowser/
+# Virtual keyboard layouts
+if [ -d "$SCRIPT_DIR/usr/share/robot-browser/layouts" ]; then
+    mkdir -p /usr/share/robot-browser/layouts
+    cp -r "$SCRIPT_DIR/usr/share/robot-browser/layouts/"* /usr/share/robot-browser/layouts/
 fi
 
-# Config and services
-cp "$SCRIPT_DIR/etc/formfactor/appconfig" /etc/formfactor/
-cp "$SCRIPT_DIR/etc/systemd/system/browser.service" /etc/systemd/system/
+# Config
+mkdir -p /etc/robot-browser
+if [ ! -f /etc/robot-browser/browser.config ]; then
+    cp "$SCRIPT_DIR/etc/robot-browser/browser.config" /etc/robot-browser/
+fi
+
+# Systemd service
+cp "$SCRIPT_DIR/usr/lib/systemd/system/robot-browser.service" /usr/lib/systemd/system/ 2>/dev/null || \
+    cp "$SCRIPT_DIR/usr/lib/systemd/system/robot-browser.service" /etc/systemd/system/
+
+# Udev rules
 cp "$SCRIPT_DIR/etc/udev/rules.d/99-robot-input.rules" /etc/udev/rules.d/
 
 echo "=== Enabling services ==="
 systemctl daemon-reload
-systemctl enable browser.service
+systemctl enable robot-browser.service
 systemctl enable NetworkManager
 
 # Disable desktop environment if installed
 systemctl set-default multi-user.target
 
 echo "=== Done ==="
-echo "Edit /etc/formfactor/appconfig to set your URL and layout."
+echo "Edit /etc/robot-browser/browser.config to set your URLs and layout."
 echo "Check /etc/udev/rules.d/99-robot-input.rules for touchscreen device name."
 echo "Reboot to start the kiosk browser."

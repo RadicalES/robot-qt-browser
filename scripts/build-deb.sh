@@ -71,8 +71,8 @@ chmod 755 "$STAGE/usr/lib/robot-browser/robotbrowser.sh"
 cp "${PROJECT_DIR}/debian/robot-browser.service" "$STAGE/usr/lib/systemd/system/robot-browser.service"
 chmod 644 "$STAGE/usr/lib/systemd/system/robot-browser.service"
 
-cp "${PROJECT_DIR}/debian/appconfig" "$STAGE/etc/robot-browser/appconfig"
-chmod 644 "$STAGE/etc/robot-browser/appconfig"
+cp "${PROJECT_DIR}/debian/browser.config" "$STAGE/etc/robot-browser/browser.config"
+chmod 644 "$STAGE/etc/robot-browser/browser.config"
 
 cp "${PROJECT_DIR}/rootfs/etc/udev/rules.d/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"

@@ -5,8 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-SyslogIdentifier=robotbrowser
-ExecStart=/home/root/RobotBrowser/robotbrowser.sh
+SyslogIdentifier=robot-browser
+ExecStart=/usr/lib/robot-browser/robotbrowser.sh
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
