@@ -35,12 +35,17 @@ private slots:
     void onUrlChanged(const QUrl& url);
     void onLoadStarted();
     void onLoadFinished(bool ok);
+    void onJavaScriptWindowObjectCleared();
 
 private:
+    QString loadResourceFiles(const QStringList& paths);
+
     QWebView* m_webView;
     WebPage* m_page;
     QUrl m_localUrl;
     QUrl m_remoteUrl;
+    QString m_jsPolyfills;
+    QString m_cssPolyfills;
     bool m_loading;
 };
 
