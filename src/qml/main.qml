@@ -5,6 +5,9 @@ Item {
     id: root
     anchors.fill: parent
 
+    // Expose popup state to C++ overlay event filter
+    property bool popupOpen: wifiPopup.visible || rebootPopup.visible || infoPopup.visible
+
     // Transparent area above the bar — mouse events pass through to QWebView underneath
     Item {
         anchors.top: parent.top

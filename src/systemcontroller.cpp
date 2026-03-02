@@ -23,10 +23,11 @@ void SystemController::resetDefaults()
 
 QString SystemController::systemInfo() const
 {
-    return QString("RobotBrowser Version 2.0\n"
-                   "Qt: %1\n"
-                   "Arch: %2\n"
-                   "Kernel: %3")
+    return QString("robot-browser %1\n"
+                   "Qt: %2\n"
+                   "Arch: %3\n"
+                   "Kernel: %4")
+        .arg(APP_VERSION)
         .arg(qVersion())
         .arg(QSysInfo::currentCpuArchitecture())
         .arg(QSysInfo::kernelVersion());

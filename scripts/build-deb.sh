@@ -9,7 +9,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Package metadata
 PKG_NAME="robot-browser"
-PKG_VERSION="2.1.0"
+PKG_VERSION=$(cat "${PROJECT_DIR}/VERSION" | tr -d '[:space:]')
 PKG_REVISION="1"
 PKG_FULL="${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}"
 

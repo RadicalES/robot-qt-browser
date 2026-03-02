@@ -1,0 +1,69 @@
+# =============================================================================
+# GitHub Actions — Create Release on Tag Push
+# =============================================================================
+# Triggered when a version tag is pushed (e.g., dev-v2.1.0, beta-v2.1.0, master-v2.1.0)
+# Extracts release notes from RELEASE.md and creates a GitHub Release.
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '*-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version and branch from tag
+        id: meta
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          # Tag format: {branch}-v{version} (e.g., dev-v2.1.0)
+          BRANCH="${TAG%-v*}"
+          VERSION="${TAG#*-v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG, Branch: $BRANCH, Version: $VERSION"
+
+      - name: Extract release notes from RELEASE.md
+        id: notes
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          # Extract section between ## [X.Y.Z] and the next --- separator or ## [
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; print; next} found && /^(## \[|---)/{exit} found{print}" RELEASE.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="Release ${VERSION}"
+          fi
+          echo "$NOTES" > /tmp/release-notes.md
+          # Append install instructions
+          cat >> /tmp/release-notes.md << 'EOF'
+
+          ---
+
+          ### Install
+
+          Packages are available from the Radical ES Debian repository:
+
+          ```bash
+          sudo apt update
+          sudo apt install robot-browser
+          ```
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: "${{ steps.meta.outputs.branch }} v${{ steps.meta.outputs.version }}"
+          body_path: /tmp/release-notes.md
+          prerelease: ${{ steps.meta.outputs.branch != 'master' }}
+          generate_release_notes: false

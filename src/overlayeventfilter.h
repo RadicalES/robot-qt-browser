@@ -69,24 +69,19 @@ private:
         QQuickItem* root = m_overlay->rootObject();
         if (!root) return true;
 
-        // Check if any popup is open — if so, QML handles everything
-        for (QQuickItem* child : root->childItems()) {
-            // Popup items have visible=true and are positioned over the content area
-            if (child->objectName().contains("Popup") && child->isVisible())
-                return false;
-        }
-
-        // Check if a Popup is open via the QML Popup type (they're in overlay)
-        // Popups create an overlay item when open - check if any child covers this point
-        QQuickItem* itemAtPos = root->childAt(pos.x(), pos.y());
-
-        // Bottom bar region: forward nothing (QML handles it)
+        // Bottom bar region: QML handles it
         int barTop = m_overlay->height() - 44;
         if (pos.y() >= barTop)
             return false;
 
-        // If the item at this position is just the root or the transparent spacer,
-        // forward to webview
+        // If any popup is open, QML handles all input
+        if (root->property("popupOpen").toBool())
+            return false;
+
+        // Check what QML item is at this position
+        QQuickItem* itemAtPos = root->childAt(pos.x(), pos.y());
+
+        // If nothing or just the root — forward to webview
         if (!itemAtPos || itemAtPos == root)
             return true;
 
@@ -95,7 +90,7 @@ private:
         if (!children.isEmpty() && itemAtPos == children.first())
             return true;
 
-        // Something else (popup content, virtual keyboard) — let QML handle it
+        // Something else (virtual keyboard, etc.) — let QML handle it
         return false;
     }
 

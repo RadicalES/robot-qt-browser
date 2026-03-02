@@ -3,6 +3,11 @@ QT += core gui widgets network quickwidgets quickcontrols2 virtualkeyboard webso
 DEFINES += QT_DEPRECATED_WARNING
 DEFINES += QT_NO_DEBUG
 
+# Version from VERSION file (single source of truth)
+VERSION_FILE = $$PWD/../VERSION
+APP_VERSION = $$cat($$VERSION_FILE)
+DEFINES += APP_VERSION=\\\"$$APP_VERSION\\\"
+
 CONFIG += c++14
 
 HEADERS = \
