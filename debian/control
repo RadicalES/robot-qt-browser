@@ -1,0 +1,31 @@
+Source: robot-browser
+Section: misc
+Priority: optional
+Maintainer: Radical Electronic Systems <info@radicalsystems.co.za>
+Build-Depends: debhelper (>= 12)
+
+Package: robot-browser
+Architecture: any
+Depends: libqt5core5a,
+         libqt5gui5,
+         libqt5widgets5,
+         libqt5network5,
+         libqt5qml5,
+         libqt5quick5,
+         libqt5quickwidgets5,
+         libqt5quickcontrols2-5,
+         libqt5quicktemplates2-5,
+         libqt5webkit5,
+         libqt5websockets5,
+         libqt5virtualkeyboard5,
+         libqt5dbus5,
+         qml-module-qtquick2,
+         qml-module-qtquick-controls2,
+         qml-module-qtquick-layouts,
+         qml-module-qtquick-window2,
+         qtvirtualkeyboard-plugin,
+         network-manager
+Description: Kiosk browser for embedded Linux robots
+ Two-URL kiosk browser with WiFi management, system info, and virtual
+ keyboard. Built with Qt 5.15 and QtWebKit 5.212 for BeagleBone Black,
+ Raspberry Pi CM4, and x86 platforms.

@@ -102,27 +102,75 @@ rm -rf build-bbb && ./docker/build-bbb.sh
 rm -rf build-cm4 && ./docker/build-cm4.sh
 ```
 
+## Debian Packaging
+
+Build `.deb` packages for any supported architecture:
+
+```sh
+./scripts/build-deb.sh arm64    # CM4 — Docker cross-compile + package
+./scripts/build-deb.sh armhf    # BBB — Docker cross-compile + package
+./scripts/build-deb.sh amd64    # PC  — local build + package
+```
+
+Output: `build-deb/robot-browser_2.1.0-1_<arch>.deb`
+
+### Package contents
+
+| Path | Description |
+|---|---|
+| `/usr/bin/robot-browser` | Application binary |
+| `/usr/lib/robot-browser/robotbrowser.sh` | Startup wrapper (auto-detects display server) |
+| `/usr/lib/systemd/system/robot-browser.service` | Systemd service unit |
+| `/etc/robot-browser/appconfig` | Configuration (preserved on upgrade) |
+| `/etc/udev/rules.d/99-robot-input.rules` | Touchscreen/keyboard device symlinks |
+
+### Configuration
+
+Edit `/etc/robot-browser/appconfig` on the target:
+
+```sh
+WB_LOAD_URL=http://192.168.100.1/transaction
+WB_LAYOUT=portrait    # or landscape
+```
+
+### Publishing to package repository
+
+Copy the `.deb` to the package pool and regenerate metadata:
+
+```sh
+cp build-deb/robot-browser_2.1.0-1_arm64.deb /path/to/package-repository/debian/pool/main/arm64/
+cp build-deb/robot-browser_2.1.0-1_armhf.deb /path/to/package-repository/debian/pool/main/armhf/
+cp build-deb/robot-browser_2.1.0-1_amd64.deb /path/to/package-repository/debian/pool/main/amd64/
+cd /path/to/package-repository && ./scripts/update-debian-repo.sh
+```
+
 ## Deploying to Devices
 
-### BBB (BeagleBone Black)
+### Via apt (recommended)
 
-Copy the binary to the device and restart the service:
-
-```sh
-scp build-bbb/robot-browser root@<bbb-ip>:/home/root/RobotBrowser/robot-browser
-ssh root@<bbb-ip> "chmod +x /home/root/RobotBrowser/robot-browser && systemctl restart browser"
-```
-
-For first-time setup, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
-### CM4 (Raspberry Pi Compute Module 4)
+On a device with the Radical ES repo configured:
 
 ```sh
-scp build-cm4/robot-browser root@<cm4-ip>:/home/root/RobotBrowser/robot-browser
-ssh root@<cm4-ip> "chmod +x /home/root/RobotBrowser/robot-browser && reboot"
+sudo apt-get update
+sudo apt-get install robot-browser
+sudo systemctl start robot-browser
 ```
 
-For first-time setup, see [DEPLOYMENT.md](DEPLOYMENT.md).
+### Manual deployment
+
+Copy the binary directly and restart:
+
+```sh
+# BBB
+scp build-bbb/robot-browser root@<bbb-ip>:/usr/bin/robot-browser
+ssh root@<bbb-ip> "systemctl restart robot-browser"
+
+# CM4
+scp build-cm4/robot-browser root@<cm4-ip>:/usr/bin/robot-browser
+ssh root@<cm4-ip> "systemctl restart robot-browser"
+```
+
+For first-time manual setup, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Project Files
 

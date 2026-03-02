@@ -1,0 +1,10 @@
+robot-browser (2.1.0-1) bookworm; urgency=medium
+
+  * Add NetworkManager D-Bus WiFi configuration UI
+  * Add JS/CSS polyfills for QtWebKit 5.212 compatibility
+  * Add overlay event filter for QML/QWebView input forwarding
+  * Add graceful virtual keyboard loading via QML Loader
+  * Rename binary from RBrowser to robot-browser
+  * Initial Debian packaging
+
+ -- Radical Electronic Systems <info@radicalsystems.co.za>  Sun, 02 Mar 2026 12:00:00 +0200

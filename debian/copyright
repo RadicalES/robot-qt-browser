@@ -1,0 +1,23 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: robot-browser
+Upstream-Contact: info@radicalsystems.co.za
+
+Files: *
+Copyright: 2017-2026 Radical Electronic Systems
+License: Proprietary
+
+Files: src/js/css-vars-ponyfill.min.js
+Copyright: John Hildenbiddle
+License: MIT
+
+Files: src/js/stickyfill.min.js
+Copyright: Oleg Korsunsky
+License: MIT
+
+Files: src/js/smoothscroll.min.js
+Copyright: Dustan Kasten
+License: MIT
+
+Files: src/js/fetch.js
+Copyright: GitHub, Inc.
+License: MIT

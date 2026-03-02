@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    systemctl daemon-reload || true
+    udevadm control --reload-rules || true
+    udevadm trigger || true
+
+    # Enable but don't start — user must configure appconfig first
+    systemctl enable robot-browser.service || true
+fi
+
+#DEBHELPER#

@@ -1,0 +1,9 @@
+# Robot Kiosk Application Settings
+# (C) 2017-2026, Radical Electronic Systems
+# http://www.radicalsystems.co.za  info@radicalsystems.co.za
+
+# URL to load on startup (remote transaction URL)
+WB_LOAD_URL=http://127.0.0.1
+
+# Display orientation: portrait or landscape
+WB_LAYOUT=landscape
