@@ -7,6 +7,7 @@
 #include <QScreen>
 #include <QDebug>
 
+#include "overlayeventfilter.h"
 #include "webpagecontroller.h"
 #include "networkcontroller.h"
 #include "systemcontroller.h"
@@ -27,7 +28,7 @@ int main(int argc, char** argv)
     QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
     QWebSettings::enablePersistentStorage();
 
-    // Parse URLs: RBrowser <remote_url> [local_url]
+    // Parse URLs: robot-browser <remote_url> [local_url]
     QUrl localUrl("http://127.0.0.1");
     QUrl remoteUrl("http://127.0.0.1");
 
@@ -62,6 +63,10 @@ int main(int argc, char** argv)
     qmlOverlay->rootContext()->setContextProperty("networkController", &networkController);
     qmlOverlay->rootContext()->setContextProperty("systemController", &systemController);
     qmlOverlay->setSource(QUrl("qrc:/qml/main.qml"));
+
+    // Event filter: forward mouse/keyboard from overlay to webview in pass-through area
+    OverlayEventFilter* eventFilter = new OverlayEventFilter(qmlOverlay, webPageController.webView());
+    qmlOverlay->installEventFilter(eventFilter);
 
     // Main window with stacked layout: webview underneath, QML overlay on top
     QMainWindow window;

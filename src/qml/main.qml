@@ -1,6 +1,5 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.VirtualKeyboard 2.15
 
 Item {
     id: root
@@ -18,7 +17,7 @@ Item {
         id: bottomBar
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: inputPanel.active ? inputPanel.top : parent.bottom
+        anchors.bottom: parent.bottom
         height: 44
     }
 
@@ -34,11 +33,30 @@ Item {
         id: infoPopup
     }
 
-    InputPanel {
-        id: inputPanel
+    // Virtual keyboard — loaded dynamically to avoid crash when module is missing
+    Loader {
+        id: vkbLoader
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        visible: active
+        source: "VirtualKeyboardPanel.qml"
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("Virtual keyboard not available")
+        }
+        onLoaded: {
+            // Move bottom bar above keyboard when active
+            bottomBar.anchors.bottom = undefined
+            bottomBar.anchors.bottomMargin = 0
+        }
+    }
+
+    states: State {
+        name: "vkbActive"
+        when: vkbLoader.item && vkbLoader.item.active
+        AnchorChanges {
+            target: bottomBar
+            anchors.bottom: vkbLoader.top
+        }
     }
 }

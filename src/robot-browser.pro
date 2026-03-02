@@ -12,7 +12,8 @@ HEADERS = \
     unixsignalnotifier.h \
     networkcontroller.h \
     webpagecontroller.h \
-    systemcontroller.h
+    systemcontroller.h \
+    overlayeventfilter.h
 
 SOURCES = \
     main.cpp \
@@ -40,4 +41,4 @@ SOURCES = \
 
 LIBS += -lQt5WebKit -lQt5WebKitWidgets
 
-RESOURCES += RBrowser.qrc
+RESOURCES += robot-browser.qrc
