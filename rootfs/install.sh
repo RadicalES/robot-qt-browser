@@ -1,6 +1,6 @@
 #!/bin/sh
 # (C) 2017-2025, Radical Electronic Systems
-# Install RBrowser and runtime dependencies on Debian 12
+# Install robot-browser and runtime dependencies on Debian 12
 # Run as root on the target device
 set -e
 
@@ -33,12 +33,12 @@ echo "=== Installing application files ==="
 mkdir -p /home/root/RobotBrowser
 mkdir -p /etc/formfactor
 
-# Copy binary (caller must place RBrowser in same directory as this script)
+# Copy binary (caller must place robot-browser in same directory as this script)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-if [ -f "$SCRIPT_DIR/home/root/RobotBrowser/RBrowser" ]; then
-    cp "$SCRIPT_DIR/home/root/RobotBrowser/RBrowser" /home/root/RobotBrowser/
-    chmod +x /home/root/RobotBrowser/RBrowser
+if [ -f "$SCRIPT_DIR/home/root/RobotBrowser/robot-browser" ]; then
+    cp "$SCRIPT_DIR/home/root/RobotBrowser/robot-browser" /home/root/RobotBrowser/
+    chmod +x /home/root/RobotBrowser/robot-browser
 fi
 
 cp "$SCRIPT_DIR/home/root/RobotBrowser/robotbrowser.sh" /home/root/RobotBrowser/

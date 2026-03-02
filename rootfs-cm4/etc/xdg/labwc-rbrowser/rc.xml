@@ -34,9 +34,9 @@
     <default />
   </mouse>
 
-  <!-- Force RBrowser fullscreen with no decorations -->
+  <!-- Force robot-browser fullscreen with no decorations -->
   <windowRules>
-    <windowRule identifier="RBrowser" serverDecoration="no" skipTaskbar="yes">
+    <windowRule identifier="robot-browser" serverDecoration="no" skipTaskbar="yes">
       <action name="Maximize" />
     </windowRule>
   </windowRules>

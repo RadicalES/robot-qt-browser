@@ -14,8 +14,8 @@ robot-qt-browser/
 │   ├── *.cpp, *.h          # C++ sources and headers
 │   ├── qml/                # QML UI files
 │   ├── images/             # Icons and images
-│   ├── RBrowser.pro        # qmake project file
-│   └── RBrowser.qrc        # Qt resource file
+│   ├── robot-browser.pro        # qmake project file
+│   └── robot-browser.qrc        # Qt resource file
 ├── docker/                 # Cross-compilation Docker setup
 │   ├── Dockerfile.bbb      # BBB armhf build container
 │   ├── Dockerfile.cm4      # CM4 arm64 build container
@@ -87,19 +87,19 @@ core, gui, widgets, network, quickwidgets, quickcontrols2, virtualkeyboard, webs
 ## CLI Arguments
 
 ```
-RBrowser <remote_url> [local_url]
+robot-browser <remote_url> [local_url]
 ```
 
 Defaults to `http://127.0.0.1` for both if not provided.
 
-## Resources (src/RBrowser.qrc)
+## Resources (src/robot-browser.qrc)
 
 Icons aliased under `qrc:/images/` (home, store, back, info, wifi-off, wifi-0 through wifi-4). QML files under `qrc:/qml/`.
 
 ## Deployment
 
 - **BBB:** Debian 12, linuxfb (no display server), systemd service. See `rootfs/` and `docs/DEPLOYMENT.md`.
-- **CM4:** Debian 12, Wayland via labwc + LightDM. Three session modes: desktop, Chrome kiosk, RBrowser kiosk. See `rootfs-cm4/` and `docs/DEPLOYMENT.md`.
+- **CM4:** Debian 12, Wayland via labwc + LightDM. Three session modes: desktop, Chrome kiosk, robot-browser kiosk. See `rootfs-cm4/` and `docs/DEPLOYMENT.md`.
 - **WiFi:** Ezurio ST60-2230C (NXP 88W8997) over SDIO on both platforms. See `docs/WIFI-ROAMING.md`.
 
 ## Pending Work

@@ -5,7 +5,7 @@
 #
 # Robot Kiosk Browser startup script for Debian 12
 
-DAEMON=/home/root/RobotBrowser/RBrowser
+DAEMON=/home/root/RobotBrowser/robot-browser
 
 # defaults
 WB_ANGLE=270

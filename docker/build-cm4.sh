@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-compile RBrowser for Raspberry Pi CM4 (arm64) inside Docker
+# Cross-compile robot-browser for Raspberry Pi CM4 (arm64) inside Docker
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -10,7 +10,7 @@ IMAGE_NAME="rbrowser-cm4-build"
 echo "=== Building Docker image ==="
 docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile.cm4" "$SCRIPT_DIR"
 
-echo "=== Cross-compiling RBrowser ==="
+echo "=== Cross-compiling robot-browser ==="
 docker run --rm \
     -v "$PROJECT_DIR:/src:ro" \
     -v "$PROJECT_DIR/build-cm4:/build" \
@@ -25,10 +25,10 @@ Libraries = /usr/lib/aarch64-linux-gnu
 QTCONF
 
         cd /build
-        /usr/lib/qt5/bin/qmake /src/src/RBrowser.pro -spec linux-aarch64-gnu-g++
+        /usr/lib/qt5/bin/qmake /src/src/robot-browser.pro -spec linux-aarch64-gnu-g++
         make -j$(nproc)
     '
 
 echo "=== Done ==="
-echo "Binary: $PROJECT_DIR/build-cm4/RBrowser"
-file "$PROJECT_DIR/build-cm4/RBrowser" 2>/dev/null || true
+echo "Binary: $PROJECT_DIR/build-cm4/robot-browser"
+file "$PROJECT_DIR/build-cm4/robot-browser" 2>/dev/null || true

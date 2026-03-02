@@ -2,7 +2,7 @@
 # (C) 2017-2025, Radical Electronic Systems
 # Robot Kiosk Browser startup for CM4 (Wayland/labwc session)
 
-DAEMON=/home/root/RobotBrowser/RBrowser
+DAEMON=/home/root/RobotBrowser/robot-browser
 
 # source settings
 . /etc/formfactor/appconfig

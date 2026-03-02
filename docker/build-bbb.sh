@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-compile RBrowser for BeagleBone Black (armhf) inside Docker
+# Cross-compile robot-browser for BeagleBone Black (armhf) inside Docker
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -10,7 +10,7 @@ IMAGE_NAME="rbrowser-bbb-build"
 echo "=== Building Docker image ==="
 docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile.bbb" "$SCRIPT_DIR"
 
-echo "=== Cross-compiling RBrowser ==="
+echo "=== Cross-compiling robot-browser ==="
 docker run --rm \
     -v "$PROJECT_DIR:/src:ro" \
     -v "$PROJECT_DIR/build-bbb:/build" \
@@ -25,7 +25,7 @@ Libraries = /usr/lib/arm-linux-gnueabihf
 QTCONF
 
         cd /build
-        /usr/lib/qt5/bin/qmake /src/src/RBrowser.pro -spec linux-arm-gnueabi-g++ \
+        /usr/lib/qt5/bin/qmake /src/src/robot-browser.pro -spec linux-arm-gnueabi-g++ \
             QMAKE_CC=arm-linux-gnueabihf-gcc \
             QMAKE_CXX=arm-linux-gnueabihf-g++ \
             QMAKE_LINK=arm-linux-gnueabihf-g++ \
@@ -35,5 +35,5 @@ QTCONF
     '
 
 echo "=== Done ==="
-echo "Binary: $PROJECT_DIR/build-bbb/RBrowser"
-file "$PROJECT_DIR/build-bbb/RBrowser" 2>/dev/null || true
+echo "Binary: $PROJECT_DIR/build-bbb/robot-browser"
+file "$PROJECT_DIR/build-bbb/robot-browser" 2>/dev/null || true

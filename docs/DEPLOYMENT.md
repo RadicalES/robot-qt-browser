@@ -1,6 +1,6 @@
-# RBrowser Deployment Guide
+# robot-browser Deployment Guide
 
-This document describes how RBrowser is deployed and runs on its two target platforms.
+This document describes how robot-browser is deployed and runs on its two target platforms.
 
 ## Target Platforms
 
@@ -27,8 +27,8 @@ Both platforms are cross-compiled from an x86_64 host using Docker containers wi
 ```
 
 Build output:
-- `build-bbb/RBrowser` — ELF 32-bit ARM, ~172K
-- `build-cm4/RBrowser` — ELF 64-bit ARM aarch64, ~231K
+- `build-bbb/robot-browser` — ELF 32-bit ARM, ~172K
+- `build-cm4/robot-browser` — ELF 64-bit ARM aarch64, ~231K
 
 Both directories are gitignored (`*build-*` pattern in `.gitignore`).
 
@@ -36,13 +36,13 @@ Both directories are gitignored (`*build-*` pattern in `.gitignore`).
 
 ### How it runs
 
-The BBB runs a minimal Debian 12 installation with **no display server** (no X11, no Wayland). RBrowser draws directly to the Linux framebuffer using Qt's `linuxfb` platform plugin. A systemd service starts the application automatically at boot.
+The BBB runs a minimal Debian 12 installation with **no display server** (no X11, no Wayland). robot-browser draws directly to the Linux framebuffer using Qt's `linuxfb` platform plugin. A systemd service starts the application automatically at boot.
 
 ```
 systemd multi-user.target
   └── browser.service
         └── robotbrowser.sh
-              └── RBrowser (QT_QPA_PLATFORM=linuxfb)
+              └── robot-browser (QT_QPA_PLATFORM=linuxfb)
                     ├── QWebView → renders web content
                     └── QML overlay → bottom bar, popups, virtual keyboard
 ```
@@ -53,7 +53,7 @@ systemd multi-user.target
 2. `browser.service` starts after `network-online.target`
 3. `robotbrowser.sh` reads `/etc/formfactor/appconfig` for URL and display orientation
 4. Environment variables configure Qt for framebuffer rendering and evdev input
-5. RBrowser launches fullscreen on the framebuffer
+5. robot-browser launches fullscreen on the framebuffer
 
 ### Key environment variables
 
@@ -82,7 +82,7 @@ cat /proc/bus/input/devices
 
 ```
 /home/root/RobotBrowser/
-├── RBrowser                 # Application binary
+├── robot-browser                 # Application binary
 ├── robotbrowser.sh          # Startup script
 └── layouts/                 # Virtual keyboard layouts
 
@@ -97,7 +97,7 @@ Copy the `rootfs/` tree onto the BBB and run the install script as root:
 
 ```sh
 # Copy build artifact into rootfs
-cp build-bbb/RBrowser rootfs/home/root/RobotBrowser/
+cp build-bbb/robot-browser rootfs/home/root/RobotBrowser/
 
 # On the BBB (via SSH or serial):
 sudo ./rootfs/install.sh
@@ -126,7 +126,7 @@ WB_LAYOUT=portrait
 
 ### How it runs
 
-The CM4 uses the existing LightDM + labwc (Wayland compositor) infrastructure from the robot-t430 platform. RBrowser runs as a **third session option** alongside the desktop and Chrome kiosk modes. Qt renders via its `wayland` platform plugin under the labwc compositor.
+The CM4 uses the existing LightDM + labwc (Wayland compositor) infrastructure from the robot-t430 platform. robot-browser runs as a **third session option** alongside the desktop and Chrome kiosk modes. Qt renders via its `wayland` platform plugin under the labwc compositor.
 
 ```
 LightDM (autologin → robot user)
@@ -134,7 +134,7 @@ LightDM (autologin → robot user)
         └── labwc -C /etc/xdg/labwc-rbrowser
               ├── kanshi (display config)
               └── rbrowser-kiosk.sh
-                    └── RBrowser (QT_QPA_PLATFORM=wayland)
+                    └── robot-browser (QT_QPA_PLATFORM=wayland)
                           ├── QWebView → renders web content
                           └── QML overlay → bottom bar, popups, virtual keyboard
 ```
@@ -147,7 +147,7 @@ The active session is controlled by which config file is symlinked to `/etc/ligh
 |---|---|---|
 | Desktop | `lightdm.desktop.conf` | `sudo ln -sf /etc/lightdm/lightdm.desktop.conf /etc/lightdm/lightdm.conf` |
 | Chrome kiosk | `lightdm.robot.conf` | `sudo ln -sf /etc/lightdm/lightdm.robot.conf /etc/lightdm/lightdm.conf` |
-| **RBrowser kiosk** | `lightdm.rbrowser.conf` | `sudo ln -sf /etc/lightdm/lightdm.rbrowser.conf /etc/lightdm/lightdm.conf` |
+| **robot-browser kiosk** | `lightdm.rbrowser.conf` | `sudo ln -sf /etc/lightdm/lightdm.rbrowser.conf /etc/lightdm/lightdm.conf` |
 
 After changing the symlink, reboot to apply.
 
@@ -158,15 +158,15 @@ After changing the symlink, reboot to apply.
 3. The `LXDE-pi-labwc-rbrowser` wayland session starts
 4. `labwc-rbrowser` script launches the labwc compositor with the `/etc/xdg/labwc-rbrowser` config
 5. labwc autostart runs `kanshi` (display configuration) and `rbrowser-kiosk.sh`
-6. `rbrowser-kiosk.sh` reads `/etc/formfactor/appconfig` and launches RBrowser with `QT_QPA_PLATFORM=wayland`
+6. `rbrowser-kiosk.sh` reads `/etc/formfactor/appconfig` and launches robot-browser with `QT_QPA_PLATFORM=wayland`
 
 ### labwc kiosk configuration
 
 The `labwc-rbrowser` config directory provides a locked-down Wayland session:
 
-- **rc.xml** — No window titlebars, no task switching shortcuts, RBrowser forced fullscreen. Only `Ctrl+Alt+Delete` (shutdown) and power key are bound. Touchscreen device mappings for DSI displays are included.
+- **rc.xml** — No window titlebars, no task switching shortcuts, robot-browser forced fullscreen. Only `Ctrl+Alt+Delete` (shutdown) and power key are bound. Touchscreen device mappings for DSI displays are included.
 - **environment** — Sets `QT_WAYLAND_DISABLE_WINDOWDECORATION=1` and virtual keyboard module.
-- **autostart** — Launches kanshi and the RBrowser kiosk script.
+- **autostart** — Launches kanshi and the robot-browser kiosk script.
 
 ### File locations on target
 
@@ -184,7 +184,7 @@ The `labwc-rbrowser` config directory provides a locked-down Wayland session:
 /usr/local/bin/rbrowser-kiosk.sh
 
 /home/root/RobotBrowser/
-├── RBrowser                 # Application binary
+├── robot-browser                 # Application binary
 └── layouts/                 # Virtual keyboard layouts
 
 /etc/formfactor/appconfig    # URL and display orientation config
@@ -196,8 +196,8 @@ Copy the `rootfs-cm4/` files onto the CM4:
 
 ```sh
 # Copy the binary
-cp build-cm4/RBrowser /home/root/RobotBrowser/
-chmod +x /home/root/RobotBrowser/RBrowser
+cp build-cm4/robot-browser /home/root/RobotBrowser/
+chmod +x /home/root/RobotBrowser/robot-browser
 
 # Copy rootfs-cm4 overlay
 sudo cp -r rootfs-cm4/* /
@@ -215,7 +215,7 @@ sudo apt-get install -y --no-install-recommends \
     qml-module-qtquick-layouts qml-module-qtquick-window2 \
     qtvirtualkeyboard-plugin
 
-# Activate RBrowser session
+# Activate robot-browser session
 sudo ln -sf /etc/lightdm/lightdm.rbrowser.conf /etc/lightdm/lightdm.conf
 sudo reboot
 ```
@@ -275,7 +275,7 @@ ls -l /dev/fb0
 cat /sys/class/graphics/fb0/modes
 ```
 
-### CM4: RBrowser session not appearing
+### CM4: robot-browser session not appearing
 
 Verify the session file is installed:
 

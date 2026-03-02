@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>JS/CSS Feature Test</title>
+<style>
+body { font-family: monospace; font-size: 14px; margin: 20px; }
+.pass { color: green; } .fail { color: red; } .warn { color: orange; }
+table { border-collapse: collapse; } td, th { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+h2 { margin-top: 20px; }
+</style></head>
+<body>
+<h1>QtWebKit 5.212 Feature Test</h1>
+<div id="ua"></div>
+<h2>Alpine.js Requirements</h2>
+<table id="alpine"></table>
+<h2>htmx Requirements</h2>
+<table id="htmx"></table>
+<h2>General ES6+ Features</h2>
+<table id="es6"></table>
+<h2>CSS Features</h2>
+<table id="css"></table>
+
+<script>
+document.getElementById('ua').textContent = 'UA: ' + navigator.userAgent;
+
+function test(tableId, name, fn) {
+  var table = document.getElementById(tableId);
+  var row = table.insertRow();
+  var result;
+  try { result = fn(); } catch(e) { result = 'ERROR: ' + e.message; }
+  var pass = result === true;
+  row.insertCell().textContent = name;
+  var cell = row.insertCell();
+  cell.textContent = pass ? 'PASS' : (result === false ? 'FAIL' : result);
+  cell.className = pass ? 'pass' : 'fail';
+}
+
+// Alpine.js requirements
+test('alpine', 'Proxy', function() { return typeof Proxy === 'function'; });
+test('alpine', 'MutationObserver', function() { return typeof MutationObserver === 'function'; });
+test('alpine', 'Template literals', function() { return eval('`test${1}`') === 'test1'; });
+test('alpine', 'Arrow functions', function() { return eval('(()=>true)()'); });
+test('alpine', 'let/const', function() { eval('let x = 1; const y = 2;'); return true; });
+test('alpine', 'Destructuring', function() { return eval('var {a} = {a:1}; a === 1'); });
+test('alpine', 'Spread operator', function() { return eval('[...[1,2]].length === 2'); });
+test('alpine', 'for...of', function() { var s=0; eval('for(var x of [1,2])s+=x'); return s===3; });
+test('alpine', 'Symbol', function() { return typeof Symbol === 'function'; });
+test('alpine', 'Promise', function() { return typeof Promise === 'function'; });
+test('alpine', 'Map/Set', function() { return typeof Map === 'function' && typeof Set === 'function'; });
+test('alpine', 'WeakMap/WeakSet', function() { return typeof WeakMap === 'function' && typeof WeakSet === 'function'; });
+test('alpine', 'Object.assign', function() { return typeof Object.assign === 'function'; });
+test('alpine', 'Array.from', function() { return typeof Array.from === 'function'; });
+test('alpine', 'String.includes', function() { return typeof ''.includes === 'function'; });
+test('alpine', 'classList', function() { return typeof document.body.classList !== 'undefined'; });
+test('alpine', 'querySelectorAll', function() { return typeof document.querySelectorAll === 'function'; });
+test('alpine', 'CustomEvent', function() { return typeof CustomEvent === 'function'; });
+test('alpine', 'Reflect', function() { return typeof Reflect === 'object'; });
+test('alpine', 'Class syntax', function() { return eval('class Foo { constructor() {} }; true'); });
+test('alpine', 'Default params', function() { return eval('(function(a=1){return a})() === 1'); });
+test('alpine', 'Rest params', function() { return eval('(function(...a){return a.length})(1,2) === 2'); });
+
+// htmx requirements
+test('htmx', 'XMLHttpRequest', function() { return typeof XMLHttpRequest === 'function'; });
+test('htmx', 'FormData', function() { return typeof FormData === 'function'; });
+test('htmx', 'MutationObserver', function() { return typeof MutationObserver === 'function'; });
+test('htmx', 'DOMParser', function() { return typeof DOMParser === 'function'; });
+test('htmx', 'History API', function() { return typeof history.pushState === 'function'; });
+test('htmx', 'requestAnimationFrame', function() { return typeof requestAnimationFrame === 'function'; });
+test('htmx', 'Element.closest', function() { return typeof document.body.closest === 'function'; });
+test('htmx', 'Element.matches', function() { return typeof document.body.matches === 'function'; });
+test('htmx', 'fetch API', function() { return typeof fetch === 'function'; });
+test('htmx', 'URLSearchParams', function() { return typeof URLSearchParams === 'function'; });
+test('htmx', 'dispatchEvent', function() { return typeof document.body.dispatchEvent === 'function'; });
+test('htmx', 'EventTarget', function() { return typeof EventTarget === 'function'; });
+test('htmx', 'NodeList.forEach', function() { return typeof NodeList.prototype.forEach === 'function'; });
+
+// General ES6
+test('es6', 'Promise.all', function() { return typeof Promise.all === 'function'; });
+test('es6', 'Promise.race', function() { return typeof Promise.race === 'function'; });
+test('es6', 'Object.keys', function() { return typeof Object.keys === 'function'; });
+test('es6', 'Object.values', function() { return typeof Object.values === 'function'; });
+test('es6', 'Object.entries', function() { return typeof Object.entries === 'function'; });
+test('es6', 'Array.isArray', function() { return typeof Array.isArray === 'function'; });
+test('es6', 'Array.prototype.find', function() { return typeof [].find === 'function'; });
+test('es6', 'Array.prototype.findIndex', function() { return typeof [].findIndex === 'function'; });
+test('es6', 'Array.prototype.includes', function() { return typeof [].includes === 'function'; });
+test('es6', 'String.startsWith', function() { return typeof ''.startsWith === 'function'; });
+test('es6', 'String.endsWith', function() { return typeof ''.endsWith === 'function'; });
+test('es6', 'Number.isFinite', function() { return typeof Number.isFinite === 'function'; });
+test('es6', 'Async/await', function() { return eval('(async function(){})(); true'); });
+test('es6', 'Generator functions', function() { return eval('function* g(){}; true'); });
+test('es6', 'Optional chaining ?.', function() { return eval('var o={a:{b:1}}; o?.a?.b === 1'); });
+test('es6', 'Nullish coalescing ??', function() { return eval('null ?? 1 === 1'); });
+
+// CSS
+test('css', 'CSS Grid', function() { return CSS.supports('display', 'grid'); });
+test('css', 'CSS Flexbox', function() { return CSS.supports('display', 'flex'); });
+test('css', 'CSS Variables', function() { return CSS.supports('--test', '0'); });
+test('css', 'CSS calc()', function() { return CSS.supports('width', 'calc(100% - 20px)'); });
+test('css', 'CSS transform', function() { return CSS.supports('transform', 'rotate(1deg)'); });
+test('css', 'CSS transition', function() { return CSS.supports('transition', 'all 0.3s'); });
+test('css', 'CSS animation', function() { return CSS.supports('animation', 'test 1s'); });
+test('css', 'CSS position sticky', function() { return CSS.supports('position', 'sticky'); });
+test('css', 'CSS object-fit', function() { return CSS.supports('object-fit', 'cover'); });
+test('css', 'CSS gap (grid)', function() { return CSS.supports('gap', '10px'); });
+
+// CSS Polyfills (run after a short delay to let polyfills activate)
+var polyfillTable = document.createElement('h2');
+polyfillTable.textContent = 'CSS Polyfills (injected)';
+document.body.appendChild(polyfillTable);
+var ptable = document.createElement('table');
+ptable.id = 'polyfills';
+document.body.appendChild(ptable);
+
+setTimeout(function() {
+  test('polyfills', 'css-vars-ponyfill loaded', function() { return typeof cssVars === 'function'; });
+  test('polyfills', 'Stickyfill loaded', function() { return typeof Stickyfill !== 'undefined'; });
+  test('polyfills', 'smoothscroll loaded', function() { return typeof smoothscroll !== 'undefined'; });
+
+  // Test CSS Variables actually work via ponyfill
+  test('polyfills', 'CSS Variables (ponyfill)', function() {
+    var style = document.createElement('style');
+    style.textContent = ':root { --test-color: rgb(0, 128, 0); } .test-var { color: var(--test-color); }';
+    document.head.appendChild(style);
+    var el = document.createElement('span');
+    el.className = 'test-var';
+    el.textContent = 'test';
+    document.body.appendChild(el);
+    // Re-run ponyfill to process the new style
+    if (typeof cssVars === 'function') cssVars({ silent: true });
+    var computed = window.getComputedStyle(el).color;
+    document.body.removeChild(el);
+    document.head.removeChild(style);
+    return computed === 'rgb(0, 128, 0)';
+  });
+}, 1000);
+</script>
+</body></html>
