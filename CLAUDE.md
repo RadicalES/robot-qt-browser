@@ -29,6 +29,28 @@ robot-qt-browser/
     └── WIFI-ROAMING.md     # WiFi roaming configuration
 ```
 
+## Version & Release
+
+Single source of truth: `VERSION` file in project root. Injected at compile time via `APP_VERSION` define in `robot-browser.pro`.
+
+```bash
+# Bump version
+./scripts/bump-version.sh patch          # 2.1.0 → 2.1.1
+./scripts/bump-version.sh minor          # 2.1.0 → 2.2.0
+./scripts/bump-version.sh 3.0.0          # Set explicit version
+
+# Create release (drafts notes into RELEASE.md, commits, tags)
+./release.sh                             # Interactive
+./release.sh --dry-run                   # Preview only
+
+# Push release (branch + tag to origin, triggers GitHub Actions)
+./push-release.sh
+```
+
+Tag format: `{branch}-v{version}` (e.g. `dev-v2.1.0`). GitHub Actions auto-creates a release on tag push; marked pre-release if not on `master`.
+
+Branch workflow: `dev` → `beta` (testing) → `master` (production).
+
 ## Build Commands
 
 ```bash
@@ -37,13 +59,16 @@ robot-qt-browser/
 
 # Cross-compile for Raspberry Pi CM4 (arm64)
 ./docker/build-cm4.sh
+
+# Build Debian package
+./scripts/build-deb.sh arm64|armhf|amd64
 ```
 
-Output binaries land in `build-bbb/` and `build-cm4/` (gitignored).
+Output binaries land in `build-bbb/`, `build-cm4/`, `build-amd64/` (gitignored).
 
 For local development (if Qt 5.15 + WebKit are installed):
 ```bash
-cd src && qmake && make
+cd build-amd64 && qmake ../src/robot-browser.pro && make
 ```
 
 ## Architecture

@@ -11,13 +11,7 @@
         <file alias="images/wifi-2.png">images/wifi-2.png</file>
         <file alias="images/wifi-3.png">images/wifi-3.png</file>
         <file alias="images/wifi-4.png">images/wifi-4.png</file>
-        <file>qml/main.qml</file>
-        <file>qml/BottomBar.qml</file>
-        <file>qml/WifiPopup.qml</file>
-        <file>qml/RebootPopup.qml</file>
-        <file>qml/InfoPopup.qml</file>
-        <file>qml/VirtualKeyboardPanel.qml</file>
-        <file>js/polyfills.js</file>
+<file>js/polyfills.js</file>
         <file>js/fetch.js</file>
         <file>js/css-vars-ponyfill.min.js</file>
         <file>js/stickyfill.min.js</file>

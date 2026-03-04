@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QUrl>
-#include <qwebview.h>
+#include "kioskwebview.h"
 #include "webpage.h"
 #include "cookiejar.h"
 #include "websockserver.h"
@@ -17,7 +17,7 @@ public:
     explicit WebPageController(QObject* parent = nullptr);
 
     void init(const QUrl& localUrl, const QUrl& remoteUrl, WebsockServer* debugger);
-    QWebView* webView() { return m_webView; }
+    KioskWebView* webView() { return m_webView; }
 
     QString currentUrl() const;
     bool loading() const { return m_loading; }
@@ -40,7 +40,7 @@ private slots:
 private:
     QString loadResourceFiles(const QStringList& paths);
 
-    QWebView* m_webView;
+    KioskWebView* m_webView;
     WebPage* m_page;
     QUrl m_localUrl;
     QUrl m_remoteUrl;

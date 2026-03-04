@@ -1,18 +1,21 @@
 #include <QApplication>
 #include <QMainWindow>
-#include <QStackedLayout>
-#include <QQuickWidget>
-#include <QQmlContext>
+#include <QToolBar>
+#include <QToolButton>
+#include <QAction>
 #include <QWebSettings>
 #include <QScreen>
 #include <QDebug>
 
-#include "overlayeventfilter.h"
+
 #include "webpagecontroller.h"
 #include "networkcontroller.h"
 #include "systemcontroller.h"
 #include "websockserver.h"
 #include "unixsignalnotifier.h"
+#include "digitalclock.h"
+#include "wifidialog.h"
+#include "infodialog.h"
 
 int main(int argc, char** argv)
 {
@@ -53,31 +56,71 @@ int main(int argc, char** argv)
     WebPageController webPageController;
     webPageController.init(localUrl, remoteUrl, &debugSvr);
 
-    // QML overlay (transparent, renders bar + popups + keyboard over webview)
-    QQuickWidget* qmlOverlay = new QQuickWidget;
-    qmlOverlay->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    qmlOverlay->setClearColor(Qt::transparent);
-    qmlOverlay->setAttribute(Qt::WA_AlwaysStackOnTop);
-    qmlOverlay->setAttribute(Qt::WA_TranslucentBackground);
-    qmlOverlay->rootContext()->setContextProperty("webPageController", &webPageController);
-    qmlOverlay->rootContext()->setContextProperty("networkController", &networkController);
-    qmlOverlay->rootContext()->setContextProperty("systemController", &systemController);
-    qmlOverlay->setSource(QUrl("qrc:/qml/main.qml"));
-
-    // Event filter: forward mouse/keyboard from overlay to webview in pass-through area
-    OverlayEventFilter* eventFilter = new OverlayEventFilter(qmlOverlay, webPageController.webView());
-    qmlOverlay->installEventFilter(eventFilter);
-
-    // Main window with stacked layout: webview underneath, QML overlay on top
+    // Main window — QWebView as central widget (receives native events directly)
     QMainWindow window;
-    QWidget* central = new QWidget;
-    QStackedLayout* stack = new QStackedLayout(central);
-    stack->setStackingMode(QStackedLayout::StackAll);
+    window.setCentralWidget(webPageController.webView());
 
-    stack->addWidget(qmlOverlay);              // on top (transparent except bar/popups)
-    stack->addWidget(webPageController.webView()); // underneath
+    // Bottom toolbar (44px)
+    QToolBar* toolbar = new QToolBar(&window);
+    toolbar->setMovable(false);
+    toolbar->setFloatable(false);
+    toolbar->setIconSize(QSize(34, 34));
+    toolbar->setFixedHeight(44);
+    toolbar->setStyleSheet(
+        "QToolBar { background: #2b2b2b; spacing: 4px; padding: 2px; border: none; }"
+        "QToolButton { border: none; padding: 3px; }"
+        "QToolButton:pressed { background: #555; border-radius: 3px; }");
+    window.addToolBar(Qt::BottomToolBarArea, toolbar);
 
-    window.setCentralWidget(central);
+    // Navigation buttons
+    QAction* homeAction = toolbar->addAction(QIcon(":/images/home.png"), "");
+    QAction* remoteAction = toolbar->addAction(QIcon(":/images/store.png"), "");
+    QAction* backAction = toolbar->addAction(QIcon(":/images/back.png"), "");
+
+    // Spacer
+    QWidget* spacer = new QWidget;
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    toolbar->addWidget(spacer);
+
+    // WiFi icon button
+    QToolButton* wifiButton = new QToolButton;
+    wifiButton->setIconSize(QSize(34, 34));
+    wifiButton->setAutoRaise(true);
+    wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
+    toolbar->addWidget(wifiButton);
+
+    // Clock
+    DigitalClock* clock = new DigitalClock;
+    toolbar->addWidget(clock);
+
+    // Info button
+    QAction* infoAction = toolbar->addAction(QIcon(":/images/info.png"), "");
+
+    // Dialogs
+    WifiDialog* wifiDialog = new WifiDialog(&networkController, &window);
+    InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
+
+    // Connect toolbar actions to controllers
+    QObject::connect(homeAction, &QAction::triggered,
+                     &webPageController, &WebPageController::loadLocal);
+    QObject::connect(remoteAction, &QAction::triggered,
+                     &webPageController, &WebPageController::loadRemote);
+    QObject::connect(backAction, &QAction::triggered,
+                     &webPageController, &WebPageController::goBack);
+    QObject::connect(wifiButton, &QToolButton::clicked,
+                     [wifiDialog]() { wifiDialog->exec(); });
+    QObject::connect(infoAction, &QAction::triggered,
+                     [infoDialog]() { infoDialog->exec(); });
+
+    // Update WiFi icon when signal level changes
+    QObject::connect(&networkController, &NetworkController::signalLevelChanged,
+                     [wifiButton, &networkController]() {
+        int level = networkController.signalLevel();
+        if (level < 0)
+            wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
+        else
+            wifiButton->setIcon(QIcon(QString(":/images/wifi-%1.png").arg(level)));
+    });
 
     // Load initial page
     webPageController.loadRemote();

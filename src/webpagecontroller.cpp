@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QDebug>
 
+
 static TestBrowserCookieJar* cookieJarInstance()
 {
     static TestBrowserCookieJar* jar = nullptr;
@@ -17,7 +18,7 @@ static TestBrowserCookieJar* cookieJarInstance()
 
 WebPageController::WebPageController(QObject* parent)
     : QObject(parent)
-    , m_webView(new QWebView)
+    , m_webView(new KioskWebView)
     , m_page(new WebPage(m_webView))
     , m_loading(false)
 {
@@ -33,7 +34,7 @@ WebPageController::WebPageController(QObject* parent)
     settings->setAttribute(QWebSettings::CSSGridLayoutEnabled, true);
     settings->setAttribute(QWebSettings::CSSRegionsEnabled, true);
     settings->setAttribute(QWebSettings::ScrollAnimatorEnabled, true);
-    settings->setAttribute(QWebSettings::AcceleratedCompositingEnabled, true);
+    settings->setAttribute(QWebSettings::AcceleratedCompositingEnabled, false);
 
     // Load polyfills from resources
     // JS polyfills: inject before page scripts (javaScriptWindowObjectCleared)

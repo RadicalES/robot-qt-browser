@@ -1,4 +1,4 @@
-QT += core gui widgets network quickwidgets quickcontrols2 virtualkeyboard websockets webkit webkitwidgets dbus
+QT += core gui widgets network virtualkeyboard websockets webkit webkitwidgets dbus
 
 DEFINES += QT_DEPRECATED_WARNING
 DEFINES += QT_NO_DEBUG
@@ -18,7 +18,11 @@ HEADERS = \
     networkcontroller.h \
     webpagecontroller.h \
     systemcontroller.h \
-    overlayeventfilter.h
+    kioskwebview.h \
+    digitalclock.h \
+    wifidialog.h \
+    infodialog.h \
+    rebootdialog.h
 
 SOURCES = \
     main.cpp \
@@ -28,7 +32,10 @@ SOURCES = \
     unixsignalnotifier.cpp \
     networkcontroller.cpp \
     webpagecontroller.cpp \
-    systemcontroller.cpp
+    systemcontroller.cpp \
+    wifidialog.cpp \
+    infodialog.cpp \
+    rebootdialog.cpp
 
 # QtWebKit 5.212
 # If WEBKIT_SOURCE_DIR is set (e.g. custom Yocto build), use it.
