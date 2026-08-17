@@ -94,7 +94,7 @@ KeyboardStyle {
             Text {
                 id: keyText
                 text: control.displayText
-                color: "red"
+                color: "#ff4500"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
@@ -143,7 +143,7 @@ KeyboardStyle {
         Rectangle {
             id: backspaceKeyBackground
             radius: 5
-            color: "red"
+            color: "#ff4500"
             anchors.fill: backspaceKeyPanel
             anchors.margins: keyBackgroundMargin
             Image {
@@ -233,7 +233,7 @@ KeyboardStyle {
         Rectangle {
             id: enterKeyBackground
             radius: 5
-            color: "red"
+            color: "#ff4500"
             anchors.fill: enterKeyPanel
             anchors.margins: keyBackgroundMargin
             Image {
@@ -375,7 +375,7 @@ KeyboardStyle {
         Rectangle {
             id: shiftKeyBackground
             radius: 5
-            color: "red"
+            color: "#ff4500"
             anchors.fill: shiftKeyPanel
             anchors.margins: keyBackgroundMargin
             Image {
@@ -442,13 +442,13 @@ KeyboardStyle {
         Rectangle {
             id: spaceKeyBackground
             radius: 5
-            color: "red"
+            color: "#ff4500"
             anchors.fill: spaceKeyPanel
             anchors.margins: keyBackgroundMargin
             Text {
                 id: spaceKeyText
                 text: "Space"
-                color: currentStyle.inputLocaleIndicatorColor
+                color: "#d9d9d9"
                 Behavior on color { PropertyAnimation { duration: 250 } }
                 anchors.centerIn: parent
                 font {
@@ -535,13 +535,13 @@ KeyboardStyle {
         Rectangle {
             id: modeKeyBackground
             radius: 5
-            color: "red"
+            color: "#ff4500"
             anchors.fill: modeKeyPanel
             anchors.margins: keyBackgroundMargin
             Text {
                 id: modeKeyText
                 text: control.displayText
-                color: "yellow"
+                color: "#d9d9d9"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
