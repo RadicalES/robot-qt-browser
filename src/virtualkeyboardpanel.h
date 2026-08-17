@@ -79,7 +79,13 @@ private slots:
     void onKeyboardActiveChanged()
     {
         QQuickItem* root = rootObject();
-        setVisible(root && root->property("keyboardActive").toBool());
+        const bool active = root && root->property("keyboardActive").toBool();
+        if (active && parentWidget()) {
+            // Re-apply the width on every show: a hidden QQuickWidget stops
+            // updating its scene, so the root can return with a stale size.
+            root->setWidth(parentWidget()->width());
+        }
+        setVisible(active);
     }
 };
 

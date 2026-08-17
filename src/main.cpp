@@ -115,10 +115,18 @@ int main(int argc, char** argv)
                      &webPageController, &WebPageController::loadRemote);
     QObject::connect(backAction, &QAction::triggered,
                      &webPageController, &WebPageController::goBack);
+    // Return focus to the page after a dialog closes, so the next tap on an
+    // input field still raises the keyboard.
     QObject::connect(wifiButton, &QToolButton::clicked,
-                     [wifiDialog]() { wifiDialog->exec(); });
+                     [wifiDialog, &webPageController]() {
+        wifiDialog->exec();
+        webPageController.webView()->setFocus();
+    });
     QObject::connect(infoAction, &QAction::triggered,
-                     [infoDialog]() { infoDialog->exec(); });
+                     [infoDialog, &webPageController]() {
+        infoDialog->exec();
+        webPageController.webView()->setFocus();
+    });
 
     // Update WiFi icon when signal level changes
     QObject::connect(&networkController, &NetworkController::signalLevelChanged,

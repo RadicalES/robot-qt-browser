@@ -123,4 +123,10 @@ void WebPageController::onLoadFinished(bool ok)
     Q_UNUSED(ok);
     m_loading = false;
     emit loadingChanged();
+
+    // Keep keyboard focus on the page. A load can leave the render widget
+    // without Qt focus, and then tapping an input field never reaches the
+    // input method, so the on-screen keyboard does not appear.
+    if (m_webView)
+        m_webView->setFocus();
 }
