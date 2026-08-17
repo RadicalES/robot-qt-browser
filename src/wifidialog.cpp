@@ -1,5 +1,6 @@
 #include "wifidialog.h"
 #include "networkcontroller.h"
+#include "dialogstyle.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -13,48 +14,49 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     , m_netCtrl(netCtrl)
 {
     setWindowTitle("WiFi");
-    setStyleSheet("QDialog { background-color: #f0f0f0; }");
+    setStyleSheet("QDialog { background-color: #f0f0f0; }" + DialogStyle::sheet());
 
     auto* layout = new QVBoxLayout(this);
 
     // --- Header ---
     auto* headerRow = new QHBoxLayout;
     auto* title = new QLabel("WiFi");
-    title->setStyleSheet("font-size: 18px; font-weight: bold;");
+    title->setStyleSheet("font-size: 28px; font-weight: bold;");
     headerRow->addWidget(title);
     headerRow->addStretch();
     auto* closeHeaderBtn = new QPushButton(QString::fromUtf8("\xc3\x97")); // ×
-    closeHeaderBtn->setFixedSize(28, 28);
-    closeHeaderBtn->setStyleSheet("font-size: 18px; border: none; background: transparent;");
+    closeHeaderBtn->setFixedSize(56, 56);
+    closeHeaderBtn->setStyleSheet("font-size: 30px; border: none; background: transparent;"
+                                  "min-width: 0px; padding: 0px;");
     connect(closeHeaderBtn, &QPushButton::clicked, this, &QDialog::reject);
     headerRow->addWidget(closeHeaderBtn);
     layout->addLayout(headerRow);
 
     // --- Connection status ---
     m_statusBox = new QWidget;
-    m_statusBox->setStyleSheet("background: #f2dede; border-radius: 4px; padding: 6px;");
+    m_statusBox->setStyleSheet("background: #f2dede; border-radius: 4px; padding: 12px;");
     auto* statusLayout = new QVBoxLayout(m_statusBox);
     statusLayout->setContentsMargins(8, 4, 8, 4);
     m_statusLabel = new QLabel("Not connected");
-    m_statusLabel->setStyleSheet("font-size: 13px;");
+    m_statusLabel->setStyleSheet("");
     statusLayout->addWidget(m_statusLabel);
     layout->addWidget(m_statusBox);
 
     // --- Scan row ---
     auto* scanRow = new QHBoxLayout;
     auto* netTitle = new QLabel("Available Networks");
-    netTitle->setStyleSheet("font-size: 14px; font-weight: bold;");
+    netTitle->setStyleSheet("font-size: 22px; font-weight: bold;");
     scanRow->addWidget(netTitle);
     scanRow->addStretch();
     m_scanBtn = new QPushButton("Scan");
-    m_scanBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    m_scanBtn->setStyleSheet("");
     connect(m_scanBtn, &QPushButton::clicked, m_netCtrl, &NetworkController::scan);
     scanRow->addWidget(m_scanBtn);
     layout->addLayout(scanRow);
 
     // --- Network list ---
     m_networkList = new QListWidget;
-    m_networkList->setStyleSheet("font-size: 13px; background: white;");
+    m_networkList->setStyleSheet("background: white;");
     m_networkList->setAlternatingRowColors(true);
     connect(m_networkList, &QListWidget::itemClicked, this, &WifiDialog::onNetworkClicked);
     layout->addWidget(m_networkList, 1);
@@ -67,13 +69,13 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     m_passwordEdit = new QLineEdit;
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     m_passwordEdit->setPlaceholderText("Password (min 8 chars)");
-    m_passwordEdit->setStyleSheet("font-size: 13px; padding: 4px;");
+    m_passwordEdit->setStyleSheet("");
     pwLayout->addWidget(m_passwordEdit);
 
     auto* pwBtnRow = new QHBoxLayout;
     m_connectBtn = new QPushButton("Connect");
     m_connectBtn->setEnabled(false);
-    m_connectBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    m_connectBtn->setStyleSheet("");
     connect(m_connectBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->connectToNetwork(m_selectedSsid, m_passwordEdit->text());
         hideSubRows();
@@ -89,7 +91,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     });
     pwBtnRow->addWidget(m_connectBtn);
     auto* pwCancelBtn = new QPushButton("Cancel");
-    pwCancelBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    pwCancelBtn->setStyleSheet("");
     connect(pwCancelBtn, &QPushButton::clicked, [this]() { hideSubRows(); });
     pwBtnRow->addWidget(pwCancelBtn);
     pwBtnRow->addStretch();
@@ -102,12 +104,12 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     auto* fgLayout = new QVBoxLayout(m_forgetRow);
     fgLayout->setContentsMargins(0, 4, 0, 4);
     m_forgetLabel = new QLabel;
-    m_forgetLabel->setStyleSheet("font-size: 13px;");
+    m_forgetLabel->setStyleSheet("");
     fgLayout->addWidget(m_forgetLabel);
 
     auto* fgBtnRow = new QHBoxLayout;
     auto* forgetBtn = new QPushButton("Forget");
-    forgetBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    forgetBtn->setStyleSheet("");
     connect(forgetBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->forgetNetwork(m_selectedSsid);
         hideSubRows();
@@ -115,7 +117,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     fgBtnRow->addWidget(forgetBtn);
 
     auto* disconnectBtn = new QPushButton("Disconnect");
-    disconnectBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    disconnectBtn->setStyleSheet("");
     connect(disconnectBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->disconnectWifi();
         hideSubRows();
@@ -123,7 +125,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     fgBtnRow->addWidget(disconnectBtn);
 
     auto* fgCancelBtn = new QPushButton("Cancel");
-    fgCancelBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    fgCancelBtn->setStyleSheet("");
     connect(fgCancelBtn, &QPushButton::clicked, [this]() { hideSubRows(); });
     fgBtnRow->addWidget(fgCancelBtn);
     fgBtnRow->addStretch();
@@ -132,7 +134,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
 
     // --- Error label ---
     m_errorLabel = new QLabel;
-    m_errorLabel->setStyleSheet("color: red; font-size: 12px;");
+    m_errorLabel->setStyleSheet("color: red;");
     m_errorLabel->setWordWrap(true);
     m_errorLabel->setVisible(false);
     layout->addWidget(m_errorLabel);
@@ -140,7 +142,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     // --- Footer ---
     auto* footer = new QHBoxLayout;
     auto* restartBtn = new QPushButton("Restart WiFi");
-    restartBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    restartBtn->setStyleSheet("");
     connect(restartBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->restartWifi();
         accept();
@@ -148,7 +150,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     footer->addWidget(restartBtn);
     footer->addStretch();
     auto* closeBtn = new QPushButton("Close");
-    closeBtn->setStyleSheet("font-size: 12px; padding: 4px 12px;");
+    closeBtn->setStyleSheet("");
     connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
     footer->addWidget(closeBtn);
     layout->addLayout(footer);
@@ -165,12 +167,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
 void WifiDialog::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
-    // Size to parent
-    if (parentWidget()) {
-        int w = qMin(static_cast<int>(parentWidget()->width() * 0.85), 420);
-        int h = qMin(static_cast<int>(parentWidget()->height() * 0.8), 520);
-        setFixedSize(w, h);
-    }
+    DialogStyle::sizeToScreen(this, 0.94, 0.85);
     // Reset state
     m_selectedSsid.clear();
     hideSubRows();
@@ -218,13 +215,13 @@ void WifiDialog::refreshNetworkList()
 void WifiDialog::updateStatus()
 {
     if (m_netCtrl->connected()) {
-        m_statusBox->setStyleSheet("background: #dff0d8; border-radius: 4px; padding: 6px;");
+        m_statusBox->setStyleSheet("background: #dff0d8; border-radius: 4px; padding: 12px;");
         QString text = QString("Connected: %1").arg(m_netCtrl->ssid());
         if (!m_netCtrl->ipAddress().isEmpty())
             text += QString("\nIP: %1").arg(m_netCtrl->ipAddress());
         m_statusLabel->setText(text);
     } else {
-        m_statusBox->setStyleSheet("background: #f2dede; border-radius: 4px; padding: 6px;");
+        m_statusBox->setStyleSheet("background: #f2dede; border-radius: 4px; padding: 12px;");
         m_statusLabel->setText("Not connected");
     }
 }

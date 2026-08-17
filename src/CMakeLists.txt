@@ -41,6 +41,7 @@ add_executable(robot-browser
     wifidialog.h
     infodialog.h
     rebootdialog.h
+    dialogstyle.h
     virtualkeyboardpanel.h
 
     main.cpp
