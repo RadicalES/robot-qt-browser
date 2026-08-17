@@ -127,8 +127,19 @@ int main(int argc, char** argv)
     // immediately after exec() returns is too early: the dialog is still
     // unwinding and the focus it restores overrides ours, leaving the input
     // method pointed at a hidden dialog and the keyboard dead.
-    auto refocusPage = [&webPageController]() {
-        QTimer::singleShot(0, webPageController.webView(), [&webPageController]() {
+    auto refocusPage = [&webPageController, &window]() {
+        QTimer::singleShot(0, webPageController.webView(), [&webPageController, &window]() {
+            // Re-activate the main window, not just refocus the view.
+            //
+            // A dialog is a separate top-level window, and the input method
+            // follows the ACTIVE WINDOW. The keyboard's InputPanel lives in
+            // this window, so while a dialog is active the input context has
+            // no panel to drive: showInputPanel() fires and nothing appears.
+            // Restoring focus alone left the context bound to the closed
+            // dialog's window, which is why the keyboard stayed dead after
+            // opening Info once.
+            window.raise();
+            window.activateWindow();
             webPageController.webView()->setFocus();
         });
     };
