@@ -3,7 +3,6 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QAction>
-#include <QWebSettings>
 #include <QScreen>
 #include <QDebug>
 
@@ -24,12 +23,8 @@ int main(int argc, char** argv)
     app.setApplicationName("RobotBrowser");
     app.setApplicationVersion("2.1");
 
-    // Global WebKit settings
-    QWebSettings::setMaximumPagesInCache(4);
-    QWebSettings::setObjectCacheCapacities(128 * 1024, 1024 * 1024, 1024 * 1024);
-    QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, true);
-    QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
-    QWebSettings::enablePersistentStorage();
+    // Engine settings and persistent storage are configured per-profile in
+    // WebPageController — QtWebEngine has no equivalent of QWebSettings globals.
 
     // Parse URLs: robot-browser <remote_url> [local_url]
     QUrl localUrl("http://127.0.0.1");

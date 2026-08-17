@@ -1,59 +1,70 @@
 #include "webpagecontroller.h"
 
-#include <QWebFrame>
-#include <QWebSettings>
-#include <QFile>
+#include <QWebEngineProfile>
+#include <QWebEngineSettings>
+#include <QStandardPaths>
+#include <QDir>
 #include <QDebug>
-
-
-static TestBrowserCookieJar* cookieJarInstance()
-{
-    static TestBrowserCookieJar* jar = nullptr;
-    if (!jar) {
-        jar = new TestBrowserCookieJar();
-        jar->setDiskStorageEnabled(true);
-    }
-    return jar;
-}
 
 WebPageController::WebPageController(QObject* parent)
     : QObject(parent)
-    , m_webView(new KioskWebView)
-    , m_page(new WebPage(m_webView))
+    , m_profile(nullptr)
+    , m_webView(new QWebEngineView)
+    , m_page(nullptr)
     , m_loading(false)
 {
+    // Named profile with on-disk storage. This replaces TestBrowserCookieJar:
+    // Chromium persists cookies, local storage and its HTTP cache itself, so
+    // the hand-rolled debounced cookie writer is no longer needed.
+    //
+    // Deliberately unparented: the page must be destroyed before the profile,
+    // and QObject deletes children in insertion order, which would do the
+    // opposite. The destructor enforces the order explicitly.
+    m_profile = new QWebEngineProfile(QStringLiteral("robot-browser"));
+    m_profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
+
+    const QString dataDir =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!dataDir.isEmpty()) {
+        QDir().mkpath(dataDir);
+        m_profile->setPersistentStoragePath(dataDir + QStringLiteral("/storage"));
+        m_profile->setCachePath(dataDir + QStringLiteral("/cache"));
+    }
+
+    m_page = new WebPage(m_profile, this);
     m_webView->setPage(m_page);
-    m_page->networkAccessManager()->setCookieJar(cookieJarInstance());
-    cookieJarInstance()->setParent(nullptr); // prevent webview from deleting shared jar
+    m_page->setDialogParent(m_webView);
 
-    // Web engine settings for kiosk
-    QWebSettings* settings = m_page->settings();
-    settings->setAttribute(QWebSettings::JavascriptEnabled, true);
-    settings->setAttribute(QWebSettings::LocalStorageEnabled, true);
-    settings->setAttribute(QWebSettings::PluginsEnabled, true);
-    settings->setAttribute(QWebSettings::CSSGridLayoutEnabled, true);
-    settings->setAttribute(QWebSettings::CSSRegionsEnabled, true);
-    settings->setAttribute(QWebSettings::ScrollAnimatorEnabled, true);
-    settings->setAttribute(QWebSettings::AcceleratedCompositingEnabled, false);
-
-    // Load polyfills from resources
-    // JS polyfills: inject before page scripts (javaScriptWindowObjectCleared)
-    m_jsPolyfills = loadResourceFiles({":/js/polyfills.js", ":/js/fetch.js"});
-    // CSS polyfills: libraries loaded early, activated after DOM ready (loadFinished)
-    m_cssPolyfills = loadResourceFiles({
-        ":/js/css-vars-ponyfill.min.js",
-        ":/js/stickyfill.min.js",
-        ":/js/smoothscroll.min.js"
-    });
+    // Kiosk engine settings. The polyfills the QtWebKit build injected —
+    // fetch, Object.values/entries, URLSearchParams, CSS custom properties,
+    // position:sticky, smooth scroll — are all native in Chromium, so both the
+    // scripts and the two-phase injection they needed are gone.
+    QWebEngineSettings* settings = m_profile->settings();
+    settings->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
+    settings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
+    settings->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    settings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, true);
+    settings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
 
     // Suppress context menu for kiosk
     m_webView->setContextMenuPolicy(Qt::NoContextMenu);
 
-    connect(m_page->mainFrame(), &QWebFrame::urlChanged, this, &WebPageController::onUrlChanged);
-    connect(m_page->mainFrame(), &QWebFrame::javaScriptWindowObjectCleared,
-            this, &WebPageController::onJavaScriptWindowObjectCleared);
-    connect(m_page, &QWebPage::loadStarted, this, &WebPageController::onLoadStarted);
-    connect(m_page, &QWebPage::loadFinished, this, &WebPageController::onLoadFinished);
+    connect(m_page, &QWebEnginePage::urlChanged, this, &WebPageController::onUrlChanged);
+    connect(m_page, &QWebEnginePage::loadStarted, this, &WebPageController::onLoadStarted);
+    connect(m_page, &QWebEnginePage::loadFinished, this, &WebPageController::onLoadFinished);
+}
+
+WebPageController::~WebPageController()
+{
+    // QtWebEngine warns ("Release of profile requested but WebEnginePage still
+    // not deleted") and can crash if a profile outlives its pages. The view may
+    // already be gone here — it is owned by the main window — so detach first.
+    if (m_webView)
+        m_webView->setPage(nullptr);
+    delete m_page;
+    m_page = nullptr;
+    delete m_profile;
+    m_profile = nullptr;
 }
 
 void WebPageController::init(const QUrl& localUrl, const QUrl& remoteUrl, WebsockServer* debugger)
@@ -65,39 +76,35 @@ void WebPageController::init(const QUrl& localUrl, const QUrl& remoteUrl, Websoc
 
 QString WebPageController::currentUrl() const
 {
-    return m_page->mainFrame()->url().toString();
+    return m_page->url().toString();
 }
 
 void WebPageController::loadLocal()
 {
-    QUrl frameUrl = m_page->mainFrame()->url();
-    if (frameUrl.isValid() && frameUrl == m_localUrl) {
-        m_page->triggerAction(QWebPage::Reload);
+    if (m_page->url().isValid() && m_page->url() == m_localUrl) {
+        m_page->triggerAction(QWebEnginePage::Reload);
         return;
     }
-    m_page->mainFrame()->load(m_localUrl);
-    QWebSettings::clearMemoryCaches();
+    m_page->setUrl(m_localUrl);
 }
 
 void WebPageController::loadRemote()
 {
-    QUrl frameUrl = m_page->mainFrame()->url();
-    if (frameUrl.isValid() && frameUrl == m_remoteUrl) {
-        m_page->triggerAction(QWebPage::Reload);
+    if (m_page->url().isValid() && m_page->url() == m_remoteUrl) {
+        m_page->triggerAction(QWebEnginePage::Reload);
         return;
     }
-    m_page->mainFrame()->load(m_remoteUrl);
-    QWebSettings::clearMemoryCaches();
+    m_page->setUrl(m_remoteUrl);
 }
 
 void WebPageController::reload()
 {
-    m_page->triggerAction(QWebPage::Reload);
+    m_page->triggerAction(QWebEnginePage::Reload);
 }
 
 void WebPageController::goBack()
 {
-    m_page->triggerAction(QWebPage::Back);
+    m_page->triggerAction(QWebEnginePage::Back);
 }
 
 void WebPageController::onUrlChanged(const QUrl&)
@@ -113,49 +120,7 @@ void WebPageController::onLoadStarted()
 
 void WebPageController::onLoadFinished(bool ok)
 {
+    Q_UNUSED(ok);
     m_loading = false;
     emit loadingChanged();
-
-    if (ok && !m_cssPolyfills.isEmpty()) {
-        // Inject CSS polyfill libraries, then activate them
-        m_page->mainFrame()->evaluateJavaScript(m_cssPolyfills);
-        m_page->mainFrame()->evaluateJavaScript(QStringLiteral(
-            // Activate css-vars-ponyfill (CSS Custom Properties)
-            "if (typeof cssVars === 'function') {"
-            "  cssVars({ watch: true, silent: true });"
-            "}"
-            // Activate stickyfill (position: sticky)
-            "if (typeof Stickyfill !== 'undefined') {"
-            "  var stickyEls = document.querySelectorAll('[style*=\"position: sticky\"], [style*=\"position:sticky\"]');"
-            "  if (stickyEls.length) Stickyfill.add(stickyEls);"
-            "}"
-            // Activate smoothscroll (scroll-behavior: smooth)
-            "if (typeof smoothscroll !== 'undefined' && typeof smoothscroll.polyfill === 'function') {"
-            "  smoothscroll.polyfill();"
-            "}"
-        ));
-    }
-}
-
-void WebPageController::onJavaScriptWindowObjectCleared()
-{
-    // Inject JS polyfills BEFORE any page JavaScript runs
-    if (!m_jsPolyfills.isEmpty()) {
-        m_page->mainFrame()->evaluateJavaScript(m_jsPolyfills);
-    }
-}
-
-QString WebPageController::loadResourceFiles(const QStringList& files)
-{
-    QString combined;
-    for (const QString& path : files) {
-        QFile f(path);
-        if (f.open(QIODevice::ReadOnly)) {
-            combined += QString::fromUtf8(f.readAll()) + "\n";
-            f.close();
-        } else {
-            qWarning() << "WebPageController: failed to load polyfill:" << path;
-        }
-    }
-    return combined;
 }

@@ -11,10 +11,5 @@
         <file alias="images/wifi-2.png">images/wifi-2.png</file>
         <file alias="images/wifi-3.png">images/wifi-3.png</file>
         <file alias="images/wifi-4.png">images/wifi-4.png</file>
-<file>js/polyfills.js</file>
-        <file>js/fetch.js</file>
-        <file>js/css-vars-ponyfill.min.js</file>
-        <file>js/stickyfill.min.js</file>
-        <file>js/smoothscroll.min.js</file>
     </qresource>
 </RCC>

@@ -51,3 +51,8 @@ compile_commands.json
 # QtCreator local machine specific files for imported projects
 *creator.user*
 resume.txt
+
+# Stale in-tree qmake build artifacts
+src/.qmake.stash
+src/robot-browser
+src/Makefile

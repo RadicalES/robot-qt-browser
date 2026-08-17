@@ -23,6 +23,7 @@ RUN dpkg --add-architecture arm64 && \
     # Target Qt 6 for arm64
     qt6-base-dev:arm64 \
     qt6-webengine-dev:arm64 \
+    qt6-websockets-dev:arm64 \
     && rm -rf /var/lib/apt/lists/*
 
 # Qt 6 requires the host tool prefix to be named explicitly when cross-compiling.

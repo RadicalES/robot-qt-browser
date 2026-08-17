@@ -32,35 +32,42 @@
 #ifndef webpage_h
 #define webpage_h
 
-#include <qwebframe.h>
-#include <qwebpage.h>
+#include <QWebEnginePage>
 #include "websockserver.h"
 
-class WebPage : public QWebPage {
+class QAuthenticator;
+class QWebEngineProfile;
+
+class WebPage : public QWebEnginePage {
     Q_OBJECT
 
 public:
-    WebPage(QObject* parent = nullptr);
+    explicit WebPage(QWebEngineProfile* profile, QObject* parent = nullptr);
 
-    QWebPage* createWindow(QWebPage::WebWindowType) override;
-    bool acceptNavigationRequest(QWebFrame*, const QNetworkRequest&, NavigationType) override;
-    QString userAgentForUrl(const QUrl&) const override;
+    QWebEnginePage* createWindow(QWebEnginePage::WebWindowType) override;
+    bool acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame) override;
 
-    void javaScriptConsoleMessage(const QString& message, int lineNumber, const QString& sourceID) override;
-    void javaScriptAlert(QWebFrame* frame, const QString& msg) override;
+    void javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
+                                  const QString& message,
+                                  int lineNumber,
+                                  const QString& sourceID) override;
+    void javaScriptAlert(const QUrl& securityOrigin, const QString& msg) override;
 
     void setDebugger(WebsockServer* debugger) { m_debugServer = debugger; }
-    void setUserAgent(const QString& ua) { m_userAgent = ua; }
 
-public Q_SLOTS:
-    void authenticationRequired(QNetworkReply*, QAuthenticator*);
-    void requestPermission(QWebFrame*, QWebPage::Feature);
+    // Dialogs are parented to this widget. QtWebEngine renders into an internal
+    // child widget, so the page cannot reliably find the top-level window itself.
+    void setDialogParent(QWidget* parent) { m_dialogParent = parent; }
+
+private Q_SLOTS:
+    void onAuthenticationRequired(const QUrl& requestUrl, QAuthenticator* authenticator);
+    void onFeaturePermissionRequested(const QUrl& securityOrigin, QWebEnginePage::Feature feature);
 
 private:
-    void applyProxy();
+    static void applyProxy();
 
-    QString m_userAgent;
     WebsockServer* m_debugServer;
+    QWidget* m_dialogParent;
 };
 
 #endif
