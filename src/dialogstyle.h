@@ -6,7 +6,9 @@
 #include <QScreen>
 #include <QString>
 #include <QAbstractButton>
+#include <QLineEdit>
 #include <QList>
+#include <QWidget>
 
 // Shared look and sizing for the kiosk dialogs.
 //
@@ -19,6 +21,16 @@
 // from here, so the whole set stays consistent. A child stylesheet merges with
 // the dialog's, so a button that sets just "background: ..." keeps these sizes.
 namespace DialogStyle {
+
+// The palette the Info dialog established: blue for the neutral/confirming
+// action, orange for one that interrupts service, red for destructive.
+namespace Colour {
+inline QString primary()   { return QStringLiteral("background: #42a5f5; color: white;"); }
+inline QString warning()   { return QStringLiteral("background: #ffa726; color: white;"); }
+inline QString danger()    { return QStringLiteral("background: #ef5350; color: white;"); }
+inline QString neutral()   { return QStringLiteral("background: white; color: #333;"
+                                                   "border: 1px solid #999;"); }
+}
 
 inline QString sheet()
 {
@@ -55,16 +67,25 @@ inline void sizeToScreen(QDialog* dialog, qreal widthFraction, qreal heightFract
     dialog->setMaximumSize(screen.width(), screen.height());
 }
 
-// Buttons on a touch kiosk are tapped, never tabbed to, so none of them needs
-// focus. Leaving them focusable strands the input method on a hidden dialog's
-// button and silently kills the on-screen keyboard. Text fields keep focus —
-// they are what the keyboard types into.
-inline void buttonsTakeNoFocus(QDialog* dialog)
+// Nothing in a kiosk dialog takes focus except its text fields.
+//
+// These dialogs are created once and reused, so any widget that takes focus
+// keeps it after the dialog hides. The input method then stays pointed at a
+// hidden dialog and the on-screen keyboard never appears again — observed
+// first with a button, then with the WiFi network list, then with the dialog
+// widget itself once the buttons were excluded. Allowing focus only where it
+// is genuinely needed closes off the whole class.
+//
+// Controls still respond to taps: click handling does not require focus.
+inline void takeNoFocusExceptFields(QDialog* dialog)
 {
-    const QList<QAbstractButton*> buttons =
-        dialog->findChildren<QAbstractButton*>();
-    for (QAbstractButton* button : buttons)
-        button->setFocusPolicy(Qt::NoFocus);
+    dialog->setFocusPolicy(Qt::NoFocus);
+    const QList<QWidget*> widgets = dialog->findChildren<QWidget*>();
+    for (QWidget* widget : widgets) {
+        if (qobject_cast<QLineEdit*>(widget))
+            continue;   // the keyboard types into these
+        widget->setFocusPolicy(Qt::NoFocus);
+    }
 }
 
 // Centre a dialog on the screen. Qt centres on the parent, which is unhelpful

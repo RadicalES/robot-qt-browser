@@ -36,7 +36,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     auto* resetBtn = new QPushButton("Reset Defaults");
     resetBtn->setStyleSheet(
-        "background: #ef5350; color: white;");
+        DialogStyle::Colour::danger());
     connect(resetBtn, &QPushButton::clicked, [sysCtrl]() {
         sysCtrl->resetDefaults();
     });
@@ -46,7 +46,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     auto* rebootBtn = new QPushButton("Reboot");
     rebootBtn->setStyleSheet(
-        "background: #ffa726; color: white;");
+        DialogStyle::Colour::warning());
     connect(rebootBtn, &QPushButton::clicked, [this, sysCtrl]() {
         RebootDialog dlg(sysCtrl, this);
         dlg.exec();
@@ -55,11 +55,11 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     auto* closeBtn = new QPushButton("Close");
     closeBtn->setStyleSheet(
-        "background: #42a5f5; color: white;");
+        DialogStyle::Colour::primary());
     connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
     buttonRow->addWidget(closeBtn);
 
     layout->addLayout(buttonRow);
 
-    DialogStyle::buttonsTakeNoFocus(this);
+    DialogStyle::takeNoFocusExceptFields(this);
 }

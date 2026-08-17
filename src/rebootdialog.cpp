@@ -26,12 +26,12 @@ RebootDialog::RebootDialog(SystemController* sysCtrl, QWidget* parent)
     buttonRow->addStretch();
 
     auto* cancelBtn = new QPushButton("Cancel");
-    cancelBtn->setStyleSheet("background: white; border: 1px solid #999;");
+    cancelBtn->setStyleSheet(DialogStyle::Colour::neutral());
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     buttonRow->addWidget(cancelBtn);
 
     auto* rebootBtn = new QPushButton("Reboot");
-    rebootBtn->setStyleSheet("background: #ffa726; color: white;");
+    rebootBtn->setStyleSheet(DialogStyle::Colour::warning());
     connect(rebootBtn, &QPushButton::clicked, [this, sysCtrl]() {
         sysCtrl->reboot();
         accept();
@@ -40,5 +40,5 @@ RebootDialog::RebootDialog(SystemController* sysCtrl, QWidget* parent)
 
     layout->addLayout(buttonRow);
 
-    DialogStyle::buttonsTakeNoFocus(this);
+    DialogStyle::takeNoFocusExceptFields(this);
 }

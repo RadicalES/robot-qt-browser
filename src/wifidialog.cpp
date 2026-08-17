@@ -49,7 +49,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     scanRow->addWidget(netTitle);
     scanRow->addStretch();
     m_scanBtn = new QPushButton("Scan");
-    m_scanBtn->setStyleSheet("");
+    m_scanBtn->setStyleSheet(DialogStyle::Colour::primary());
     connect(m_scanBtn, &QPushButton::clicked, m_netCtrl, &NetworkController::scan);
     scanRow->addWidget(m_scanBtn);
     layout->addLayout(scanRow);
@@ -75,7 +75,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     auto* pwBtnRow = new QHBoxLayout;
     m_connectBtn = new QPushButton("Connect");
     m_connectBtn->setEnabled(false);
-    m_connectBtn->setStyleSheet("");
+    m_connectBtn->setStyleSheet(DialogStyle::Colour::primary());
     connect(m_connectBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->connectToNetwork(m_selectedSsid, m_passwordEdit->text());
         hideSubRows();
@@ -91,7 +91,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     });
     pwBtnRow->addWidget(m_connectBtn);
     auto* pwCancelBtn = new QPushButton("Cancel");
-    pwCancelBtn->setStyleSheet("");
+    pwCancelBtn->setStyleSheet(DialogStyle::Colour::neutral());
     connect(pwCancelBtn, &QPushButton::clicked, [this]() { hideSubRows(); });
     pwBtnRow->addWidget(pwCancelBtn);
     pwBtnRow->addStretch();
@@ -109,7 +109,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
 
     auto* fgBtnRow = new QHBoxLayout;
     auto* forgetBtn = new QPushButton("Forget");
-    forgetBtn->setStyleSheet("");
+    forgetBtn->setStyleSheet(DialogStyle::Colour::danger());
     connect(forgetBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->forgetNetwork(m_selectedSsid);
         hideSubRows();
@@ -117,7 +117,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     fgBtnRow->addWidget(forgetBtn);
 
     auto* disconnectBtn = new QPushButton("Disconnect");
-    disconnectBtn->setStyleSheet("");
+    disconnectBtn->setStyleSheet(DialogStyle::Colour::warning());
     connect(disconnectBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->disconnectWifi();
         hideSubRows();
@@ -125,7 +125,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     fgBtnRow->addWidget(disconnectBtn);
 
     auto* fgCancelBtn = new QPushButton("Cancel");
-    fgCancelBtn->setStyleSheet("");
+    fgCancelBtn->setStyleSheet(DialogStyle::Colour::neutral());
     connect(fgCancelBtn, &QPushButton::clicked, [this]() { hideSubRows(); });
     fgBtnRow->addWidget(fgCancelBtn);
     fgBtnRow->addStretch();
@@ -142,7 +142,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     // --- Footer ---
     auto* footer = new QHBoxLayout;
     auto* restartBtn = new QPushButton("Restart WiFi");
-    restartBtn->setStyleSheet("");
+    restartBtn->setStyleSheet(DialogStyle::Colour::warning());
     connect(restartBtn, &QPushButton::clicked, [this]() {
         m_netCtrl->restartWifi();
         accept();
@@ -150,7 +150,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     footer->addWidget(restartBtn);
     footer->addStretch();
     auto* closeBtn = new QPushButton("Close");
-    closeBtn->setStyleSheet("");
+    closeBtn->setStyleSheet(DialogStyle::Colour::primary());
     connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
     footer->addWidget(closeBtn);
     layout->addLayout(footer);
@@ -163,7 +163,7 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     connect(m_netCtrl, &NetworkController::scanningChanged, this, &WifiDialog::updateScanButton);
     connect(m_netCtrl, &NetworkController::errorChanged, this, &WifiDialog::updateError);
 
-    DialogStyle::buttonsTakeNoFocus(this);
+    DialogStyle::takeNoFocusExceptFields(this);
 }
 
 void WifiDialog::showEvent(QShowEvent* event)
