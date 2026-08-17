@@ -52,7 +52,7 @@ private:
         if (belongsToPage(QApplication::focusWidget()))
             return;                     // page already has focus, nothing to do
 
-        qInfo() << "PageFocusGuard: reclaiming focus for the page from"
+        qDebug() << "PageFocusGuard: reclaiming focus for the page from"
                 << QApplication::focusWidget();
         m_view->setFocus(Qt::MouseFocusReason);
     }

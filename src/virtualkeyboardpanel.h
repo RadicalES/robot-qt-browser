@@ -103,7 +103,7 @@ private slots:
             root->setWidth(parentWidget()->width());
         }
 
-        qInfo() << "VirtualKeyboardPanel: active=" << active
+        qDebug() << "VirtualKeyboardPanel: active=" << active
                 << "rootHeight=" << (root ? root->height() : -1)
                 << "widgetHeight=" << height();
 
