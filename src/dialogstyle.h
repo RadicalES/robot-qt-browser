@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QList>
 #include <QWidget>
+#include <QGuiApplication>
+#include <QInputMethod>
 
 // Shared look and sizing for the kiosk dialogs.
 //
@@ -96,6 +98,20 @@ inline void centerOnScreen(QDialog* dialog)
 {
     const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
     dialog->move(screen.center() - dialog->rect().center());
+}
+
+// Close the on-screen keyboard before opening a dialog.
+//
+// A dialog that opens over a raised keyboard leaves the input method in a
+// state the panel never recovers from: the panel deactivates because focus
+// moved, but the context is not told, so the next tap on a web input produces
+// no showInputPanel() and the keyboard stays down for good. Committing first
+// keeps any half-typed preedit text.
+inline void closeKeyboard()
+{
+    QInputMethod* inputMethod = QGuiApplication::inputMethod();
+    inputMethod->commit();
+    inputMethod->hide();
 }
 
 } // namespace DialogStyle

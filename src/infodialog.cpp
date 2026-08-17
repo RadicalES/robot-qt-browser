@@ -48,6 +48,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     rebootBtn->setStyleSheet(
         DialogStyle::Colour::warning());
     connect(rebootBtn, &QPushButton::clicked, [this, sysCtrl]() {
+        DialogStyle::closeKeyboard();
         RebootDialog dlg(sysCtrl, this);
         dlg.exec();
     });

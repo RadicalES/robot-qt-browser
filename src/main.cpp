@@ -18,6 +18,8 @@
 #include "wifidialog.h"
 #include "infodialog.h"
 #include "virtualkeyboardpanel.h"
+#include "pagefocusguard.h"
+#include "dialogstyle.h"
 
 int main(int argc, char** argv)
 {
@@ -129,11 +131,13 @@ int main(int argc, char** argv)
     };
     QObject::connect(wifiButton, &QToolButton::clicked,
                      [wifiDialog, refocusPage]() {
+        DialogStyle::closeKeyboard();
         wifiDialog->exec();
         refocusPage();
     });
     QObject::connect(infoAction, &QAction::triggered,
                      [infoDialog, refocusPage]() {
+        DialogStyle::closeKeyboard();
         infoDialog->exec();
         refocusPage();
     });
@@ -155,6 +159,11 @@ int main(int argc, char** argv)
     for (QToolButton* button : toolbar->findChildren<QToolButton*>())
         button->setFocusPolicy(Qt::NoFocus);
     webPageController.webView()->setFocusPolicy(Qt::StrongFocus);
+
+    // Any tap on the page reclaims keyboard focus for it. Without this, a
+    // widget that takes focus and never gives it back leaves the on-screen
+    // keyboard unable to appear for the rest of the session.
+    app.installEventFilter(new PageFocusGuard(webPageController.webView(), &app));
 
     // Load initial page
     webPageController.loadRemote();
