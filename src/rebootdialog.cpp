@@ -39,4 +39,6 @@ RebootDialog::RebootDialog(SystemController* sysCtrl, QWidget* parent)
     buttonRow->addWidget(rebootBtn);
 
     layout->addLayout(buttonRow);
+
+    DialogStyle::buttonsTakeNoFocus(this);
 }

@@ -3,6 +3,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QTimer>
 #include <QAction>
 #include <QScreen>
 #include <QDebug>
@@ -117,15 +118,24 @@ int main(int argc, char** argv)
                      &webPageController, &WebPageController::goBack);
     // Return focus to the page after a dialog closes, so the next tap on an
     // input field still raises the keyboard.
+    // Return focus to the page once the dialog has fully closed. Doing it
+    // immediately after exec() returns is too early: the dialog is still
+    // unwinding and the focus it restores overrides ours, leaving the input
+    // method pointed at a hidden dialog and the keyboard dead.
+    auto refocusPage = [&webPageController]() {
+        QTimer::singleShot(0, webPageController.webView(), [&webPageController]() {
+            webPageController.webView()->setFocus();
+        });
+    };
     QObject::connect(wifiButton, &QToolButton::clicked,
-                     [wifiDialog, &webPageController]() {
+                     [wifiDialog, refocusPage]() {
         wifiDialog->exec();
-        webPageController.webView()->setFocus();
+        refocusPage();
     });
     QObject::connect(infoAction, &QAction::triggered,
-                     [infoDialog, &webPageController]() {
+                     [infoDialog, refocusPage]() {
         infoDialog->exec();
-        webPageController.webView()->setFocus();
+        refocusPage();
     });
 
     // Update WiFi icon when signal level changes

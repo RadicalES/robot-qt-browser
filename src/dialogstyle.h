@@ -5,6 +5,8 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QString>
+#include <QAbstractButton>
+#include <QList>
 
 // Shared look and sizing for the kiosk dialogs.
 //
@@ -23,7 +25,7 @@ inline QString sheet()
     return QStringLiteral(
         "QLabel { font-size: 20px; }"
         "QPushButton { font-size: 20px; padding: 14px 24px; border-radius: 6px;"
-        "              min-height: 34px; min-width: 120px; border: none; }"
+        "              min-height: 34px; min-width: 90px; border: none; }"
         "QLineEdit { font-size: 22px; padding: 12px; border: 1px solid #bbb;"
         "            border-radius: 6px; }"
         "QListWidget { font-size: 20px; background: white; }"
@@ -40,6 +42,7 @@ inline void widthToScreen(QDialog* dialog, qreal widthFraction)
 {
     const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
     dialog->setMinimumWidth(int(screen.width() * widthFraction));
+    dialog->setMaximumWidth(screen.width());
 }
 
 // Width and height. Only for dialogs with a scrolling list that genuinely
@@ -49,6 +52,29 @@ inline void sizeToScreen(QDialog* dialog, qreal widthFraction, qreal heightFract
     const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
     dialog->setMinimumSize(int(screen.width() * widthFraction),
                            int(screen.height() * heightFraction));
+    dialog->setMaximumSize(screen.width(), screen.height());
+}
+
+// Buttons on a touch kiosk are tapped, never tabbed to, so none of them needs
+// focus. Leaving them focusable strands the input method on a hidden dialog's
+// button and silently kills the on-screen keyboard. Text fields keep focus —
+// they are what the keyboard types into.
+inline void buttonsTakeNoFocus(QDialog* dialog)
+{
+    const QList<QAbstractButton*> buttons =
+        dialog->findChildren<QAbstractButton*>();
+    for (QAbstractButton* button : buttons)
+        button->setFocusPolicy(Qt::NoFocus);
+}
+
+// Centre a dialog on the screen. Qt centres on the parent, which is unhelpful
+// once a dialog has been clamped to the screen: it can still end up straddling
+// an edge with half its controls unreachable. Call from showEvent, after the
+// size is settled.
+inline void centerOnScreen(QDialog* dialog)
+{
+    const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+    dialog->move(screen.center() - dialog->rect().center());
 }
 
 } // namespace DialogStyle

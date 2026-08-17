@@ -162,12 +162,16 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     connect(m_netCtrl, &NetworkController::ipAddressChanged, this, &WifiDialog::updateStatus);
     connect(m_netCtrl, &NetworkController::scanningChanged, this, &WifiDialog::updateScanButton);
     connect(m_netCtrl, &NetworkController::errorChanged, this, &WifiDialog::updateError);
+
+    DialogStyle::buttonsTakeNoFocus(this);
 }
 
 void WifiDialog::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
-    DialogStyle::sizeToScreen(this, 0.94, 0.85);
+    DialogStyle::sizeToScreen(this, 0.92, 0.72);
+    resize(minimumSize());
+    DialogStyle::centerOnScreen(this);
     // Reset state
     m_selectedSsid.clear();
     hideSubRows();

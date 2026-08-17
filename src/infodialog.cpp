@@ -60,4 +60,6 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     buttonRow->addWidget(closeBtn);
 
     layout->addLayout(buttonRow);
+
+    DialogStyle::buttonsTakeNoFocus(this);
 }
