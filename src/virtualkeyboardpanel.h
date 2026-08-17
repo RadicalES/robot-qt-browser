@@ -4,6 +4,8 @@
 #include <QQuickWidget>
 #include <QQuickItem>
 #include <QQmlEngine>
+#include <QGuiApplication>
+#include <QInputMethod>
 #include <QMetaProperty>
 #include <QDebug>
 
@@ -86,6 +88,19 @@ private slots:
             root->setWidth(parentWidget()->width());
         }
         setVisible(active);
+
+        if (!active) {
+            // Resync the platform input context. When a dialog takes focus the
+            // input panel deactivates and this widget hides, but the context is
+            // never told — it still believes the panel is on screen, so the
+            // next tap on a web input issues no showInputPanel() and the
+            // keyboard never comes back. Telling it to hide restores the
+            // transition. isVisible() guards against recursing through the
+            // hideInputPanel this triggers.
+            QInputMethod* inputMethod = QGuiApplication::inputMethod();
+            if (inputMethod->isVisible())
+                inputMethod->hide();
+        }
     }
 };
 
