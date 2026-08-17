@@ -67,16 +67,17 @@ int main(int argc, char** argv)
 
     window.setCentralWidget(central);
 
-    // Bottom toolbar (44px)
+    // Bottom toolbar. Sized for finger use on a touch-only terminal: 44px
+    // with 34px icons was too small a target to hit reliably.
     QToolBar* toolbar = new QToolBar(&window);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
-    toolbar->setIconSize(QSize(34, 34));
-    toolbar->setFixedHeight(44);
+    toolbar->setIconSize(QSize(48, 48));
+    toolbar->setFixedHeight(76);
     toolbar->setStyleSheet(
-        "QToolBar { background: #2b2b2b; spacing: 4px; padding: 2px; border: none; }"
-        "QToolButton { border: none; padding: 3px; }"
-        "QToolButton:pressed { background: #555; border-radius: 3px; }");
+        "QToolBar { background: #4d4d4d; spacing: 10px; padding: 4px; border: none; }"
+        "QToolButton { border: none; padding: 8px; min-width: 60px; }"
+        "QToolButton:pressed { background: #808080; border-radius: 6px; }");
     window.addToolBar(Qt::BottomToolBarArea, toolbar);
 
     // Navigation buttons
@@ -91,7 +92,7 @@ int main(int argc, char** argv)
 
     // WiFi icon button
     QToolButton* wifiButton = new QToolButton;
-    wifiButton->setIconSize(QSize(34, 34));
+    wifiButton->setIconSize(QSize(48, 48));
     wifiButton->setAutoRaise(true);
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
     toolbar->addWidget(wifiButton);
