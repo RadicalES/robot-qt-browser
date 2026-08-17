@@ -4,15 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kiosk-style browser application for embedded Linux (BeagleBone Black, Raspberry Pi CM4). Displays two web pages (a local URL and a remote transaction URL) with minimal desktop functions: WiFi status, network setup, reboot, system info. Built with Qt 5.15 LTS, QML UI shell, and QtWebKit 5.212 for web rendering. Targets Debian 12 (Bookworm).
+Kiosk-style browser application for embedded Linux (BeagleBone Black, Raspberry Pi CM4). Displays two web pages (a local URL and a remote transaction URL) with minimal desktop functions: WiFi status, network setup, reboot, system info. Built with Qt 5.15 LTS, a pure Qt Widgets UI shell, and QtWebKit 5.212 for web rendering. Targets Debian 12 (Bookworm).
 
 ## Project Structure
 
 ```
 robot-qt-browser/
 ├── src/                    # Application source code
-│   ├── *.cpp, *.h          # C++ sources and headers
-│   ├── qml/                # QML UI files
+│   ├── *.cpp, *.h          # C++ sources and headers (widgets UI + controllers)
+│   ├── js/                 # JS/CSS polyfills injected into pages
+│   ├── qml/                # Legacy QML UI — no longer built (see Architecture)
 │   ├── images/             # Icons and images
 │   ├── robot-browser.pro        # qmake project file
 │   └── robot-browser.qrc        # Qt resource file
@@ -73,33 +74,34 @@ cd build-amd64 && qmake ../src/robot-browser.pro && make
 
 ## Architecture
 
-**Hybrid layout:** QWebView (widget) underneath a transparent QQuickWidget overlay for the QML shell.
+**Pure Qt Widgets layout:** `KioskWebView` is the `QMainWindow` central widget, with a bottom `QToolBar` and `QDialog` popups. There is no QML — the previous transparent `QQuickWidget` overlay was removed because event forwarding into the web view was broken on linuxfb (events synthesized via `sendEvent` arrive non-spontaneous). `src/qml/` is still in the repo but is not referenced by `robot-browser.pro` or `.qrc`.
 
 ```
 src/main.cpp
 ├── QApplication + QWebSettings global config
-├── QStackedLayout (StackAll mode)
-│   ├── QQuickWidget (transparent overlay) ← src/qml/main.qml
-│   └── QWebView (QtWebKit rendering)     ← WebPageController
+├── QMainWindow
+│   ├── centralWidget: KioskWebView (QtWebKit) ← WebPageController
+│   └── bottom QToolBar (44px, dark stylesheet)
+│       [Home] [Remote] [Back] ──spacer── [WiFi icon] [DigitalClock] [Info]
 │
-├── C++ Controllers (registered as QML context properties)
+├── C++ Controllers (plain QObjects, wired to widget signals)
 │   ├── WebPageController  — loadLocal(), loadRemote(), reload(), goBack()
 │   ├── NetworkController  — WiFi management via NetworkManager D-Bus
 │   ├── SystemController   — reboot(), resetDefaults(), systemInfo()
 │   └── WebsockServer      — debug WebSocket server (port 7070)
 │
-└── QML UI (src/qml/)
-    ├── main.qml         — root overlay with bottom bar, popups, virtual keyboard
-    ├── BottomBar.qml    — [Home] [Remote] [Back] | WiFi icon | Clock | [Info]
-    ├── WifiPopup.qml    — WiFi config: scan, connect, forget, signal, restart
-    ├── RebootPopup.qml  — Reboot confirmation
-    └── InfoPopup.qml    — System info + reset defaults + reboot
+└── Widgets UI (src/)
+    ├── digitalclock.h   — header-only QLabel clock, blinking colon, 1s timer
+    ├── wifidialog.*     — WiFi config: scan, connect, forget, signal, restart
+    ├── infodialog.*     — System info + reset defaults + reboot
+    └── rebootdialog.*   — Reboot confirmation (opened from InfoDialog)
 ```
 
 **Key C++ classes (all in `src/`):**
-- `WebPageController` — wraps QWebView + WebPage + CookieJar. Exposes load/reload/back as Q_INVOKABLE, URL and loading state as Q_PROPERTY.
+- `KioskWebView` (`kioskwebview.h`, header-only) — QWebView subclass that eats `MouseMove` events while a button is held, so WebCore never starts a drag, and eats all drag/drop events. Works around linuxfb pixel artifacts from `QSimpleDrag` (Debian's QtWebKit 5.212 ships `ENABLE_DRAG_SUPPORT=ON`). Text selection is sacrificed — acceptable for kiosk.
+- `WebPageController` — owns KioskWebView + WebPage + CookieJar, exposes `webView()`. load/reload/back are Q_INVOKABLE; URL and loading state are Q_PROPERTY. Sets `AcceleratedCompositingEnabled = false` (required for linuxfb). Injects polyfills in two phases: JS (`js/polyfills.js`, `js/fetch.js`) on `javaScriptWindowObjectCleared` before page scripts run; CSS polyfills (css-vars-ponyfill, stickyfill, smoothscroll) activated on `loadFinished`.
 - `WebPage` — simplified QWebPage subclass. Navigation network check, proxy, HTTP auth dialog, JS console/alert forwarding to debug server.
-- `NetworkController` — WiFi management via NetworkManager D-Bus (system bus). Exposes signalLevel, connected, ssid, ipAddress, scanning, networks (QVariantList), error as Q_PROPERTY. Provides scan(), connectToNetwork(ssid, password), disconnectWifi(), forgetNetwork(ssid), restartWifi() as Q_INVOKABLE. Uses 5-second polling + PropertiesChanged/AccessPointAdded/Removed D-Bus signals. Registered as `networkController` QML context property.
+- `NetworkController` — WiFi management via NetworkManager D-Bus (system bus, raw QDBusInterface). Exposes signalLevel, connected, ssid, ipAddress, scanning, networks (QVariantList), error as Q_PROPERTY. Provides scan(), connectToNetwork(ssid, password), disconnectWifi(), forgetNetwork(ssid), restartWifi(). Uses 5-second polling + PropertiesChanged/AccessPointAdded/Removed D-Bus signals.
 - `SystemController` — reboot, factory reset, system info string.
 - `TestBrowserCookieJar` (`cookiejar.h/.cpp`) — disk-persisted cookies, 10-second debounced writes.
 - `WebsockServer` — WebSocket server for remote debug, JS console and alert broadcast.
@@ -107,7 +109,9 @@ src/main.cpp
 
 ## Qt Modules
 
-core, gui, widgets, network, quickwidgets, quickcontrols2, virtualkeyboard, websockets, dbus + QtWebKit 5.212 (external)
+core, gui, widgets, network, virtualkeyboard, websockets, dbus, webkit, webkitwidgets (QtWebKit 5.212 — system `libqt5webkit5-dev`, or a custom build via `WEBKIT_SOURCE_DIR`)
+
+No quickwidgets/quickcontrols2 — the QML shell was removed.
 
 ## CLI Arguments
 
@@ -119,22 +123,23 @@ Defaults to `http://127.0.0.1` for both if not provided.
 
 ## Resources (src/robot-browser.qrc)
 
-Icons aliased under `qrc:/images/` (home, store, back, info, wifi-off, wifi-0 through wifi-4). QML files under `qrc:/qml/`.
+Icons aliased under `:/images/` (favicon, home, store, back, info, wifi-off, wifi-0 through wifi-4). Polyfill scripts under `:/js/` (polyfills.js, fetch.js, css-vars-ponyfill.min.js, stickyfill.min.js, smoothscroll.min.js). No QML is bundled.
 
 ## Deployment
 
-- **BBB:** Debian 12, linuxfb (no display server), systemd service. See `rootfs/` and `docs/DEPLOYMENT.md`.
+- **BBB:** Debian 12, linuxfb (no display server), systemd service. Input via evdev plugins with `grab=1` plus `QT_QPA_FB_NO_LIBINPUT=1` (see `rootfs/usr/lib/robot-browser/robotbrowser.sh`) — needed because the CX 2.4G receiver exposes a "Consumer Control" device with REL axes that Qt otherwise treats as a second mouse. See `rootfs/`, `docs/DEPLOYMENT.md`, `docs/BBB-SETUP.md`.
 - **CM4:** Debian 12, Wayland via labwc + LightDM. Three session modes: desktop, Chrome kiosk, robot-browser kiosk. See `rootfs-cm4/` and `docs/DEPLOYMENT.md`.
 - **WiFi:** Ezurio ST60-2230C (NXP 88W8997) over SDIO on both platforms. See `docs/WIFI-ROAMING.md`.
 
 ## Pending Work
 
-- Virtual keyboard layout path may need updating for Debian 12 Qt packages
+- Virtual keyboard layout path may need updating for Debian 12 Qt packages (`QT_IM_MODULE=qtvirtualkeyboard` is set in the launch scripts)
+- `src/qml/` is dead code from the pre-widgets UI and can be deleted
 
 ## Code Conventions
 
-- C++14 standard
+- C++14 standard, Qt 5.15 APIs only (no Qt 6)
 - Qt signal/slot connections (prefer new-style `connect(&obj, &Class::signal, ...)`)
-- C++ controllers expose state to QML via Q_PROPERTY with NOTIFY signals
-- QML actions call C++ via Q_INVOKABLE methods
+- Controllers expose state via Q_PROPERTY with NOTIFY signals; widgets connect to those signals directly
+- UI is Qt Widgets only — do not reintroduce QML
 - No address bar — kiosk mode with two fixed URLs only
