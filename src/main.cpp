@@ -2,6 +2,7 @@
 #include <QMainWindow>
 #include <QToolBar>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QAction>
 #include <QScreen>
 #include <QDebug>
@@ -15,6 +16,7 @@
 #include "digitalclock.h"
 #include "wifidialog.h"
 #include "infodialog.h"
+#include "virtualkeyboardpanel.h"
 
 int main(int argc, char** argv)
 {
@@ -51,9 +53,19 @@ int main(int argc, char** argv)
     WebPageController webPageController;
     webPageController.init(localUrl, remoteUrl, &debugSvr);
 
-    // Main window — QWebView as central widget (receives native events directly)
+    // Main window — web view fills the window, with the virtual keyboard
+    // sharing the central area so it pushes content up rather than covering it.
     QMainWindow window;
-    window.setCentralWidget(webPageController.webView());
+    QWidget* central = new QWidget;
+    QVBoxLayout* centralLayout = new QVBoxLayout(central);
+    centralLayout->setContentsMargins(0, 0, 0, 0);
+    centralLayout->setSpacing(0);
+    centralLayout->addWidget(webPageController.webView(), 1);
+
+    VirtualKeyboardPanel* keyboard = new VirtualKeyboardPanel;
+    centralLayout->addWidget(keyboard);
+
+    window.setCentralWidget(central);
 
     // Bottom toolbar (44px)
     QToolBar* toolbar = new QToolBar(&window);
@@ -133,6 +145,7 @@ int main(int argc, char** argv)
     window.setGeometry(screen->geometry());
     window.showFullScreen();
     webPageController.webView()->setFocus();
+    keyboard->setPanelWidth(screen->geometry().width());
 
     return app.exec();
 }

@@ -24,6 +24,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Network
     WebSockets
     WebEngineWidgets
+    QuickWidgets
     DBus
 )
 
@@ -40,6 +41,7 @@ add_executable(robot-browser
     wifidialog.h
     infodialog.h
     rebootdialog.h
+    virtualkeyboardpanel.h
 
     main.cpp
     webpage.cpp
@@ -66,6 +68,7 @@ target_link_libraries(robot-browser PRIVATE
     Qt6::Network
     Qt6::WebSockets
     Qt6::WebEngineWidgets
+    Qt6::QuickWidgets
     Qt6::DBus
 )
 
