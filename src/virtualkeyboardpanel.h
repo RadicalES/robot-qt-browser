@@ -66,6 +66,16 @@ public:
         }
         connect(root, rootMeta->property(propIndex).notifySignal(),
                 this, metaObject()->method(slotIndex));
+
+        // Drive the widget height from the QML root explicitly.
+        //
+        // When the keyboard activates, its height is still 0 — the QML binding
+        // has not evaluated yet — so relying on the size hint to propagate
+        // afterwards is a race the layout sometimes loses, leaving the panel
+        // collapsed even though the keyboard was asked for. Following
+        // heightChanged and setting a fixed height re-runs the layout the
+        // moment the real height is known.
+        connect(root, SIGNAL(heightChanged()), this, SLOT(onRootHeightChanged()));
     }
 
     // Match the keyboard to the window width. InputPanel derives its height
@@ -77,6 +87,12 @@ public:
     }
 
 private slots:
+    void onRootHeightChanged()
+    {
+        if (QQuickItem* root = rootObject())
+            setFixedHeight(int(root->height()));
+    }
+
     void onKeyboardActiveChanged()
     {
         QQuickItem* root = rootObject();

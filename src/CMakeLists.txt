@@ -43,6 +43,7 @@ add_executable(robot-browser
     rebootdialog.h
     dialogstyle.h
     pagefocusguard.h
+    kioskstyle.h
     virtualkeyboardpanel.h
 
     main.cpp

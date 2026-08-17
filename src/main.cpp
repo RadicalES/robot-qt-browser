@@ -20,10 +20,13 @@
 #include "virtualkeyboardpanel.h"
 #include "pagefocusguard.h"
 #include "dialogstyle.h"
+#include "kioskstyle.h"
 
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
+    // Raise the keyboard on the FIRST tap of an input, not the second.
+    app.setStyle(new KioskStyle);
     app.setOrganizationName("Radical Electronic Systems");
     app.setApplicationName("RobotBrowser");
     app.setApplicationVersion("2.1");
