@@ -152,7 +152,7 @@ KeyboardStyle {
                 sourceSize.width: 159 * keyIconScale
                 sourceSize.height: 88 * keyIconScale
                 smooth: false
-                source: resourcePrefix + "images/backspace-868482.svg"
+                source: resourcePrefix + "images/backspace-d9d9d9.svg"
             }
         }
         states: [
@@ -197,7 +197,7 @@ KeyboardStyle {
                 sourceSize.width: 144 * keyIconScale
                 sourceSize.height: 144 * keyIconScale
                 smooth: false
-                source: resourcePrefix + "images/globe-868482.svg"
+                source: resourcePrefix + "images/globe-d9d9d9.svg"
             }
         }
         states: [
@@ -262,11 +262,11 @@ KeyboardStyle {
                     case EnterKeyAction.Send:
                     case EnterKeyAction.Next:
                     case EnterKeyAction.Done:
-                        return resourcePrefix + "images/check-868482.svg"
+                        return resourcePrefix + "images/check-d9d9d9.svg"
                     case EnterKeyAction.Search:
-                        return resourcePrefix + "images/search-868482.svg"
+                        return resourcePrefix + "images/search-d9d9d9.svg"
                     default:
-                        return resourcePrefix + "images/enter-868482.svg"
+                        return resourcePrefix + "images/enter-d9d9d9.svg"
                     }
                 }
             }
@@ -339,7 +339,7 @@ KeyboardStyle {
                 sourceSize.width: 144 * keyIconScale
                 sourceSize.height: 127 * keyIconScale
                 smooth: false
-                source: resourcePrefix + "images/hidekeyboard-868482.svg"
+                source: resourcePrefix + "images/hidekeyboard-d9d9d9.svg"
             }
         }
         states: [
@@ -384,7 +384,7 @@ KeyboardStyle {
                 sourceSize.width: 144 * keyIconScale
                 sourceSize.height: 134 * keyIconScale
                 smooth: false
-                source: resourcePrefix + "images/shift-868482.svg"
+                source: resourcePrefix + "images/shift-d9d9d9.svg"
             }
             states: [
                 State {
@@ -541,7 +541,7 @@ KeyboardStyle {
             Text {
                 id: modeKeyText
                 text: control.displayText
-                color: "#d9d9d9"
+                color: "yellow"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
@@ -610,7 +610,7 @@ KeyboardStyle {
                 sourceSize.width: hwrKeyIconSize.width * keyIconScale
                 sourceSize.height: hwrKeyIconSize.height * keyIconScale
                 smooth: false
-                source: resourcePrefix + (keyboard.handwritingMode ? "images/textmode-868482.svg" : "images/handwriting-868482.svg")
+                source: resourcePrefix + (keyboard.handwritingMode ? "images/textmode-d9d9d9.svg" : "images/handwriting-d9d9d9.svg")
             }
         }
         states: [

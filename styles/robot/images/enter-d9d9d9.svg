@@ -5,9 +5,9 @@
 <g>
 	<rect x="-394" y="111" fill="none" width="211" height="80"/>
 	<g>
-		<rect x="-384.8" y="144.8" fill="#868482" width="201.8" height="12.3"/>
-		<rect x="-195.3" y="121.7" fill="#868482" width="12.3" height="35.3"/>
-		<polygon fill="#868482" points="-349.5,111 -349.5,190.8 -394,151.7 		"/>
+		<rect x="-384.8" y="144.8" fill="#d9d9d9" width="201.8" height="12.3"/>
+		<rect x="-195.3" y="121.7" fill="#d9d9d9" width="12.3" height="35.3"/>
+		<polygon fill="#d9d9d9" points="-349.5,111 -349.5,190.8 -394,151.7 		"/>
 	</g>
 </g>
 </svg>
