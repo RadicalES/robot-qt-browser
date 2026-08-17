@@ -117,6 +117,14 @@ int main(int argc, char** argv)
             wifiButton->setIcon(QIcon(QString(":/images/wifi-%1.png").arg(level)));
     });
 
+    // Kiosk focus policy: web content owns keyboard focus, the toolbar never
+    // takes it. Without this the first QToolButton holds focus from startup, so
+    // the web view never becomes the input-method focus object and the virtual
+    // keyboard is never raised for page input fields.
+    for (QToolButton* button : toolbar->findChildren<QToolButton*>())
+        button->setFocusPolicy(Qt::NoFocus);
+    webPageController.webView()->setFocusPolicy(Qt::StrongFocus);
+
     // Load initial page
     webPageController.loadRemote();
 
@@ -124,6 +132,7 @@ int main(int argc, char** argv)
     QScreen* screen = app.primaryScreen();
     window.setGeometry(screen->geometry());
     window.showFullScreen();
+    webPageController.webView()->setFocus();
 
     return app.exec();
 }
