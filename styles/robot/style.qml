@@ -489,7 +489,7 @@ KeyboardStyle {
             Text {
                 id: symbolKeyText
                 text: control.displayText
-                color: "white"
+                color: "yellow"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
@@ -497,7 +497,7 @@ KeyboardStyle {
                 font {
                     family: fontFamily
                     weight: Font.Normal
-                    pixelSize: 44 * scaleHint
+                    pixelSize: 110 * scaleHint
                     capitalization: Font.AllUppercase
                 }
             }
@@ -541,7 +541,7 @@ KeyboardStyle {
             Text {
                 id: modeKeyText
                 text: control.displayText
-                color: "white"
+                color: "yellow"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 anchors.fill: parent
@@ -549,7 +549,7 @@ KeyboardStyle {
                 font {
                     family: fontFamily
                     weight: Font.Normal
-                    pixelSize: 44 * scaleHint
+                    pixelSize: 110 * scaleHint
                     capitalization: Font.AllUppercase
                 }
             }

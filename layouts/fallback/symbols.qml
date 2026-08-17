@@ -2,12 +2,12 @@
  * Numbers and symbols pages for the robot kiosk keyboard.
  *
  * Three keypads in total: letters (main.qml), numbers, symbols. The letters
- * page reaches numbers via its [123] key, numbers reaches symbols via [#+=],
+ * page reaches numbers via its [123] key, numbers reaches symbols via [SYM],
  * and either returns to letters via [ABC].
  *
  * Rules for this keyboard:
- *  - one character per key; only the page-toggle keys carry a word or a
- *    symbol group as their label
+ *  - one character per key; only the page-toggle keys carry a word, and they
+ *    are named after the page they open: ABC, 123, SYM
  *  - the number pad uses four keys per row so the targets stay large
  *  - only the symbols production actually uses. The stock Qt page carried
  *    maths signs, fractions, four currencies and an emoticon.
@@ -50,7 +50,7 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_8; text: "8" }
                 Key { key: Qt.Key_9; text: "9" }
                 ModeKey {
-                    displayText: "#+="
+                    displayText: "SYM"
                     onClicked: secondPage = true
                 }
             }
