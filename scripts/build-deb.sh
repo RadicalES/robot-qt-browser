@@ -77,6 +77,14 @@ chmod 644 "$STAGE/etc/robot-browser/browser.config"
 cp "${PROJECT_DIR}/rootfs/etc/udev/rules.d/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 
+# Custom virtual keyboard style (red lettering, from the T420 terminal).
+# Must sit at QtQuick/VirtualKeyboard/Styles/<name> under a QML import root.
+if [ -d "${PROJECT_DIR}/styles/robot" ]; then
+    STYLE_DIR="$STAGE/usr/share/robot-browser/qml/QtQuick/VirtualKeyboard/Styles/robot"
+    mkdir -p "$STYLE_DIR"
+    cp -r "${PROJECT_DIR}/styles/robot/"* "$STYLE_DIR/"
+fi
+
 # Virtual keyboard layouts
 if [ -d "${PROJECT_DIR}/layouts" ]; then
     mkdir -p "$STAGE/usr/share/robot-browser/layouts"

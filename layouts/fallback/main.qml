@@ -38,65 +38,17 @@ KeyboardLayout {
     keyWeight: 160
 
     KeyboardRow {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        Layout.alignment: Qt.AlignHCenter
+        //Layout.preferredHeight : 100
+        //Layout.preferredWidth : 800
+        //Layout.fillWidth: true
+        //Layout.fillHeight: true
+        //Layout.alignment: Qt.AlignHCenter
 
         KeyboardColumn {
-            Layout.fillHeight: false
+            //Layout.fillHeight: false
 
             KeyboardRow {
-                Layout.preferredHeight : 30
-
-                Key {
-                    key: Qt.Key_0
-                    text: "0"
-                }
-                Key {
-                    key: Qt.Key_1
-                    text: "1"
-                }
-                Key {
-                    key: Qt.Key_2
-                    text: "2"
-                }
-                Key {
-                    key: Qt.Key_3
-                    text: "3"
-                }
-                Key {
-                    key: Qt.Key_4
-                    text: "4"
-                }
-                Key {
-                    key: Qt.Key_5
-                    text: "5"
-                }
-                Key {
-                    key: Qt.Key_6
-                    text: "6"
-                }
-
-                Key {
-                    key: Qt.Key_7
-                    text: "7"
-                }
-                Key {
-                    key: Qt.Key_8
-                    text: "8"
-                }
-                Key {
-                    key: Qt.Key_9
-                    text: "9"
-                }
-                Key {
-                    key: Qt.Key_Period
-                    text: "."
-                }
-            }
-
-            KeyboardRow {
-                Layout.preferredHeight : 30
+                //Layout.preferredHeight : 30
                 Key {
                     key: Qt.Key_Q
                     text: "q"
@@ -140,8 +92,8 @@ KeyboardLayout {
                 BackspaceKey {}
             }
             KeyboardRow {
-                Layout.preferredHeight : 30
-                keyWeight: 150
+                //Layout.preferredHeight : 30
+                //keyWeight: 150
                 Key {
                     key: Qt.Key_A
                     text: "a"
@@ -187,8 +139,8 @@ KeyboardLayout {
                 }
             }
             KeyboardRow {
-                Layout.preferredHeight : 30
-                keyWeight: 150
+                //Layout.preferredHeight : 30
+                //keyWeight: 150
                 ShiftKey {}
                 Key {
                     key: Qt.Key_Z
@@ -218,7 +170,19 @@ KeyboardLayout {
                     key: Qt.Key_M
                     text: "m"
                 }
-                HideKeyboardKey {
+                // Mode cycle: letters -> numbers -> symbols -> letters.
+                // Numeric input mode loads numbers.qml, whose "#+=" key
+                // continues on to symbols.
+                // Mode cycle step 1: letters -> numbers.
+                //
+                // SymbolModeKey rather than a mode/input-mode key: the numbers
+                // and digits layouts are selected from the focused field's
+                // input hints, not from inputMode, so a key cannot switch to
+                // them. Symbol mode can be toggled freely, and its first page
+                // is the number pad — see symbols.qml.
+                SymbolModeKey {
+                    displayText: "123"
+                    weight: 160
                 }
                 SpaceKey {
                     weight: 450

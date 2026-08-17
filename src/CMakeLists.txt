@@ -56,8 +56,13 @@ add_executable(robot-browser
     robot-browser.qrc
 )
 
+# Where the packaged QML import root lives (custom virtual keyboard style).
+set(ROBOT_BROWSER_QML_DIR "/usr/share/robot-browser/qml" CACHE STRING
+    "Install path of the shipped QML import root")
+
 target_compile_definitions(robot-browser PRIVATE
     APP_VERSION="${APP_VERSION}"
+    ROBOT_BROWSER_QML_DIR="${ROBOT_BROWSER_QML_DIR}"
     QT_DEPRECATED_WARNINGS
 )
 

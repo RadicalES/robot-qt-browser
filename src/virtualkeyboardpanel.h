@@ -3,6 +3,7 @@
 
 #include <QQuickWidget>
 #include <QQuickItem>
+#include <QQmlEngine>
 #include <QMetaProperty>
 #include <QDebug>
 
@@ -24,9 +25,14 @@ public:
     explicit VirtualKeyboardPanel(QWidget* parent = nullptr)
         : QQuickWidget(parent)
     {
+        // The custom "robot" keyboard style ships with the package rather than
+        // with Qt, so its import root has to be added before the QML loads.
+        // Harmless when the directory is absent — QtVirtualKeyboard then falls
+        // back to its default style.
+        engine()->addImportPath(QStringLiteral(ROBOT_BROWSER_QML_DIR));
+
         // The widget takes its size from the QML root, whose height tracks the
-        // keyboard and collapses to zero when inactive. Sizing the other way
-        // round would squash the key rows.
+        // keyboard. Sizing the other way round would squash the key rows.
         setResizeMode(QQuickWidget::SizeViewToRootObject);
         setAttribute(Qt::WA_AlwaysStackOnTop);
         // Never take Qt focus. A QQuickWidget grabs focus when clicked, which
