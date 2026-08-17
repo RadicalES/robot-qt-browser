@@ -43,7 +43,6 @@ public:
         setFocusPolicy(Qt::NoFocus);
         setClearColor(Qt::transparent);
         setSource(QUrl(QStringLiteral("qrc:/qml/virtualkeyboard.qml")));
-        hide();
 
         // Bind to the QML property's notify signal through the meta-object.
         // A SIGNAL("keyboardActiveChanged()") string does not match the signal
@@ -83,11 +82,14 @@ private slots:
         QQuickItem* root = rootObject();
         const bool active = root && root->property("keyboardActive").toBool();
         if (active && parentWidget()) {
-            // Re-apply the width on every show: a hidden QQuickWidget stops
-            // updating its scene, so the root can return with a stale size.
+            // Re-apply the width on every show, in case the window resized
+            // while the keyboard was collapsed.
             root->setWidth(parentWidget()->width());
         }
-        setVisible(active);
+
+        qInfo() << "VirtualKeyboardPanel: active=" << active
+                << "rootHeight=" << (root ? root->height() : -1)
+                << "widgetHeight=" << height();
 
         if (!active) {
             // Resync the platform input context. When a dialog takes focus the

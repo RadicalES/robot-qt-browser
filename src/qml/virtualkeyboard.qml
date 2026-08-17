@@ -31,12 +31,14 @@ Item {
     // was removed); it was 0.62 when that layout had four rows.
     property real heightRatio: 0.465
 
-    // Width is set from C++ to the window width; height follows the keyboard.
-    // Height is unconditional: collapsing it to zero when inactive left the
-    // QQuickWidget's size hint stuck at zero, so the keyboard never grew back.
-    // The widget is hidden from C++ instead.
+    // Width is set from C++ to the window width; height follows the keyboard,
+    // collapsing to zero when it is not wanted.
+    //
+    // The widget is never hidden — hiding a QQuickWidget stops its scene
+    // updating, and the keyboard then came back with no height at all even
+    // though the input method had asked for it.
     width: 800
-    height: inputPanel.height
+    height: inputPanel.active ? inputPanel.height : 0
 
     Component.onCompleted: {
         // The T420 terminal's keyboard: red lettering on dark keys. Shipped in
