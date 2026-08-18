@@ -4,6 +4,66 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.0.0] - 2026-08-18
+
+Rendering engine replaced. Nothing about the 2.x line carries over.
+
+### Engine
+
+- Replaced QtWebKit 5.212 with **Qt 6 + QtWebEngine** (Chromium 102)
+- Removed all JS/CSS polyfills: `fetch`, `Object.values`/`entries`,
+  `URLSearchParams`, CSS custom properties, `position: sticky` and smooth
+  scroll are native in Chromium, so the shims and the two-phase injection that
+  delivered them are gone
+- Replaced the hand-rolled cookie jar with a persistent `QWebEngineProfile`
+- Build moved from qmake to CMake — Debian's Qt 6 ships no aarch64 mkspec
+
+### Platforms
+
+- **Dropped the BeagleBone Black (armhf) target.** QtWebEngine needs EGL/GLES
+  and cannot run on linuxfb
+- Runs on CM4 and Raspberry Pi 5 (arm64, Bookworm) under an X11 kiosk session.
+  Wayland is not usable: Qt 6 refuses the client-side virtual keyboard there,
+  and these terminals are touch-only
+
+### On-screen keyboard
+
+- Restored the T420 keyboard — three pages (letters, numbers, symbols), the
+  custom red-on-dark style, one character per key, touch-sized targets
+- Hosted in-app, because Debian's Qt 6 QtVirtualKeyboard has no desktop
+  integration compiled in and creates no panel of its own
+- Added a toolbar button to show and hide it manually
+- Fixed four separate defects that each produced "the keyboard does not come
+  up": the input method following the active window across dialogs, dialogs
+  opening over a live keyboard, dialogs retaining focus after hiding, and the
+  software input panel needing a second tap
+
+### Networking
+
+- Added wired network support with its own toolbar icon, distinguishing "no
+  cable" from "cable connected, no address"
+- Added IPv4 settings — DHCP or fixed address, netmask, gateway, DNS — shared
+  between wired and wireless
+- Rate-limited WiFi scanning against NetworkManager's `LastScan`
+- The provisioning hotspot is no longer reported as a network connection
+- Ships a polkit rule so the kiosk user can apply network changes
+
+### Interface
+
+- Toolbar and dialogs sized for touch; icons redrawn flat in a single tone
+- Load progress shown on the page's bottom edge
+- Offline reported inline instead of in a modal dialog
+
+### Packaging
+
+- Runs standalone from `/etc/robot-browser/browser.config`: URLs, and
+  `NETWORK_WIFI`/`NETWORK_LAN` to select what a terminal offers (`auto`, `on`,
+  `off`). Command-line arguments still override, so a provisioning layer
+  integrates without this package knowing it exists
+- The systemd service is no longer enabled on install — session-launched
+  terminals would get a second instance fighting for the display
+- Published to https://packages.radicales.net for bookworm/arm64
+
 ## [2.1.0] - 2026-03-02
 
 ### Added
