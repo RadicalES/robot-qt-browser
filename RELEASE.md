@@ -4,6 +4,31 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.0.1] - 2026-08-18
+
+### Added
+
+- **SCADA server status in the toolbar.** Mirrors the desktop tray indicator
+  the kiosk session cannot show: grey when no server or service is detected,
+  orange when the terminal is not provisioned, green when connected. Reads the
+  same `/run/robot` files robot-scada-client publishes, so it needs no socket,
+  no D-Bus, and not even the client package — a terminal without it shows grey.
+  `ONLINE` with a stale `last_ok` reports as offline, so a dead link cannot
+  read as working.
+- **Provisioning MAC in the SCADA dialog.** Provisioning means reading the MAC
+  off the screen; until now that needed a shell. Taken from the wired
+  interface, which is what the server keys on.
+- **The Robot mascot head**, traced from robot-scada-client's tray pixmaps into
+  SVG so it stays sharp at both toolbar and dialog sizes. Heads the indicator,
+  the SCADA dialog and the Info dialog.
+
+### Changed
+
+- Tighter toolbar spacing. With WiFi, LAN and the SCADA head all shown the row
+  is nine buttons plus the clock, which overflowed a 720px panel. The padding
+  gave way, not the 48px icons — the touch targets are unchanged.
+
+
 ## [3.0.0] - 2026-08-18
 
 Rendering engine replaced. Nothing about the 2.x line carries over.
