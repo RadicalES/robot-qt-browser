@@ -48,6 +48,8 @@ add_executable(robot-browser
     appconfig.h
     dialogstyle.h
     pagefocusguard.h
+    scadaindicator.h
+    robothead.h
     kioskstyle.h
     virtualkeyboardpanel.h
 

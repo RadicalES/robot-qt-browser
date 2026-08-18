@@ -2,6 +2,7 @@
 #include "rebootdialog.h"
 #include "systemcontroller.h"
 #include "dialogstyle.h"
+#include "robothead.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -17,10 +18,21 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     auto* layout = new QVBoxLayout(this);
 
-    // Header
+    // Header: mascot plus title. The head carries the SCADA state, so the
+    // dialog says at a glance what the toolbar indicator says.
+    auto* headerRow = new QHBoxLayout;
+
+    m_head = new QLabel;
+    m_head->setFixedSize(56, 56);
+    setStatusColour(QColor("#9e9e9e"));
+    headerRow->addWidget(m_head);
+
     auto* header = new QLabel("System Info");
     header->setStyleSheet("font-size: 30px; font-weight: bold;");
-    layout->addWidget(header);
+    headerRow->addWidget(header);
+    headerRow->addStretch();
+
+    layout->addLayout(headerRow);
 
     // System info text
     auto* infoText = new QLabel(sysCtrl->systemInfo());
@@ -63,4 +75,9 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     layout->addLayout(buttonRow);
 
     DialogStyle::takeNoFocusExceptFields(this);
+}
+
+void InfoDialog::setStatusColour(const QColor& colour)
+{
+    m_head->setPixmap(RobotHead::pixmap(56, colour));
 }

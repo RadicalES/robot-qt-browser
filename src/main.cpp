@@ -6,6 +6,9 @@
 #include <QProgressBar>
 #include <QInputMethod>
 #include <QLabel>
+#include <QDialog>
+#include <QPushButton>
+#include <QHBoxLayout>
 #include <QTimer>
 #include <QAction>
 #include <QScreen>
@@ -23,6 +26,8 @@
 #include "infodialog.h"
 #include "virtualkeyboardpanel.h"
 #include "pagefocusguard.h"
+#include "scadaindicator.h"
+#include "robothead.h"
 #include "dialogstyle.h"
 #include "kioskstyle.h"
 #include "appconfig.h"
@@ -175,6 +180,12 @@ int main(int argc, char** argv)
     lanButton->setVisible(showLan && networkController.lanAvailable());
     toolbar->addWidget(lanButton);
 
+    // SCADA server status, mirroring the desktop tray indicator: grey when no
+    // server or service is detected, orange when the terminal is not
+    // provisioned, green when it is talking to a server.
+    ScadaIndicator* scadaIndicator = new ScadaIndicator;
+    toolbar->addWidget(scadaIndicator);
+
     // Manual keyboard toggle. The keyboard normally follows the focused field,
     // but an operator needs a way to dismiss it while reading, and a way to
     // raise it if it fails to appear.
@@ -238,8 +249,9 @@ int main(int argc, char** argv)
         refocusPage();
     });
     QObject::connect(infoAction, &QAction::triggered,
-                     [infoDialog, refocusPage]() {
+                     [infoDialog, scadaIndicator, refocusPage]() {
         DialogStyle::closeKeyboard();
+        infoDialog->setStatusColour(scadaIndicator->colour());
         infoDialog->exec();
         refocusPage();
     });
@@ -275,6 +287,51 @@ int main(int argc, char** argv)
     // showed "disconnected" indefinitely.
     updateLanIcon();
     updateWifiIcon();
+
+    QObject::connect(scadaIndicator, &QToolButton::clicked,
+                     [scadaIndicator, &window, refocusPage]() {
+        DialogStyle::closeKeyboard();
+        QDialog dialog(&window);
+        dialog.setWindowTitle("SCADA Server");
+        dialog.setStyleSheet("QDialog { background-color: #f0f0f0; }" + DialogStyle::sheet());
+        DialogStyle::widthToScreen(&dialog, 0.94);
+
+        auto* layout = new QVBoxLayout(&dialog);
+
+        auto* headerRow = new QHBoxLayout;
+        auto* head = new QLabel;
+        head->setPixmap(RobotHead::pixmap(56, scadaIndicator->colour()));
+        headerRow->addWidget(head);
+        auto* header = new QLabel("SCADA Server");
+        header->setStyleSheet("font-size: 28px; font-weight: bold;");
+        headerRow->addWidget(header);
+        headerRow->addStretch();
+        layout->addLayout(headerRow);
+
+        const QString station = scadaIndicator->station();
+        const QString server = scadaIndicator->serverUrl();
+        auto* body = new QLabel(
+            "Status: " + scadaIndicator->statusText() + "\n"
+            "Station: " + (station.isEmpty() ? QString("-") : station) + "\n"
+            "Server: " + (server.isEmpty() ? QString("-") : server));
+        body->setWordWrap(true);
+        body->setStyleSheet(
+            "font-family: monospace; font-size: 19px; background: white; "
+            "border: 1px solid #ccc; border-radius: 6px; padding: 14px;");
+        layout->addWidget(body);
+
+        auto* row = new QHBoxLayout;
+        row->addStretch();
+        auto* closeBtn = new QPushButton("Close");
+        closeBtn->setStyleSheet(DialogStyle::Colour::primary());
+        QObject::connect(closeBtn, &QPushButton::clicked, &dialog, &QDialog::accept);
+        row->addWidget(closeBtn);
+        layout->addLayout(row);
+
+        DialogStyle::takeNoFocusExceptFields(&dialog);
+        dialog.exec();
+        refocusPage();
+    });
 
     QObject::connect(keyboardButton, &QToolButton::clicked,
                      [keyboard, &webPageController]() {
