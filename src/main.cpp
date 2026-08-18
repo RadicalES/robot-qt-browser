@@ -81,19 +81,24 @@ int main(int argc, char** argv)
     offlineBanner->hide();
     centralLayout->addWidget(offlineBanner);
 
-    // Load progress. Without it, tapping Remote on a slow link looks like
-    // nothing happened and the operator taps again.
+    centralLayout->addWidget(webPageController.webView(), 1);
+
+    // Load progress, sitting on the bottom edge of the page. Without it,
+    // tapping Remote on a slow link looks like nothing happened and the
+    // operator taps again.
+    //
+    // Always present, never hidden: showing and hiding it resized the page
+    // under the operator's finger. Left full when idle, it reads as a divider
+    // between the page and the toolbar.
     QProgressBar* loadBar = new QProgressBar;
     loadBar->setRange(0, 100);
+    loadBar->setValue(100);
     loadBar->setTextVisible(false);
     loadBar->setFixedHeight(6);
     loadBar->setStyleSheet(
         "QProgressBar { background: #2b2b2b; border: none; }"
         "QProgressBar::chunk { background: #ff4500; }");
-    loadBar->hide();
     centralLayout->addWidget(loadBar);
-
-    centralLayout->addWidget(webPageController.webView(), 1);
 
     VirtualKeyboardPanel* keyboard = new VirtualKeyboardPanel;
     centralLayout->addWidget(keyboard);
@@ -249,7 +254,9 @@ int main(int argc, char** argv)
     QObject::connect(&webPageController, &WebPageController::loadingChanged,
                      [loadBar, offlineBanner, &webPageController]() {
         const bool loading = webPageController.loading();
-        loadBar->setVisible(loading);
+        // Empty it at the start of a load and fill it at the end, rather than
+        // showing and hiding the widget.
+        loadBar->setValue(loading ? 0 : 100);
         if (loading)
             offlineBanner->hide();
     });
