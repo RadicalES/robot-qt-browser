@@ -74,7 +74,7 @@ chmod 644 "$STAGE/usr/lib/systemd/system/robot-browser.service"
 cp "${PROJECT_DIR}/debian/browser.config" "$STAGE/etc/robot-browser/browser.config"
 chmod 644 "$STAGE/etc/robot-browser/browser.config"
 
-cp "${PROJECT_DIR}/rootfs/etc/udev/rules.d/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
+cp "${PROJECT_DIR}/packaging/udev/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 
 # Custom virtual keyboard style (red lettering, from the T420 terminal).

@@ -1,57 +1,76 @@
 # robot-qt-browser
 
-Kiosk browser and minimal desktop for the RadicalES Robot-T410, BeagleBone Black, and Raspberry Pi CM4.
+Kiosk browser for RadicalES robot terminals — Raspberry Pi CM4 and Pi 5.
 
 ## Overview
 
-Two-URL kiosk browser with WiFi status, network setup, reboot, and system info. Built with:
+Two-URL kiosk browser with WiFi and LAN setup, SCADA server status, system
+info and an on-screen keyboard. Built with:
 
-- **Qt 5.15 LTS** (C++14) on Debian 12 (Bookworm)
-- **QtWebKit 5.212** — custom build of the last open-source release ([source](https://github.com/qt/qtwebkit))
-- **QML UI shell** — bottom toolbar, popups, virtual keyboard overlay on top of QWebView
+- **Qt 6.4.2** (C++17) on Debian 12 (Bookworm)
+- **QtWebEngine** (Chromium 102) — Debian's `qt6-webengine-dev`
+- **Qt Widgets** UI — a bottom toolbar and dialogs around a `QWebEngineView`
+- **Qt Virtual Keyboard**, hosted in-process (Debian's Qt 6 build has no
+  desktop integration)
+
+The terminal shows two fixed pages and no address bar: a remote transaction URL
+(the landing page) and a local web UI. Everything else — network setup, system
+info, reboot — is in the toolbar.
 
 ## Building
 
-```bash
-cd src && qmake && make
+```sh
+./docker/build-cm4.sh              # arm64 cross-build → build-cm4/robot-browser
+./scripts/build-deb.sh arm64       # → build-deb/robot-browser_<version>-1_arm64.deb
 ```
 
-Cross-compile for target devices:
+Local amd64 build for UI work:
 
-```bash
-./docker/build-bbb.sh    # BeagleBone Black (armhf) → build-bbb/robot-browser
-./docker/build-cm4.sh    # Raspberry Pi CM4 (arm64) → build-cm4/robot-browser
+```sh
+cmake -B build-amd64 src -DCMAKE_BUILD_TYPE=Release && cmake --build build-amd64 -j$(nproc)
 ```
 
-See [WORKFLOW.md](WORKFLOW.md) for full development workflow, branching strategy, and deployment steps.
+See [WORKFLOW.md](WORKFLOW.md) for the full development, release and publishing
+workflow.
 
 ## Running
 
-```bash
-./robot-browser <remote_url> [local_url]
+```sh
+robot-browser [--config=PATH] [--wifi=auto|on|off] [--lan=...] [remote_url] [local_url]
 ```
 
-Both default to `http://127.0.0.1` if not provided. On the target device, the startup script `rootfs/home/root/RobotBrowser/robotbrowser.sh` handles touchscreen calibration, screen rotation, and environment setup.
+Settings come from `/etc/robot-browser/browser.config`, and anything on the
+command line overrides the file. Both URLs default to `http://127.0.0.1`.
+
+## Installing
+
+Published to the RadicalES package repository, so a terminal installs it like
+any other package:
+
+```sh
+sudo apt-get update && sudo apt-get install robot-browser
+```
+
+The package is self-contained: it configures itself from its own config file
+and needs no other Radical software present. A provisioning layer, where there
+is one, passes the URLs it holds as arguments.
 
 ## Architecture
 
-Hybrid widget + QML layout: QWebView renders web content underneath a transparent QQuickWidget overlay that provides the bottom toolbar (Home, Remote, Back, WiFi, Clock, Info buttons), confirmation popups, and the Qt Virtual Keyboard.
+`QWebEngineView` fills the window, with a `QToolBar` along the bottom (Home,
+Remote, Back, WiFi, LAN, SCADA status, keyboard toggle, clock, Info) and
+`QDialog` popups for settings. The virtual keyboard shares the central layout,
+so it pushes the page up rather than covering it.
 
-C++ controllers (`WebPageController`, `NetworkController`, `SystemController`) are registered as QML context properties and expose state via `Q_PROPERTY` / actions via `Q_INVOKABLE`.
-
-## Browser Compatibility
-
-QtWebKit 5.212 (Safari 10 era) has limited JS/CSS support. robot-browser injects polyfills to extend compatibility:
-
-- **JS polyfills** (before page scripts): fetch, URLSearchParams, Object.values/entries, Array.flat, NodeList.forEach
-- **CSS polyfills** (after DOM ready): CSS Variables (css-vars-ponyfill), position: sticky (stickyfill), smooth scrolling
-- **htmx**: fully compatible
-- **Alpine.js v2**: compatible (v3 requires Proxy — not available)
-
-See [docs/BROWSER-COMPATIBILITY.md](docs/BROWSER-COMPATIBILITY.md) for full test results. Run `docs/feature-test.html` in robot-browser to verify on a target device.
+C++ controllers — `WebPageController`, `NetworkController`, `SystemController`
+— expose state via `Q_PROPERTY` with NOTIFY signals, and the widgets connect to
+those signals directly. There is no QML UI: the only QML left is the virtual
+keyboard's own `InputPanel` and its layouts.
 
 ## Target Platforms
 
-- BeagleBone Black (ARM Cortex-A8, 512 MB RAM)
-- Raspberry Pi Compute Module 4
-- Debian 12 (Bookworm), Linux framebuffer (`linuxfb`)
+- Raspberry Pi CM4 and Pi 5, Debian 12 (Bookworm) arm64
+- X11 (Xwayland is fine) — QtWebEngine needs a GPU and a compositor
+
+The BeagleBone Black armhf target was retired at 3.0: QtWebEngine cannot run on
+`linuxfb`. The last BBB build is on the `webkit` branch.

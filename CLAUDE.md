@@ -4,142 +4,110 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kiosk-style browser application for embedded Linux (BeagleBone Black, Raspberry Pi CM4). Displays two web pages (a local URL and a remote transaction URL) with minimal desktop functions: WiFi status, network setup, reboot, system info. Built with Qt 5.15 LTS, a pure Qt Widgets UI shell, and QtWebKit 5.212 for web rendering. Targets Debian 12 (Bookworm).
+Kiosk-style browser application for embedded Linux (Raspberry Pi CM4, Pi 5). Displays two web pages (a remote transaction URL and a local web UI) with minimal desktop functions: WiFi and LAN setup, SCADA server status, reboot, system info. Built with Qt 6.4.2, a pure Qt Widgets UI, and QtWebEngine (Chromium 102). Targets Debian 12 (Bookworm) arm64.
+
+Development, release and publishing workflow: [WORKFLOW.md](WORKFLOW.md).
 
 ## Project Structure
 
 ```
 robot-qt-browser/
-├── src/                    # Application source code
-│   ├── *.cpp, *.h          # C++ sources and headers (widgets UI + controllers)
-│   ├── js/                 # JS/CSS polyfills injected into pages
-│   ├── qml/                # Legacy QML UI — no longer built (see Architecture)
-│   ├── images/             # Icons and images
-│   ├── robot-browser.pro        # qmake project file
-│   └── robot-browser.qrc        # Qt resource file
-├── docker/                 # Cross-compilation Docker setup
-│   ├── Dockerfile.bbb      # BBB armhf build container
-│   ├── Dockerfile.cm4      # CM4 arm64 build container
-│   ├── build-bbb.sh        # BBB build script
-│   └── build-cm4.sh        # CM4 build script
-├── rootfs/                 # BBB deployment overlay (linuxfb, systemd service)
-├── rootfs-cm4/             # CM4 deployment overlay (Wayland/labwc session)
-├── layouts/                # Qt Virtual Keyboard custom layouts
-└── docs/                   # Documentation
-    ├── DEPLOYMENT.md       # Platform deployment guide
-    └── WIFI-ROAMING.md     # WiFi roaming configuration
+├── src/                    # Application source
+│   ├── *.cpp, *.h          # C++ sources (widgets UI + controllers)
+│   ├── qml/                # virtualkeyboard.qml only — the keyboard's InputPanel
+│   ├── images/             # Icons
+│   ├── CMakeLists.txt      # Build definition
+│   └── robot-browser.qrc   # Qt resources
+├── layouts/                # Qt Virtual Keyboard layouts (three pages)
+├── styles/robot/           # Virtual keyboard style
+├── packaging/udev/         # Input device rules shipped by the package
+├── debian/                 # Package metadata, service unit, config, changelog
+├── docker/                 # arm64 cross-compilation (Dockerfile.cm4-qt6)
+├── rootfs-cm4-x11/         # Kiosk session overlay (LXDE-pi-robot, X11)
+├── scripts/                # build-deb, bump-version, publish-deb, setup-kiosk
+└── docs/                   # KIOSK-CM4, WIFI-ROAMING, qt6-wifi-integration
 ```
 
-## Version & Release
+## Build
 
-Single source of truth: `VERSION` file in project root. Injected at compile time via `APP_VERSION` define in `robot-browser.pro`.
+CMake, not qmake — Debian's Qt 6 ships no aarch64 mkspec, so the qmake
+cross-build the 2.x line used cannot work.
 
-```bash
-# Bump version
-./scripts/bump-version.sh patch          # 2.1.0 → 2.1.1
-./scripts/bump-version.sh minor          # 2.1.0 → 2.2.0
-./scripts/bump-version.sh 3.0.0          # Set explicit version
-
-# Create release (drafts notes into RELEASE.md, commits, tags)
-./release.sh                             # Interactive
-./release.sh --dry-run                   # Preview only
-
-# Push release (branch + tag to origin, triggers GitHub Actions)
-./push-release.sh
+```sh
+./docker/build-cm4.sh                # arm64 → build-cm4/
+./scripts/build-deb.sh arm64|amd64   # → build-deb/
+cmake -B build-amd64 src && cmake --build build-amd64 -j$(nproc)   # local
 ```
 
-Tag format: `{branch}-v{version}` (e.g. `dev-v2.1.0`). GitHub Actions auto-creates a release on tag push; marked pre-release if not on `master`.
-
-Branch workflow: `dev` → `beta` (testing) → `master` (production).
-
-## Build Commands
-
-```bash
-# Cross-compile for BeagleBone Black (armhf)
-./docker/build-bbb.sh
-
-# Cross-compile for Raspberry Pi CM4 (arm64)
-./docker/build-cm4.sh
-
-# Build Debian package
-./scripts/build-deb.sh arm64|armhf|amd64
-```
-
-Output binaries land in `build-bbb/`, `build-cm4/`, `build-amd64/` (gitignored).
-
-For local development (if Qt 5.15 + WebKit are installed):
-```bash
-cd build-amd64 && qmake ../src/robot-browser.pro && make
-```
+Qt 6 modules: Core, Gui, Widgets, Network, WebEngineWidgets, WebSockets, DBus, Quick, QuickWidgets. QtVirtualKeyboard is loaded at runtime as a QML module, not linked.
 
 ## Architecture
 
-**Pure Qt Widgets layout:** `KioskWebView` is the `QMainWindow` central widget, with a bottom `QToolBar` and `QDialog` popups. There is no QML — the previous transparent `QQuickWidget` overlay was removed because event forwarding into the web view was broken on linuxfb (events synthesized via `sendEvent` arrive non-spontaneous). `src/qml/` is still in the repo but is not referenced by `robot-browser.pro` or `.qrc`.
+**Pure Qt Widgets.** `QWebEngineView` is the central widget of a `QMainWindow`, with a bottom `QToolBar` and `QDialog` popups. The virtual keyboard shares the central layout so it pushes the page up rather than covering it. There is no QML UI — `src/qml/virtualkeyboard.qml` is the keyboard's `InputPanel` and nothing else.
 
 ```
 src/main.cpp
-├── QApplication + QWebSettings global config
+├── QApplication + KioskStyle (RSIP_OnMouseClick — keyboard on first tap)
 ├── QMainWindow
-│   ├── centralWidget: KioskWebView (QtWebKit) ← WebPageController
-│   └── bottom QToolBar (44px, dark stylesheet)
-│       [Home] [Remote] [Back] ──spacer── [WiFi icon] [DigitalClock] [Info]
+│   ├── central: [offline banner] [QWebEngineView] [load bar] [keyboard panel]
+│   └── bottom QToolBar (76px, 48px icons, #4d4d4d)
+│       [Home] [Remote] [Back] ──spacer── [WiFi] [LAN] [SCADA] [Keyboard] [Clock] [Info]
 │
-├── C++ Controllers (plain QObjects, wired to widget signals)
+├── Controllers (plain QObjects, wired to widget signals)
 │   ├── WebPageController  — loadLocal(), loadRemote(), reload(), goBack()
-│   ├── NetworkController  — WiFi management via NetworkManager D-Bus
+│   ├── NetworkController  — WiFi and LAN via NetworkManager D-Bus
 │   ├── SystemController   — reboot(), resetDefaults(), systemInfo()
 │   └── WebsockServer      — debug WebSocket server (port 7070)
 │
-└── Widgets UI (src/)
-    ├── digitalclock.h   — header-only QLabel clock, blinking colon, 1s timer
-    ├── wifidialog.*     — WiFi config: scan, connect, forget, signal, restart
-    ├── infodialog.*     — System info + reset defaults + reboot
-    └── rebootdialog.*   — Reboot confirmation (opened from InfoDialog)
+└── Widgets (src/)
+    ├── digitalclock.h        — header-only QLabel clock
+    ├── scadaindicator.h      — SCADA state from /run/robot, robot head icon
+    ├── virtualkeyboardpanel.h— hosts the keyboard's InputPanel in a QQuickWidget
+    ├── wifidialog.*          — WiFi scan, connect, forget, signal
+    ├── landialog.*           — wired link state and IPv4 config
+    ├── ipconfigdialog.*      — shared DHCP/static editor
+    ├── infodialog.*          — system info, reset defaults, reboot
+    └── rebootdialog.*        — reboot confirmation
 ```
 
-**Key C++ classes (all in `src/`):**
-- `KioskWebView` (`kioskwebview.h`, header-only) — QWebView subclass that eats `MouseMove` events while a button is held, so WebCore never starts a drag, and eats all drag/drop events. Works around linuxfb pixel artifacts from `QSimpleDrag` (Debian's QtWebKit 5.212 ships `ENABLE_DRAG_SUPPORT=ON`). Text selection is sacrificed — acceptable for kiosk.
-- `WebPageController` — owns KioskWebView + WebPage + CookieJar, exposes `webView()`. load/reload/back are Q_INVOKABLE; URL and loading state are Q_PROPERTY. Sets `AcceleratedCompositingEnabled = false` (required for linuxfb). Injects polyfills in two phases: JS (`js/polyfills.js`, `js/fetch.js`) on `javaScriptWindowObjectCleared` before page scripts run; CSS polyfills (css-vars-ponyfill, stickyfill, smoothscroll) activated on `loadFinished`.
-- `WebPage` — simplified QWebPage subclass. Navigation network check, proxy, HTTP auth dialog, JS console/alert forwarding to debug server.
-- `NetworkController` — WiFi management via NetworkManager D-Bus (system bus, raw QDBusInterface). Exposes signalLevel, connected, ssid, ipAddress, scanning, networks (QVariantList), error as Q_PROPERTY. Provides scan(), connectToNetwork(ssid, password), disconnectWifi(), forgetNetwork(ssid), restartWifi(). Uses 5-second polling + PropertiesChanged/AccessPointAdded/Removed D-Bus signals.
-- `SystemController` — reboot, factory reset, system info string.
-- `TestBrowserCookieJar` (`cookiejar.h/.cpp`) — disk-persisted cookies, 10-second debounced writes.
-- `WebsockServer` — WebSocket server for remote debug, JS console and alert broadcast.
-- `UnixSignalNotifier` — singleton converting SIGINT/SIGTERM to Qt signals for systemd shutdown.
+**Key classes (all in `src/`):**
+- `WebPageController` — owns the view, a `WebPage` and a persistent `QWebEngineProfile("robot-browser")` for cookies. Destruction order matters: the page must outlive nothing and the profile must outlive the page, so the destructor is explicit and the view is held in a `QPointer`. Refocuses the view on `loadFinished`.
+- `WebPage` — `QWebEnginePage` subclass. Navigation network check, HTTP auth dialog, JS console forwarding to the debug server. Emits `networkUnavailable()` instead of showing a modal; main.cpp shows an inline banner.
+- `VirtualKeyboardPanel` — hosts `qrc:/qml/virtualkeyboard.qml` in a `QQuickWidget` with `Qt::NoFocus`. Debian's Qt 6 QtVirtualKeyboard has **no desktop integration compiled in**, so the panel must be hosted by the application. Height follows the QML root; `isShowing()` queries the QML `keyboardActive` property, not widget visibility.
+- `KioskStyle` — `QProxyStyle` returning `RSIP_OnMouseClick`, so an input raises the keyboard on the first tap.
+- `DialogStyle` — shared dialog sizing (`sheet()`, `widthToScreen()`, `centerOnScreen()`), the colour set, `takeNoFocusExceptFields()` and `closeKeyboard()`.
+- `AppConfig` — reads `/etc/robot-browser/browser.config`; CLI arguments override it.
+- `ScadaIndicator` — polls `/run/robot` (status, last_ok, station, serverURL), the same files robot-scada-client's tray indicator reads. Needs no D-Bus, no socket and not even the client package.
+- `PageFocusGuard` — application event filter that reclaims page focus on tap.
+- `UnixSignalNotifier` — SIGINT/SIGTERM to Qt signals for clean shutdown.
 
-## Qt Modules
+**The keyboard's hard constraint:** the input method binds to the *active window*, not the focused widget. After any dialog closes, the main window must `raise()` and `activateWindow()` before the keyboard will work again — see `refocusPage()` in main.cpp. This cost five wrong diagnoses; do not "simplify" it away.
 
-core, gui, widgets, network, virtualkeyboard, websockets, dbus, webkit, webkitwidgets (QtWebKit 5.212 — system `libqt5webkit5-dev`, or a custom build via `WEBKIT_SOURCE_DIR`)
+## Configuration
 
-No quickwidgets/quickcontrols2 — the QML shell was removed.
+`/etc/robot-browser/browser.config`:
 
-## CLI Arguments
-
+```sh
+WB_REMOTE_URL=...     # [Remote] button and the landing page
+WB_LOCAL_URL=...      # [Home] button — the local web UI
+NETWORK_WIFI=on       # auto | on | off
+NETWORK_LAN=off       # auto | on | off
 ```
-robot-browser <remote_url> [local_url]
-```
 
-Defaults to `http://127.0.0.1` for both if not provided.
-
-## Resources (src/robot-browser.qrc)
-
-Icons aliased under `:/images/` (favicon, home, store, back, info, wifi-off, wifi-0 through wifi-4). Polyfill scripts under `:/js/` (polyfills.js, fetch.js, css-vars-ponyfill.min.js, stickyfill.min.js, smoothscroll.min.js). No QML is bundled.
+Deployments differ: T430 is wired, T440 is WiFi roaming, general terminals leave both on `auto`. The package is standalone — it must not depend on any other Radical software being installed.
 
 ## Deployment
 
-- **BBB:** Debian 12, linuxfb (no display server), systemd service. Input via evdev plugins with `grab=1` plus `QT_QPA_FB_NO_LIBINPUT=1` (see `rootfs/usr/lib/robot-browser/robotbrowser.sh`) — needed because the CX 2.4G receiver exposes a "Consumer Control" device with REL axes that Qt otherwise treats as a second mouse. See `rootfs/`, `docs/DEPLOYMENT.md`, `docs/BBB-SETUP.md`.
-- **CM4:** Debian 12, Wayland via labwc + LightDM. Three session modes: desktop, Chrome kiosk, robot-browser kiosk. See `rootfs-cm4/` and `docs/DEPLOYMENT.md`.
-- **WiFi:** Ezurio ST60-2230C (NXP 88W8997) over SDIO on both platforms. See `docs/WIFI-ROAMING.md`.
+Debian 12 arm64 under X11 (Xwayland is fine). QtWebEngine needs a GPU and a compositor, so `linuxfb` is not an option and the BeagleBone Black armhf target was retired at 3.0 — the last BBB build is on the `webkit` branch.
 
-## Pending Work
+The package ships a systemd unit but does **not** enable it: the kiosk session starts the browser, and an enabled service fights it. Restarting the browser means restarting `lightdm`.
 
-- Virtual keyboard layout path may need updating for Debian 12 Qt packages (`QT_IM_MODULE=qtvirtualkeyboard` is set in the launch scripts)
-- `src/qml/` is dead code from the pre-widgets UI and can be deleted
+See `rootfs-cm4-x11/`, `scripts/setup-kiosk-cm4.sh` and `docs/KIOSK-CM4.md`. WiFi hardware notes: `docs/WIFI-ROAMING.md`.
 
 ## Code Conventions
 
-- C++14 standard, Qt 5.15 APIs only (no Qt 6)
-- Qt signal/slot connections (prefer new-style `connect(&obj, &Class::signal, ...)`)
-- Controllers expose state via Q_PROPERTY with NOTIFY signals; widgets connect to those signals directly
-- UI is Qt Widgets only — do not reintroduce QML
-- No address bar — kiosk mode with two fixed URLs only
+- C++17, Qt 6 APIs only
+- New-style `connect(&obj, &Class::signal, ...)`
+- Controllers expose state via Q_PROPERTY with NOTIFY; widgets connect directly
+- UI is Qt Widgets only — do not reintroduce a QML UI
+- No address bar — two fixed URLs
