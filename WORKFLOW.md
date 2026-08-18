@@ -16,6 +16,9 @@ dev  →  beta  →  main
 | `beta` | Pre-release testing on target hardware. Also used for hotfixes to main |
 | `main` | Production — the code running on live terminals. Only merges, no direct development |
 
+This repository's release branch is still named `master`; the two names mean
+the same thing here, and the release and publish scripts accept either.
+
 **Packages published to the CDN are built from `main`.** A `.deb` on
 `packages.radicales.net` is what terminals install by `apt-get install`, so it
 must come from the released branch. Test builds from `dev` or `beta` go onto a
