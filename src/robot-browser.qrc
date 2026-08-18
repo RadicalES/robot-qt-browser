@@ -7,6 +7,9 @@
         <file alias="images/info.png">images/info.png</file>
         <file alias="images/wifi-off.png">images/wifi-off.png</file>
         <file alias="images/keyboard.png">images/keyboard.png</file>
+        <file alias="images/robot-head-off.svg">images/robot-head-off.svg</file>
+        <file alias="images/robot-head-warn.svg">images/robot-head-warn.svg</file>
+        <file alias="images/robot-head-ok.svg">images/robot-head-ok.svg</file>
         <file alias="images/lan-up.png">images/lan-up.png</file>
         <file alias="images/lan-down.png">images/lan-down.png</file>
         <file alias="images/wifi-0.png">images/wifi-0.png</file>

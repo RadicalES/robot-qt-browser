@@ -24,7 +24,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     m_head = new QLabel;
     m_head->setFixedSize(56, 56);
-    setStatusColour(QColor("#9e9e9e"));
+    setStatus(RobotHead::Off);
     headerRow->addWidget(m_head);
 
     auto* header = new QLabel("System Info");
@@ -77,7 +77,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     DialogStyle::takeNoFocusExceptFields(this);
 }
 
-void InfoDialog::setStatusColour(const QColor& colour)
+void InfoDialog::setStatus(RobotHead::Variant variant)
 {
-    m_head->setPixmap(RobotHead::pixmap(56, colour));
+    m_head->setPixmap(RobotHead::pixmap(56, variant));
 }

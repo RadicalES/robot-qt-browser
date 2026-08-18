@@ -251,7 +251,7 @@ int main(int argc, char** argv)
     QObject::connect(infoAction, &QAction::triggered,
                      [infoDialog, scadaIndicator, refocusPage]() {
         DialogStyle::closeKeyboard();
-        infoDialog->setStatusColour(scadaIndicator->colour());
+        infoDialog->setStatus(scadaIndicator->variant());
         infoDialog->exec();
         refocusPage();
     });
@@ -300,7 +300,7 @@ int main(int argc, char** argv)
 
         auto* headerRow = new QHBoxLayout;
         auto* head = new QLabel;
-        head->setPixmap(RobotHead::pixmap(56, scadaIndicator->colour()));
+        head->setPixmap(RobotHead::pixmap(56, scadaIndicator->variant()));
         headerRow->addWidget(head);
         auto* header = new QLabel("SCADA Server");
         header->setStyleSheet("font-size: 28px; font-weight: bold;");

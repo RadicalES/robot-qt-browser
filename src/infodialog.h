@@ -2,7 +2,7 @@
 #define INFODIALOG_H
 
 #include <QDialog>
-#include <QColor>
+#include "robothead.h"
 
 class QLabel;
 class SystemController;
@@ -14,7 +14,7 @@ public:
 
     // Recolours the mascot to the current SCADA state. Called before the dialog
     // is shown, so the head agrees with the toolbar indicator behind it.
-    void setStatusColour(const QColor& colour);
+    void setStatus(RobotHead::Variant variant);
 
 private:
     QLabel* m_head;

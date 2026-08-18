@@ -40,7 +40,7 @@ public:
     }
 
     State state() const { return m_state; }
-    QColor colour() const { return colourFor(m_state); }
+    RobotHead::Variant variant() const { return variantFor(m_state); }
     QString station() const { return read("station"); }
     QString serverUrl() const { return read("serverURL"); }
     QString statusText() const { return m_statusText; }
@@ -79,7 +79,7 @@ private slots:
         if (state != m_state || text != m_statusText) {
             m_state = state;
             m_statusText = text;
-            setIcon(QIcon(indicatorPixmap(state)));
+            setIcon(QIcon(RobotHead::pixmap(48, variantFor(state))));
             const QString site = station();
             setToolTip("SCADA server: " + text + (site.isEmpty() ? "" : " — " + site));
             emit stateChanged();
@@ -101,24 +101,13 @@ private:
         return QString::fromUtf8(file.readAll()).trimmed();
     }
 
-    static QColor colourFor(State state)
+    static RobotHead::Variant variantFor(State state)
     {
         switch (state) {
-        case Online:        return QColor("#4caf50");   // working
-        case Unprovisioned: return QColor("#ff9800");   // no station yet
-        default:            return QColor("#9e9e9e");   // no server/service
+        case Online:        return RobotHead::Ok;
+        case Unprovisioned: return RobotHead::Warn;
+        default:            return RobotHead::Off;
         }
-    }
-
-    // The same mascot head the desktop tray indicator shows, tinted per state.
-    static QPixmap indicatorPixmap(State state)
-    {
-        QPixmap pixmap(48, 48);
-        pixmap.fill(Qt::transparent);
-        QPainter painter(&pixmap);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.drawPixmap(0, 0, RobotHead::pixmap(48, colourFor(state)));
-        return pixmap;
     }
 
     State m_state;
