@@ -3,6 +3,8 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QProgressBar>
+#include <QLabel>
 #include <QTimer>
 #include <QAction>
 #include <QScreen>
@@ -67,6 +69,30 @@ int main(int argc, char** argv)
     QVBoxLayout* centralLayout = new QVBoxLayout(central);
     centralLayout->setContentsMargins(0, 0, 0, 0);
     centralLayout->setSpacing(0);
+    // Offline notice: an inline strip rather than a modal. A packhouse dead
+    // zone is routine, and a dialog would block the operator and steal focus
+    // from the page for something that fixes itself when they move.
+    QLabel* offlineBanner = new QLabel(
+        "No network — the page could not be loaded. It will work again once "
+        "the terminal is back in range.");
+    offlineBanner->setWordWrap(true);
+    offlineBanner->setStyleSheet(
+        "background: #ffa726; color: #4d4d4d; font-size: 20px; padding: 14px;");
+    offlineBanner->hide();
+    centralLayout->addWidget(offlineBanner);
+
+    // Load progress. Without it, tapping Remote on a slow link looks like
+    // nothing happened and the operator taps again.
+    QProgressBar* loadBar = new QProgressBar;
+    loadBar->setRange(0, 100);
+    loadBar->setTextVisible(false);
+    loadBar->setFixedHeight(6);
+    loadBar->setStyleSheet(
+        "QProgressBar { background: #2b2b2b; border: none; }"
+        "QProgressBar::chunk { background: #ff4500; }");
+    loadBar->hide();
+    centralLayout->addWidget(loadBar);
+
     centralLayout->addWidget(webPageController.webView(), 1);
 
     VirtualKeyboardPanel* keyboard = new VirtualKeyboardPanel;
@@ -214,7 +240,34 @@ int main(int argc, char** argv)
     // keyboard unable to appear for the rest of the session.
     app.installEventFilter(new PageFocusGuard(webPageController.webView(), &app));
 
-    // Load initial page
+    // Progress strip follows the load, and clears the offline notice when a
+    // load actually starts.
+    QObject::connect(&webPageController, &WebPageController::loadProgress,
+                     [loadBar](int percent) {
+        loadBar->setValue(percent);
+    });
+    QObject::connect(&webPageController, &WebPageController::loadingChanged,
+                     [loadBar, offlineBanner, &webPageController]() {
+        const bool loading = webPageController.loading();
+        loadBar->setVisible(loading);
+        if (loading)
+            offlineBanner->hide();
+    });
+
+    // Offline notice hides itself: by the time an operator reads it and looks
+    // up, it is usually stale.
+    QTimer* offlineTimer = new QTimer(&window);
+    offlineTimer->setSingleShot(true);
+    offlineTimer->setInterval(8000);
+    QObject::connect(offlineTimer, &QTimer::timeout, offlineBanner, &QLabel::hide);
+    QObject::connect(&webPageController, &WebPageController::networkUnavailable,
+                     [offlineBanner, offlineTimer]() {
+        offlineBanner->show();
+        offlineTimer->start();
+    });
+
+    // Load initial page. Remote is the landing page: the transaction page is
+    // where operators spend their time, Home is the exception.
     webPageController.loadRemote();
 
     // Show fullscreen for kiosk

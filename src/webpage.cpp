@@ -81,14 +81,7 @@ bool WebPage::acceptNavigationRequest(const QUrl& url, NavigationType type, bool
         }
     }
     if (!networkUp && !url.matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded)) {
-        QMessageBox box(m_dialogParent);
-        QFont f = box.font();
-        f.setPointSize(6);
-        box.setFont(f);
-        box.setWindowTitle(tr("Network Alert"));
-        box.setText("Network not Online!");
-        box.setStandardButtons(QMessageBox::Ok);
-        box.exec();
+        emit networkUnavailable();
         return false;
     }
 

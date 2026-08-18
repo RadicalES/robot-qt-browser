@@ -59,6 +59,12 @@ public:
     // child widget, so the page cannot reliably find the top-level window itself.
     void setDialogParent(QWidget* parent) { m_dialogParent = parent; }
 
+Q_SIGNALS:
+    // Navigation was blocked because no network interface is up. Reported
+    // rather than shown from here: a modal over the kiosk is a poor fit for a
+    // packhouse dead zone, which is routine and self-correcting.
+    void networkUnavailable();
+
 private Q_SLOTS:
     void onAuthenticationRequired(const QUrl& requestUrl, QAuthenticator* authenticator);
     void onFeaturePermissionRequested(const QUrl& securityOrigin, QWebEnginePage::Feature feature);

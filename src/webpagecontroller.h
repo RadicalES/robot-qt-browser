@@ -33,6 +33,8 @@ public:
 signals:
     void urlChanged();
     void loadingChanged();
+    void loadProgress(int percent);
+    void networkUnavailable();
 
 private slots:
     void onUrlChanged(const QUrl& url);

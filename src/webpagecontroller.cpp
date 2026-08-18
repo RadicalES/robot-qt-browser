@@ -52,6 +52,9 @@ WebPageController::WebPageController(QObject* parent)
     connect(m_page, &QWebEnginePage::urlChanged, this, &WebPageController::onUrlChanged);
     connect(m_page, &QWebEnginePage::loadStarted, this, &WebPageController::onLoadStarted);
     connect(m_page, &QWebEnginePage::loadFinished, this, &WebPageController::onLoadFinished);
+    connect(m_page, &QWebEnginePage::loadProgress, this, &WebPageController::loadProgress);
+    connect(m_page, &WebPage::networkUnavailable,
+            this, &WebPageController::networkUnavailable);
 }
 
 WebPageController::~WebPageController()
