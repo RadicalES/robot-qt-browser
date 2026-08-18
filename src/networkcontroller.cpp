@@ -1,4 +1,5 @@
 #include "networkcontroller.h"
+#include "nmdefs.h"
 
 #include <QFile>
 #include <QDBusConnection>
@@ -10,22 +11,7 @@
 #include <QUuid>
 #include <algorithm>
 
-static const char* NM_SERVICE   = "org.freedesktop.NetworkManager";
-static const char* NM_PATH      = "/org/freedesktop/NetworkManager";
-static const char* NM_IFACE     = "org.freedesktop.NetworkManager";
-static const char* NM_DEVICE    = "org.freedesktop.NetworkManager.Device";
-static const char* NM_WIRELESS  = "org.freedesktop.NetworkManager.Device.Wireless";
-static const char* NM_AP        = "org.freedesktop.NetworkManager.AccessPoint";
-static const char* NM_SETTINGS  = "org.freedesktop.NetworkManager.Settings";
-static const char* NM_SETTINGS_CONN = "org.freedesktop.NetworkManager.Settings.Connection";
-static const char* NM_IP4CONFIG = "org.freedesktop.NetworkManager.IP4Config";
-static const char* DBUS_PROPS   = "org.freedesktop.DBus.Properties";
-
-// NM D-Bus types
-typedef QMap<QString, QVariant> NMVariantMap;
-typedef QMap<QString, NMVariantMap> NMSettingsMap;
-Q_DECLARE_METATYPE(NMVariantMap)
-Q_DECLARE_METATYPE(NMSettingsMap)
+// NM names and settings types live in nmdefs.h, shared with the IPv4 code.
 
 static QVariant getProperty(const QString& path, const char* iface, const QString& prop)
 {
@@ -66,6 +52,7 @@ NetworkController::NetworkController(QObject* parent)
     qDBusRegisterMetaType<NMSettingsMap>();
 
     findWifiDevice();
+    findLanDevice();
 
     if (m_available) {
         // Listen for device property changes (state, active AP)
@@ -121,14 +108,88 @@ void NetworkController::findWifiDevice()
     }
 }
 
+void NetworkController::findLanDevice()
+{
+    QDBusInterface nm(NM_SERVICE, NM_PATH, NM_IFACE, QDBusConnection::systemBus());
+    if (!nm.isValid())
+        return;
+
+    QDBusReply<QList<QDBusObjectPath>> reply = nm.call("GetDevices");
+    if (!reply.isValid())
+        return;
+
+    for (const QDBusObjectPath& devPath : reply.value()) {
+        const uint type = getProperty(devPath.path(), NM_DEVICE, "DeviceType").toUInt();
+        if (type != NM_DEVICE_TYPE_ETHERNET)
+            continue;
+        m_lanDevicePath = devPath.path();
+        m_lanAvailable = true;
+
+        QDBusConnection::systemBus().connect(
+            NM_SERVICE, m_lanDevicePath, DBUS_PROPS, "PropertiesChanged",
+            this, SLOT(onDevicePropertiesChanged(QString,QVariantMap,QStringList)));
+
+        qDebug() << "NetworkController: LAN device" << m_lanDevicePath;
+        pollLanStatus();
+        return;
+    }
+    qDebug() << "NetworkController: no wired device";
+}
+
+void NetworkController::pollLanStatus()
+{
+    if (!m_lanAvailable)
+        return;
+
+    const uint state = getProperty(m_lanDevicePath, NM_DEVICE, "State").toUInt();
+    const bool connected = (state == NM_DEVICE_STATE_ACTIVATED);
+    // Carrier is the cable: reported even when no profile is up, which is what
+    // distinguishes "unplugged" from "plugged in but not configured".
+    const bool carrier = getProperty(m_lanDevicePath, NM_WIRED, "Carrier").toBool();
+
+    QString ip;
+    if (connected) {
+        const QString ip4Path = getProperty(m_lanDevicePath, NM_DEVICE, "Ip4Config")
+                                    .value<QDBusObjectPath>().path();
+        if (!ip4Path.isEmpty() && ip4Path != "/") {
+            const QVariant addressData = getProperty(ip4Path, NM_IP4CONFIG, "AddressData");
+            const QDBusArgument arg = addressData.value<QDBusArgument>();
+            QList<NMVariantMap> addresses;
+            arg >> addresses;
+            if (!addresses.isEmpty())
+                ip = addresses.first().value("address").toString();
+        }
+    }
+
+    if (connected != m_lanConnected || carrier != m_lanCarrier || ip != m_lanIpAddress) {
+        m_lanConnected = connected;
+        m_lanCarrier = carrier;
+        m_lanIpAddress = ip;
+        emit lanChanged();
+    }
+}
+
 void NetworkController::pollStatus()
 {
+    pollLanStatus();
+
     if (!m_available) return;
 
     // Device state
     uint state = getProperty(m_wifiDevicePath, NM_DEVICE, "State").toUInt();
     bool wasConnected = m_connected;
-    m_connected = (state == 100); // NM_DEVICE_STATE_ACTIVATED
+    m_connected = (state == NM_DEVICE_STATE_ACTIVATED);
+
+    // NM80211Mode 3 is AP: the radio is running the provisioning hotspot, not
+    // joined to anything. Reporting that as "connected" tells an operator the
+    // terminal is on the network when it has no uplink at all — on a single
+    // radio the two are mutually exclusive.
+    const uint mode = getProperty(m_wifiDevicePath, NM_WIRELESS, "Mode").toUInt();
+    const bool hotspot = (mode == 3);
+    if (hotspot != m_hotspotActive) {
+        m_hotspotActive = hotspot;
+        emit connectedChanged();
+    }
 
     if (m_connected) {
         // Active AP → SSID and signal

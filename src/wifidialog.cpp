@@ -1,6 +1,7 @@
 #include "wifidialog.h"
 #include "networkcontroller.h"
 #include "dialogstyle.h"
+#include "ipconfigdialog.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -148,7 +149,20 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
         accept();
     });
     footer->addWidget(restartBtn);
+
+    // Same IPv4 form the wired dialog uses: DHCP or a fixed address is a
+    // property of the connection, not of how the terminal is attached.
+    auto* ipBtn = new QPushButton("IP Settings");
+    ipBtn->setStyleSheet(DialogStyle::Colour::primary());
+    connect(ipBtn, &QPushButton::clicked, [this]() {
+        DialogStyle::closeKeyboard();
+        IpConfigDialog dlg(m_netCtrl->wifiDevicePath(), "WiFi IP Settings", this);
+        dlg.exec();
+        updateStatus();
+    });
+    footer->addWidget(ipBtn);
     footer->addStretch();
+
     auto* closeBtn = new QPushButton("Close");
     closeBtn->setStyleSheet(DialogStyle::Colour::primary());
     connect(closeBtn, &QPushButton::clicked, this, &QDialog::accept);
@@ -218,7 +232,16 @@ void WifiDialog::refreshNetworkList()
 
 void WifiDialog::updateStatus()
 {
-    if (m_netCtrl->connected()) {
+    // The provisioning hotspot reads as "connected" to NetworkManager, but the
+    // terminal has no uplink at all while it is up — the radio cannot run AP
+    // and station mode at once. Say so, rather than showing the setup SSID as
+    // though the operator were on the network.
+    if (m_netCtrl->hotspotActive()) {
+        m_statusBox->setStyleSheet("background: #fcf8e3; border-radius: 4px; padding: 12px;");
+        QString text = QString("Setup mode: %1").arg(m_netCtrl->ssid());
+        text += "\nNot connected to a network. Choose one below to go online.";
+        m_statusLabel->setText(text);
+    } else if (m_netCtrl->connected()) {
         m_statusBox->setStyleSheet("background: #dff0d8; border-radius: 4px; padding: 12px;");
         QString text = QString("Connected: %1").arg(m_netCtrl->ssid());
         if (!m_netCtrl->ipAddress().isEmpty())

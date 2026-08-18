@@ -16,6 +16,14 @@ class NetworkController : public QObject {
     Q_PROPERTY(bool scanning READ scanning NOTIFY scanningChanged)
     Q_PROPERTY(QVariantList networks READ networks NOTIFY networksChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
+    // LAN. The kiosk shows wired and wireless side by side in the toolbar, and
+    // both configure their IP settings through the same dialog.
+    Q_PROPERTY(bool lanAvailable READ lanAvailable NOTIFY lanChanged)
+    Q_PROPERTY(bool lanConnected READ lanConnected NOTIFY lanChanged)
+    Q_PROPERTY(bool lanCarrier READ lanCarrier NOTIFY lanChanged)
+    Q_PROPERTY(QString lanIpAddress READ lanIpAddress NOTIFY lanChanged)
+    // True while the provisioning hotspot is up rather than a real uplink.
+    Q_PROPERTY(bool hotspotActive READ hotspotActive NOTIFY connectedChanged)
 
 public:
     explicit NetworkController(QObject* parent = nullptr);
@@ -27,6 +35,16 @@ public:
     bool scanning() const { return m_scanning; }
     QVariantList networks() const { return m_networks; }
     QString error() const { return m_error; }
+
+    bool lanAvailable() const { return m_lanAvailable; }
+    bool lanConnected() const { return m_lanConnected; }
+    bool lanCarrier() const { return m_lanCarrier; }
+    QString lanIpAddress() const { return m_lanIpAddress; }
+    bool hotspotActive() const { return m_hotspotActive; }
+
+    // Device object paths, for the shared IPv4 settings dialog.
+    QString wifiDevicePath() const { return m_wifiDevicePath; }
+    QString lanDevicePath() const { return m_lanDevicePath; }
 
     Q_INVOKABLE void scan();
     Q_INVOKABLE void connectToNetwork(const QString& ssid, const QString& password);
@@ -42,6 +60,7 @@ signals:
     void scanningChanged();
     void networksChanged();
     void errorChanged();
+    void lanChanged();
 
 private slots:
     void onDevicePropertiesChanged(const QString& iface,
@@ -54,6 +73,8 @@ private slots:
 
 private:
     void findWifiDevice();
+    void findLanDevice();
+    void pollLanStatus();
     void updateActiveConnection();
     void updateAccessPoints();
     qint64 lastScanValue();         // raw NM LastScan, CLOCK_BOOTTIME ms, -1 if never
@@ -74,6 +95,13 @@ private:
     qint64 m_scanRequestedAt;       // LastScan when we asked, to spot completion
     int m_scanWaitElapsed;
     QTimer m_scanWaitTimer;
+
+    bool m_lanAvailable = false;
+    bool m_lanConnected = false;
+    bool m_lanCarrier = false;
+    QString m_lanDevicePath;
+    QString m_lanIpAddress;
+    bool m_hotspotActive = false;
     QVariantList m_networks;
     QString m_error;
     QTimer m_pollTimer;

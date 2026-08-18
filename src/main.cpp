@@ -16,6 +16,7 @@
 #include "unixsignalnotifier.h"
 #include "digitalclock.h"
 #include "wifidialog.h"
+#include "landialog.h"
 #include "infodialog.h"
 #include "virtualkeyboardpanel.h"
 #include "pagefocusguard.h"
@@ -103,6 +104,16 @@ int main(int argc, char** argv)
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
     toolbar->addWidget(wifiButton);
 
+    // LAN icon button, beside WiFi: the T430 terminals run wired, so the
+    // operator needs the same at-a-glance state and the same way in to
+    // settings for either link.
+    QToolButton* lanButton = new QToolButton;
+    lanButton->setIconSize(QSize(48, 48));
+    lanButton->setAutoRaise(true);
+    lanButton->setIcon(QIcon(":/images/lan-down.png"));
+    lanButton->setVisible(networkController.lanAvailable());
+    toolbar->addWidget(lanButton);
+
     // Clock
     DigitalClock* clock = new DigitalClock;
     toolbar->addWidget(clock);
@@ -112,6 +123,7 @@ int main(int argc, char** argv)
 
     // Dialogs
     WifiDialog* wifiDialog = new WifiDialog(&networkController, &window);
+    LanDialog* lanDialog = new LanDialog(&networkController, &window);
     InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
 
     // Connect toolbar actions to controllers
@@ -149,11 +161,26 @@ int main(int argc, char** argv)
         wifiDialog->exec();
         refocusPage();
     });
+    QObject::connect(lanButton, &QToolButton::clicked,
+                     [lanDialog, refocusPage]() {
+        DialogStyle::closeKeyboard();
+        lanDialog->exec();
+        refocusPage();
+    });
     QObject::connect(infoAction, &QAction::triggered,
                      [infoDialog, refocusPage]() {
         DialogStyle::closeKeyboard();
         infoDialog->exec();
         refocusPage();
+    });
+
+    // Wired state: shown only when the terminal has an ethernet port at all.
+    QObject::connect(&networkController, &NetworkController::lanChanged,
+                     [lanButton, &networkController]() {
+        lanButton->setVisible(networkController.lanAvailable());
+        lanButton->setIcon(QIcon(networkController.lanConnected()
+                                     ? ":/images/lan-up.png"
+                                     : ":/images/lan-down.png"));
     });
 
     // Update WiFi icon when signal level changes

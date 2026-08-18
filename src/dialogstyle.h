@@ -42,6 +42,8 @@ inline QString sheet()
         "              min-height: 34px; min-width: 90px; border: none; }"
         "QLineEdit { font-size: 22px; padding: 12px; border: 1px solid #bbb;"
         "            border-radius: 6px; }"
+        "QRadioButton { font-size: 26px; padding: 12px 0px; }"
+        "QRadioButton::indicator { width: 36px; height: 36px; }"
         "QListWidget { font-size: 20px; background: white; }"
         "QListWidget::item { padding: 16px 8px; }");
 }

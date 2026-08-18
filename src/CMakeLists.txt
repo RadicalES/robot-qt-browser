@@ -41,6 +41,10 @@ add_executable(robot-browser
     wifidialog.h
     infodialog.h
     rebootdialog.h
+    landialog.h
+    ipconfigdialog.h
+    ipconfig.h
+    nmdefs.h
     dialogstyle.h
     pagefocusguard.h
     kioskstyle.h
@@ -56,6 +60,9 @@ add_executable(robot-browser
     wifidialog.cpp
     infodialog.cpp
     rebootdialog.cpp
+    landialog.cpp
+    ipconfigdialog.cpp
+    ipconfig.cpp
     robot-browser.qrc
 )
 
