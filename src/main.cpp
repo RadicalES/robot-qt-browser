@@ -141,9 +141,13 @@ int main(int argc, char** argv)
     toolbar->setFloatable(false);
     toolbar->setIconSize(QSize(48, 48));
     toolbar->setFixedHeight(76);
+    // Tight spacing: with WiFi, LAN and the SCADA head all present the row is
+    // nine buttons plus the clock, which at a comfortable 10px gap and 60px
+    // buttons overflows a 720px panel. The 48px icons still give a finger-sized
+    // target on their own, so the padding around them is what gives way.
     toolbar->setStyleSheet(
-        "QToolBar { background: #4d4d4d; spacing: 10px; padding: 4px; border: none; }"
-        "QToolButton { border: none; padding: 8px; min-width: 60px; }"
+        "QToolBar { background: #4d4d4d; spacing: 2px; padding: 2px; border: none; }"
+        "QToolButton { border: none; padding: 3px; min-width: 54px; }"
         "QToolButton:pressed { background: #808080; border-radius: 6px; }");
     window.addToolBar(Qt::BottomToolBarArea, toolbar);
 
