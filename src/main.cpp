@@ -175,23 +175,31 @@ int main(int argc, char** argv)
     });
 
     // Wired state: shown only when the terminal has an ethernet port at all.
-    QObject::connect(&networkController, &NetworkController::lanChanged,
-                     [lanButton, &networkController]() {
+    auto updateLanIcon = [lanButton, &networkController]() {
         lanButton->setVisible(networkController.lanAvailable());
         lanButton->setIcon(QIcon(networkController.lanConnected()
                                      ? ":/images/lan-up.png"
                                      : ":/images/lan-down.png"));
-    });
+    };
+    QObject::connect(&networkController, &NetworkController::lanChanged, updateLanIcon);
 
-    // Update WiFi icon when signal level changes
-    QObject::connect(&networkController, &NetworkController::signalLevelChanged,
-                     [wifiButton, &networkController]() {
+    auto updateWifiIcon = [wifiButton, &networkController]() {
         int level = networkController.signalLevel();
         if (level < 0)
             wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
         else
             wifiButton->setIcon(QIcon(QString(":/images/wifi-%1.png").arg(level)));
-    });
+    };
+    QObject::connect(&networkController, &NetworkController::signalLevelChanged,
+                     updateWifiIcon);
+
+    // Seed both icons from the current state. NetworkController polls during
+    // construction, before these connections exist, so its first — and on a
+    // stable link, only — signal is emitted with nothing listening. Without
+    // this the icons keep whatever they were built with: a wired terminal
+    // showed "disconnected" indefinitely.
+    updateLanIcon();
+    updateWifiIcon();
 
     // Kiosk focus policy: web content owns keyboard focus, the toolbar never
     // takes it. Without this the first QToolButton holds focus from startup, so
