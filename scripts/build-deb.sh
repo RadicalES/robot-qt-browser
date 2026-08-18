@@ -101,7 +101,7 @@ Version: ${PKG_VERSION}-${PKG_REVISION}
 Architecture: ${ARCH}
 Maintainer: Radical Electronic Systems <info@radicalsystems.co.za>
 Installed-Size: ${INSTALLED_SIZE}
-Depends: libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6dbus6, libqt6websockets6, libqt6webenginewidgets6, libqt6quickwidgets6, libqt6qml6, libqt6quick6, qt6-virtualkeyboard-plugin, qml6-module-qtquick-virtualkeyboard, qml6-module-qtqml-workerscript, qml6-module-qt-labs-folderlistmodel, network-manager
+Depends: libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6dbus6, libqt6websockets6, libqt6svg6, libqt6webenginewidgets6, libqt6quickwidgets6, libqt6qml6, libqt6quick6, qt6-virtualkeyboard-plugin, qml6-module-qtquick-virtualkeyboard, qml6-module-qtqml-workerscript, qml6-module-qt-labs-folderlistmodel, network-manager
 Section: misc
 Priority: optional
 Description: Kiosk browser for embedded Linux robots

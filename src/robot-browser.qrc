@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <file>images/favicon.png</file>
         <file alias="images/home.png">images/home.png</file>
-        <file alias="images/store.png">images/store.png</file>
+        <file alias="images/store.svg">images/store.svg</file>
         <file alias="images/back.png">images/back.png</file>
         <file alias="images/info.png">images/info.png</file>
         <file alias="images/wifi-off.png">images/wifi-off.png</file>

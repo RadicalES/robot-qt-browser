@@ -143,7 +143,7 @@ int main(int argc, char** argv)
 
     // Navigation buttons
     QAction* homeAction = toolbar->addAction(QIcon(":/images/home.png"), "");
-    QAction* remoteAction = toolbar->addAction(QIcon(":/images/store.png"), "");
+    QAction* remoteAction = toolbar->addAction(QIcon(":/images/store.svg"), "");
     QAction* backAction = toolbar->addAction(QIcon(":/images/back.png"), "");
 
     // Spacer
