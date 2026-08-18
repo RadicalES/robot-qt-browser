@@ -1,14 +1,9 @@
-robot-browser (3.0.1-1) bookworm; urgency=medium
+robot-browser (3.0.2-1) bookworm; urgency=medium
 
-  * Show SCADA server status in the toolbar, read from the /run/robot files
-    robot-scada-client publishes: grey when no server or service is detected,
-    orange when the terminal is not provisioned, green when connected
-  * Show the provisioning MAC in the SCADA dialog, taken from the wired
-    interface, so a terminal can be provisioned without a shell
-  * Add the Robot mascot head as SVG, traced from the tray pixmaps, and use it
-    for the indicator and the Info dialog
-  * Tighten toolbar spacing so WiFi, LAN and the SCADA head all fit on a 720px
-    panel
+  * Add a $ key to the symbols keyboard page, replacing the quote key
+  * Add a Show/Hide toggle to the WiFi password field
+  * Tighten toolbar spacing so WiFi, LAN and the SCADA head all fit
+  * Retire the BeagleBone and labwc overlays, and the QtWebKit-era docs
 
- -- Jan Zwiegers <jan@radicalsystems.co.za>  Tue, 18 Aug 2026 16:15:00 +0200
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Tue, 18 Aug 2026 17:30:00 +0200
 
