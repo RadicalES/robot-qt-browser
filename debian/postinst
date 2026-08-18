@@ -6,8 +6,22 @@ if [ "$1" = "configure" ]; then
     udevadm control --reload-rules || true
     udevadm trigger || true
 
-    # Enable but don't start — user must configure appconfig first
-    systemctl enable robot-browser.service || true
+    # The service is installed but NOT enabled.
+    #
+    # Most deployments start the browser from a session — the kiosk session
+    # launcher execs it — and a systemd unit starting a second copy fights the
+    # first for the display. Enabling it is therefore a deployment decision,
+    # not something installing the package should assume:
+    #
+    #   systemctl enable --now robot-browser    # standalone, no session manager
+    #
+    # Previously this enabled the unit unconditionally, which meant every
+    # package upgrade re-armed a conflicting second instance.
+    if [ -z "$2" ]; then
+        echo "robot-browser: installed. The systemd service is not enabled."
+        echo "  Session-launched deployments need nothing further."
+        echo "  Standalone:  systemctl enable --now robot-browser"
+    fi
 fi
 
 #DEBHELPER#

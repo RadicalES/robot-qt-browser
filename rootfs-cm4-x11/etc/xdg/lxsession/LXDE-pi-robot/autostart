@@ -1,0 +1,15 @@
+# LXDE-pi-robot kiosk autostart.
+#
+# No panel, no desktop, no file manager — the browser is the whole session.
+# Mirrors the T430 rootfs autostart of the same name.
+
+# Screen must never blank or sleep on a kiosk.
+@xset s 0 0
+@xset s noblank
+@xset s noexpose
+@xset dpms 0 0 0
+
+# Touch-only terminal: hide the pointer.
+@unclutter -idle 0.1 -root
+
+@/etc/xdg/lxsession/LXDE-pi-robot/pi-app.sh

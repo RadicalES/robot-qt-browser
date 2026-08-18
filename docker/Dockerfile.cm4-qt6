@@ -1,0 +1,34 @@
+# Qt 6 + QtWebEngine cross-compilation for CM4 / Raspberry Pi 5 (arm64).
+#
+# Differs from Dockerfile.cm4 (Qt 5 + QtWebKit) in one structural way: Debian's
+# Qt 6 ships no aarch64 qmake mkspec, so the qmake + qt.conf redirect used by
+# build-cm4.sh does not work here. Qt 6 cross-builds go through CMake with
+# docker/toolchain-arm64.cmake and a QT_HOST_PATH for moc/rcc.
+
+FROM debian:12
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN dpkg --add-architecture arm64 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    # Cross toolchain + build tools (host)
+    crossbuild-essential-arm64 \
+    cmake \
+    ninja-build \
+    pkg-config \
+    file \
+    # Host Qt 6 — supplies moc/rcc/uic, which must run on the build machine
+    qt6-base-dev-tools \
+    qmake6 \
+    # Target Qt 6 for arm64
+    qt6-base-dev:arm64 \
+    qt6-webengine-dev:arm64 \
+    qt6-websockets-dev:arm64 \
+    qt6-declarative-dev:arm64 \
+    qt6-virtualkeyboard-dev:arm64 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Qt 6 requires the host tool prefix to be named explicitly when cross-compiling.
+ENV QT_HOST_PATH=/usr
+
+WORKDIR /build

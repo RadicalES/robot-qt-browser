@@ -17,16 +17,19 @@ else
 fi
 
 # --- Qt platform ---
-# Auto-detect: use wayland if available, fall back to linuxfb
-if [ -n "$WAYLAND_DISPLAY" ] || [ -n "$XDG_SESSION_TYPE" ] && [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+# Auto-detect the display stack. X11 is preferred where both are available:
+# Qt 6 refuses the on-screen keyboard on Wayland, and these terminals are
+# touch-only. With no display server at all, eglfs drives KMS/DRM directly.
+#
+# linuxfb is deliberately absent: QtWebEngine needs EGL/GLES and cannot run on
+# it, which is why the BeagleBone target was retired.
+if [ -n "$DISPLAY" ]; then
+    export QT_QPA_PLATFORM=xcb
+elif [ -n "$WAYLAND_DISPLAY" ] || [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     export QT_QPA_PLATFORM=wayland
     export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-elif [ -n "$DISPLAY" ]; then
-    export QT_QPA_PLATFORM=xcb
 else
-    export QT_QPA_PLATFORM=linuxfb:rotation=$WB_ANGLE
-    export QT_QPA_FB_DRM=1
-    export QT_QPA_FB_NO_LIBINPUT=1
+    export QT_QPA_PLATFORM=eglfs
 fi
 
 # --- Input devices ---

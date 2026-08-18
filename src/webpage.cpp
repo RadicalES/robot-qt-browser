@@ -40,33 +40,36 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QFont>
-#include <QtNetwork/QNetworkReply>
-#include <QtNetwork/QNetworkRequest>
+#include <QWebEngineProfile>
 #include <QtNetwork/QNetworkProxy>
 #include <QtNetwork/QNetworkInterface>
 
-WebPage::WebPage(QObject* parent)
-    : QWebPage(parent)
+WebPage::WebPage(QWebEngineProfile* profile, QObject* parent)
+    : QWebEnginePage(profile, parent)
     , m_debugServer(nullptr)
+    , m_dialogParent(nullptr)
 {
     applyProxy();
 
-    connect(networkAccessManager(), SIGNAL(authenticationRequired(QNetworkReply*, QAuthenticator*)),
-            this, SLOT(authenticationRequired(QNetworkReply*, QAuthenticator*)));
-    connect(this, SIGNAL(featurePermissionRequested(QWebFrame*, QWebPage::Feature)),
-            this, SLOT(requestPermission(QWebFrame*, QWebPage::Feature)));
+    connect(this, &QWebEnginePage::authenticationRequired,
+            this, &WebPage::onAuthenticationRequired);
+    connect(this, &QWebEnginePage::featurePermissionRequested,
+            this, &WebPage::onFeaturePermissionRequested);
 }
 
 void WebPage::applyProxy()
 {
-    QUrl proxyUrl(qgetenv("http_proxy"));
+    // QtWebEngine has no per-page QNetworkAccessManager — Chromium does its own
+    // networking, and honours only the application-wide proxy.
+    QUrl proxyUrl(QString::fromLocal8Bit(qgetenv("http_proxy")));
     if (proxyUrl.isValid() && !proxyUrl.host().isEmpty()) {
         int proxyPort = (proxyUrl.port() > 0) ? proxyUrl.port() : 8080;
-        networkAccessManager()->setProxy(QNetworkProxy(QNetworkProxy::HttpProxy, proxyUrl.host(), proxyPort));
+        QNetworkProxy::setApplicationProxy(
+            QNetworkProxy(QNetworkProxy::HttpProxy, proxyUrl.host(), proxyPort));
     }
 }
 
-bool WebPage::acceptNavigationRequest(QWebFrame* frame, const QNetworkRequest& request, NavigationType type)
+bool WebPage::acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame)
 {
     bool networkUp = false;
     for (const QNetworkInterface& iface : QNetworkInterface::allInterfaces()) {
@@ -77,53 +80,44 @@ bool WebPage::acceptNavigationRequest(QWebFrame* frame, const QNetworkRequest& r
             break;
         }
     }
-    if (!networkUp && !request.url().matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded)) {
-        QMessageBox box(view());
-        QFont f = box.font();
-        f.setPointSize(6);
-        box.setFont(f);
-        box.setWindowTitle(tr("Network Alert"));
-        box.setText("Network not Online!");
-        box.setStandardButtons(QMessageBox::Ok);
-        box.exec();
+    if (!networkUp && !url.matches(QUrl("http://127.0.0.1/"), QUrl::FullyDecoded)) {
+        emit networkUnavailable();
         return false;
     }
 
-    return QWebPage::acceptNavigationRequest(frame, request, type);
+    return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
 }
 
-QString WebPage::userAgentForUrl(const QUrl& url) const
-{
-    if (!m_userAgent.isEmpty())
-        return m_userAgent;
-    return QWebPage::userAgentForUrl(url);
-}
-
-void WebPage::javaScriptAlert(QWebFrame*, const QString& msg)
+void WebPage::javaScriptAlert(const QUrl& securityOrigin, const QString& msg)
 {
     if (m_debugServer)
         m_debugServer->sendWSMessage("ALERT:" + msg.trimmed());
 
-    QMessageBox box(view());
+    QMessageBox box(m_dialogParent);
     QFont f = box.font();
     f.setPointSize(6);
     box.setFont(f);
-    box.setWindowTitle(tr("JavaScript Alert - %1").arg(mainFrame()->url().host()));
+    box.setWindowTitle(tr("JavaScript Alert - %1").arg(securityOrigin.host()));
     box.setText(msg);
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
 }
 
-void WebPage::javaScriptConsoleMessage(const QString& message, int lineNumber, const QString& sourceID)
+void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
+                                       const QString& message,
+                                       int lineNumber,
+                                       const QString& sourceID)
 {
+    Q_UNUSED(level);
     QString ds = QString("%1:%2 : %3").arg(sourceID).arg(lineNumber).arg(message);
     if (m_debugServer)
         m_debugServer->sendWSMessage("CONSOLE: " + ds.trimmed());
 }
 
-void WebPage::authenticationRequired(QNetworkReply* reply, QAuthenticator* authenticator)
+void WebPage::onAuthenticationRequired(const QUrl& requestUrl, QAuthenticator* authenticator)
 {
-    QDialog* dialog = new QDialog(QApplication::activeWindow());
+    QDialog* dialog = new QDialog(m_dialogParent ? m_dialogParent
+                                                 : QApplication::activeWindow());
     dialog->setWindowTitle("HTTP Authentication");
 
     QGridLayout* layout = new QGridLayout(dialog);
@@ -131,7 +125,7 @@ void WebPage::authenticationRequired(QNetworkReply* reply, QAuthenticator* authe
 
     QLabel* messageLabel = new QLabel(dialog);
     messageLabel->setWordWrap(true);
-    messageLabel->setText(QString("Enter username and password for: %1").arg(reply->url().toString()));
+    messageLabel->setText(QString("Enter username and password for: %1").arg(requestUrl.toString()));
     layout->addWidget(messageLabel, 0, 1);
 
     QLabel* userLabel = new QLabel("Username:", dialog);
@@ -147,24 +141,28 @@ void WebPage::authenticationRequired(QNetworkReply* reply, QAuthenticator* authe
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, dialog);
-    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
-    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+    connect(buttonBox, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
     layout->addWidget(buttonBox, 3, 1);
 
     if (dialog->exec() == QDialog::Accepted) {
         authenticator->setUser(userInput->text());
         authenticator->setPassword(passInput->text());
+    } else {
+        // Cancelling must invalidate the authenticator, otherwise QtWebEngine
+        // retries with empty credentials instead of failing the request.
+        *authenticator = QAuthenticator();
     }
 
     delete dialog;
 }
 
-void WebPage::requestPermission(QWebFrame* frame, QWebPage::Feature feature)
+void WebPage::onFeaturePermissionRequested(const QUrl& securityOrigin, QWebEnginePage::Feature feature)
 {
-    setFeaturePermission(frame, feature, PermissionGrantedByUser);
+    setFeaturePermission(securityOrigin, feature, PermissionGrantedByUser);
 }
 
-QWebPage* WebPage::createWindow(QWebPage::WebWindowType)
+QWebEnginePage* WebPage::createWindow(QWebEnginePage::WebWindowType)
 {
     // In kiosk mode, new windows load in the same view
     return this;

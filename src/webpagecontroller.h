@@ -2,11 +2,13 @@
 #define WEBPAGECONTROLLER_H
 
 #include <QObject>
+#include <QPointer>
 #include <QUrl>
-#include "kioskwebview.h"
+#include <QWebEngineView>
 #include "webpage.h"
-#include "cookiejar.h"
 #include "websockserver.h"
+
+class QWebEngineProfile;
 
 class WebPageController : public QObject {
     Q_OBJECT
@@ -15,37 +17,39 @@ class WebPageController : public QObject {
 
 public:
     explicit WebPageController(QObject* parent = nullptr);
+    ~WebPageController() override;
 
     void init(const QUrl& localUrl, const QUrl& remoteUrl, WebsockServer* debugger);
-    KioskWebView* webView() { return m_webView; }
+    QWebEngineView* webView() { return m_webView; }
 
     QString currentUrl() const;
     bool loading() const { return m_loading; }
 
-    Q_INVOKABLE void loadLocal();
-    Q_INVOKABLE void loadRemote();
-    Q_INVOKABLE void reload();
-    Q_INVOKABLE void goBack();
+    void loadLocal();
+    void loadRemote();
+    void reload();
+    void goBack();
 
 signals:
     void urlChanged();
     void loadingChanged();
+    void loadProgress(int percent);
+    void networkUnavailable();
 
 private slots:
     void onUrlChanged(const QUrl& url);
     void onLoadStarted();
     void onLoadFinished(bool ok);
-    void onJavaScriptWindowObjectCleared();
 
 private:
-    QString loadResourceFiles(const QStringList& paths);
-
-    KioskWebView* m_webView;
+    QWebEngineProfile* m_profile;
+    // QPointer, not a raw pointer: the view is reparented into the main window,
+    // which is destroyed before this controller, so a raw pointer would dangle
+    // by the time the destructor runs.
+    QPointer<QWebEngineView> m_webView;
     WebPage* m_page;
     QUrl m_localUrl;
     QUrl m_remoteUrl;
-    QString m_jsPolyfills;
-    QString m_cssPolyfills;
     bool m_loading;
 };
 

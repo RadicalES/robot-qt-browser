@@ -16,8 +16,12 @@ PKG_FULL="${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}"
 ARCH="${1:-amd64}"
 
 case "$ARCH" in
-    arm64|armhf|amd64) ;;
-    *) echo "Usage: $0 <arm64|armhf|amd64>"; exit 1 ;;
+    arm64|amd64) ;;
+    armhf)
+        echo "ERROR: armhf (BeagleBone Black) is retired - QtWebEngine cannot"
+        echo "       target linuxfb. The last QtWebKit build is on the 'webkit' branch."
+        exit 1 ;;
+    *) echo "Usage: $0 <arm64|amd64>"; exit 1 ;;
 esac
 
 echo "=== Building robot-browser for ${ARCH} ==="
@@ -28,17 +32,13 @@ case "$ARCH" in
         "${PROJECT_DIR}/docker/build-cm4.sh"
         BINARY="${PROJECT_DIR}/build-cm4/robot-browser"
         ;;
-    armhf)
-        "${PROJECT_DIR}/docker/build-bbb.sh"
-        BINARY="${PROJECT_DIR}/build-bbb/robot-browser"
-        ;;
     amd64)
         echo "=== Building locally for amd64 ==="
         BUILD_DIR="${PROJECT_DIR}/build-amd64"
         mkdir -p "$BUILD_DIR"
         cd "$BUILD_DIR"
-        qmake "${PROJECT_DIR}/src/robot-browser.pro"
-        make -j$(nproc)
+        cmake "${PROJECT_DIR}/src" -DCMAKE_BUILD_TYPE=Release
+        cmake --build . -- -j$(nproc)
         BINARY="${BUILD_DIR}/robot-browser"
         cd "$PROJECT_DIR"
         ;;
@@ -77,6 +77,14 @@ chmod 644 "$STAGE/etc/robot-browser/browser.config"
 cp "${PROJECT_DIR}/rootfs/etc/udev/rules.d/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 
+# Custom virtual keyboard style (red lettering, from the T420 terminal).
+# Must sit at QtQuick/VirtualKeyboard/Styles/<name> under a QML import root.
+if [ -d "${PROJECT_DIR}/styles/robot" ]; then
+    STYLE_DIR="$STAGE/usr/share/robot-browser/qml/QtQuick/VirtualKeyboard/Styles/robot"
+    mkdir -p "$STYLE_DIR"
+    cp -r "${PROJECT_DIR}/styles/robot/"* "$STYLE_DIR/"
+fi
+
 # Virtual keyboard layouts
 if [ -d "${PROJECT_DIR}/layouts" ]; then
     mkdir -p "$STAGE/usr/share/robot-browser/layouts"
@@ -93,13 +101,13 @@ Version: ${PKG_VERSION}-${PKG_REVISION}
 Architecture: ${ARCH}
 Maintainer: Radical Electronic Systems <info@radicalsystems.co.za>
 Installed-Size: ${INSTALLED_SIZE}
-Depends: libqt5core5a, libqt5gui5, libqt5widgets5, libqt5network5, libqt5qml5, libqt5quick5, libqt5quickwidgets5, libqt5quickcontrols2-5, libqt5quicktemplates2-5, libqt5webkit5, libqt5websockets5, libqt5virtualkeyboard5, libqt5dbus5, qml-module-qtquick2, qml-module-qtquick-controls2, qml-module-qtquick-layouts, qml-module-qtquick-window2, qtvirtualkeyboard-plugin, network-manager
+Depends: libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6dbus6, libqt6websockets6, libqt6svg6, libqt6webenginewidgets6, libqt6quickwidgets6, libqt6qml6, libqt6quick6, qt6-virtualkeyboard-plugin, qml6-module-qtquick-virtualkeyboard, qml6-module-qtqml-workerscript, qml6-module-qt-labs-folderlistmodel, network-manager
 Section: misc
 Priority: optional
 Description: Kiosk browser for embedded Linux robots
  Two-URL kiosk browser with WiFi management, system info, and virtual
- keyboard. Built with Qt 5.15 and QtWebKit 5.212 for BeagleBone Black,
- Raspberry Pi CM4, and x86 platforms.
+ keyboard. Built with Qt 6 and QtWebEngine for Raspberry Pi CM4 and
+ Raspberry Pi 5.
 EOF
 
 # Step 6: Install maintainer scripts

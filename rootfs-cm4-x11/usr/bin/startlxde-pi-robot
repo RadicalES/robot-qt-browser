@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# startlxde-pi-robot - kiosk session entry point (X11).
+#
+# Mirrors the T430 rootfs session of the same name, trimmed to what this repo
+# needs: no setup_env, no robot-scada-client. lxsession runs the LXDE-pi-robot
+# profile, whose autostart launches pi-app.sh -> pi-browser.sh.
+#
+# X11 rather than Wayland is deliberate. Qt 6 refuses the client-side virtual
+# keyboard on Wayland ("qtvirtualkeyboard currently is not supported at
+# client-side"), and labwc offers no compositor-side input method, so an
+# on-screen keyboard is impossible under the labwc session. See issue #6.
+#
+# (C) 2017-2026, Radical Electronic Systems - www.radicalsystems.co.za
+
+if [ -z "$XDG_CONFIG_HOME" ]; then
+    export XDG_CONFIG_HOME="$HOME/.config"
+fi
+
+# Launch DBus if needed (NetworkManager access from the WiFi dialog).
+if which dbus-launch >/dev/null && test -z "$DBUS_SESSION_BUS_ADDRESS"; then
+    eval "$(dbus-launch --sh-syntax --exit-with-session)"
+fi
+
+exec /usr/bin/lxsession -s LXDE-pi-robot -e LXDE

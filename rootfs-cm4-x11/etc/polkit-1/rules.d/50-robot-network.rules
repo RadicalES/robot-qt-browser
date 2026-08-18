@@ -1,0 +1,25 @@
+// Let the kiosk user configure WiFi from the browser without sudo.
+//
+// NetworkManager's stock rules grant most of network-control to allow_active
+// only — an active local session. The kiosk runs on seat 0 and so may already
+// qualify, but a terminal that is provisioned over SSH, or a session polkit
+// does not consider active, would otherwise be unable to join a network at all.
+//
+// Reading state and scanning need no rule; this covers the writes:
+// creating/modifying a connection profile and bringing it up.
+//
+// Narrow and auditable on purpose: it names one user and four actions, and
+// survives NetworkManager upgrades. Ships in the rootfs overlay rather than the
+// application package, since it is a device policy decision.
+//
+// (C) 2017-2026, Radical Electronic Systems - www.radicalsystems.co.za
+
+polkit.addRule(function(action, subject) {
+    if (subject.user == "robot" &&
+        (action.id == "org.freedesktop.NetworkManager.settings.modify.system" ||
+         action.id == "org.freedesktop.NetworkManager.network-control" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-wifi" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.scan")) {
+        return polkit.Result.YES;
+    }
+});

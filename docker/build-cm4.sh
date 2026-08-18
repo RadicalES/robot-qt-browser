@@ -1,34 +1,37 @@
 #!/bin/sh
-# Cross-compile robot-browser for Raspberry Pi CM4 (arm64) inside Docker
+# Cross-compile robot-browser for Raspberry Pi CM4 / Pi 5 (arm64) inside Docker.
+#
+# Qt 6 + QtWebEngine. Uses CMake rather than qmake: Debian's Qt 6 ships no
+# linux-aarch64-gnu-g++ mkspec, so the qmake + qt.conf redirect this script
+# previously used for Qt 5 cannot work.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-IMAGE_NAME="rbrowser-cm4-build"
+IMAGE_NAME="rbrowser-cm4-qt6-build"
+OUT_DIR="$PROJECT_DIR/build-cm4"
 
 echo "=== Building Docker image ==="
-docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile.cm4" "$SCRIPT_DIR"
+docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile.cm4-qt6" "$SCRIPT_DIR"
 
-echo "=== Cross-compiling robot-browser ==="
+mkdir -p "$OUT_DIR"
+
+echo "=== Cross-compiling robot-browser (arm64) ==="
 docker run --rm \
     -v "$PROJECT_DIR:/src:ro" \
-    -v "$PROJECT_DIR/build-cm4:/build" \
+    -v "$OUT_DIR:/build" \
     "$IMAGE_NAME" \
     sh -c '
-        # Redirect qmake to arm64 Qt paths (qt.conf must sit next to real qmake binary)
-        cat > /usr/lib/qt5/bin/qt.conf <<QTCONF
-[Paths]
-Prefix = /usr/lib/aarch64-linux-gnu/qt5
-Headers = /usr/include/aarch64-linux-gnu/qt5
-Libraries = /usr/lib/aarch64-linux-gnu
-QTCONF
-
         cd /build
-        /usr/lib/qt5/bin/qmake /src/src/robot-browser.pro -spec linux-aarch64-gnu-g++
-        make -j$(nproc)
+        cmake /src/src \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=/src/docker/toolchain-arm64.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DQT_HOST_PATH=/usr
+        cmake --build . -- -j"$(nproc)"
     '
 
 echo "=== Done ==="
-echo "Binary: $PROJECT_DIR/build-cm4/robot-browser"
-file "$PROJECT_DIR/build-cm4/robot-browser" 2>/dev/null || true
+echo "Binary: $OUT_DIR/robot-browser"
+file "$OUT_DIR/robot-browser" 2>/dev/null || true

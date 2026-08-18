@@ -1,3 +1,29 @@
+robot-browser (3.0.0-1) bookworm; urgency=medium
+
+  * Replace QtWebKit 5.212 with Qt 6 + QtWebEngine (Chromium 102)
+  * Drop the BeagleBone Black armhf target: QtWebEngine cannot run on linuxfb
+  * Drop all JS/CSS polyfills — fetch, Object.values/entries, URLSearchParams,
+    CSS custom properties, position:sticky and smooth scroll are native in
+    Chromium, so the shims and their two-phase injection are gone
+  * Replace the hand-rolled cookie jar with a persistent QWebEngineProfile
+  * Build with CMake; Debian's Qt 6 ships no aarch64 qmake mkspec
+  * Host QtQuick.VirtualKeyboard's InputPanel in-app, since Debian's Qt 6
+    QtVirtualKeyboard has no desktop integration compiled in
+  * Restore the T420 keyboard: three pages, custom style, touch-sized keys,
+    with a toolbar button to show and hide it
+  * Add wired network support with its own toolbar icon, and IPv4 settings
+    (DHCP or fixed address) shared between wired and wireless
+  * Rate-limit WiFi scanning against NetworkManager's LastScan
+  * Distinguish the provisioning hotspot from a real uplink
+  * Size the toolbar and dialogs for touch
+  * Show load progress, and report offline inline rather than in a modal
+  * Read settings from /etc/robot-browser/browser.config so the package runs
+    standalone; NETWORK_WIFI and NETWORK_LAN select what a terminal offers
+  * Do not enable the systemd service on install: session-launched terminals
+    would get a second instance fighting for the display
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Tue, 18 Aug 2026 09:21:07 +0000
+
 robot-browser (2.1.0-1) bookworm; urgency=medium
 
   * Add NetworkManager D-Bus WiFi configuration UI

@@ -12,9 +12,9 @@ public:
         : QLabel(parent)
         , m_colonVisible(true)
     {
-        setStyleSheet("color: white; font-family: monospace; font-size: 16px;");
+        setStyleSheet("color: #d9d9d9; font-family: monospace; font-size: 24px;");
         setAlignment(Qt::AlignCenter);
-        setFixedWidth(50);
+        setFixedWidth(78);
         updateDisplay();
 
         connect(&m_timer, &QTimer::timeout, this, &DigitalClock::tick);

@@ -2,19 +2,18 @@
     <qresource prefix="/">
         <file>images/favicon.png</file>
         <file alias="images/home.png">images/home.png</file>
-        <file alias="images/store.png">images/store.png</file>
+        <file alias="images/store.svg">images/store.svg</file>
         <file alias="images/back.png">images/back.png</file>
         <file alias="images/info.png">images/info.png</file>
         <file alias="images/wifi-off.png">images/wifi-off.png</file>
+        <file alias="images/keyboard.png">images/keyboard.png</file>
+        <file alias="images/lan-up.png">images/lan-up.png</file>
+        <file alias="images/lan-down.png">images/lan-down.png</file>
         <file alias="images/wifi-0.png">images/wifi-0.png</file>
         <file alias="images/wifi-1.png">images/wifi-1.png</file>
         <file alias="images/wifi-2.png">images/wifi-2.png</file>
         <file alias="images/wifi-3.png">images/wifi-3.png</file>
         <file alias="images/wifi-4.png">images/wifi-4.png</file>
-<file>js/polyfills.js</file>
-        <file>js/fetch.js</file>
-        <file>js/css-vars-ponyfill.min.js</file>
-        <file>js/stickyfill.min.js</file>
-        <file>js/smoothscroll.min.js</file>
+        <file>qml/virtualkeyboard.qml</file>
     </qresource>
 </RCC>
