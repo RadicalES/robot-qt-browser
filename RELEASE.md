@@ -4,6 +4,29 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.0.2] - 2026-08-18
+
+### Added
+
+- **`$` on the symbols keyboard page**, replacing the quote key. It was absent
+  entirely, and there is no way to type a currency amount without it.
+- **Show/Hide toggle on the WiFi password field.** A WPA key is long, typed on
+  a virtual keyboard, in a packhouse — and a wrong one fails minutes later with
+  "connection failed", which reads as a hardware fault rather than a typo.
+
+### Changed
+
+- Tighter toolbar spacing. With WiFi, LAN and the SCADA head all shown the row
+  is nine buttons plus the clock, which overflowed a 720px panel. The padding
+  gave way, not the 48px icons, so the touch targets are unchanged.
+- Retired the BeagleBone `rootfs/` and the labwc `rootfs-cm4/` overlays, the
+  leftover QML from the removed QML UI, and the QtWebKit-era documentation.
+  All of it remains on the `webkit` branch.
+- `README.md` and `CLAUDE.md` rewritten against the Qt 6 build; `WORKFLOW.md`
+  rewritten for the dev → beta → main model, with CDN packages built from the
+  release branch only.
+
+
 ## [3.0.1] - 2026-08-18
 
 ### Added
