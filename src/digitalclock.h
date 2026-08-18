@@ -12,7 +12,7 @@ public:
         : QLabel(parent)
         , m_colonVisible(true)
     {
-        setStyleSheet("color: white; font-family: monospace; font-size: 24px;");
+        setStyleSheet("color: #d9d9d9; font-family: monospace; font-size: 24px;");
         setAlignment(Qt::AlignCenter);
         setFixedWidth(78);
         updateDisplay();
