@@ -99,7 +99,7 @@ KeyboardLayoutLoader {
                     displayText: "123"
                     onClicked: secondPage = false
                 }
-                Key { key: Qt.Key_Apostrophe; text: "'" }
+                Key { key: Qt.Key_Dollar; text: "$" }
                 Key { key: Qt.Key_Comma; text: "," }
                 Key { key: Qt.Key_Period; text: "." }
                 SpaceKey {}

@@ -39,6 +39,7 @@ private:
     QListWidget* m_networkList;
     QWidget* m_passwordRow;
     QLineEdit* m_passwordEdit;
+    QPushButton* m_revealBtn;
     QPushButton* m_connectBtn;
     QWidget* m_forgetRow;
     QLabel* m_forgetLabel;

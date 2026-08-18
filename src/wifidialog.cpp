@@ -71,7 +71,25 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     m_passwordEdit->setPlaceholderText("Password (min 8 chars)");
     m_passwordEdit->setStyleSheet("");
-    pwLayout->addWidget(m_passwordEdit);
+
+    // Reveal toggle. A WPA key is long, typed on a virtual keyboard, in a
+    // packhouse — and a wrong one fails minutes later with "connection
+    // failed", which reads as a hardware fault. Seeing what was typed is the
+    // difference between one attempt and several.
+    auto* pwFieldRow = new QHBoxLayout;
+    pwFieldRow->addWidget(m_passwordEdit, 1);
+    m_revealBtn = new QPushButton("Show");
+    m_revealBtn->setCheckable(true);
+    // Never take focus: the input method follows the active window, and a
+    // button that grabs focus drops the keyboard mid-entry.
+    m_revealBtn->setFocusPolicy(Qt::NoFocus);
+    m_revealBtn->setStyleSheet(DialogStyle::Colour::neutral());
+    connect(m_revealBtn, &QPushButton::toggled, [this](bool shown) {
+        m_passwordEdit->setEchoMode(shown ? QLineEdit::Normal : QLineEdit::Password);
+        m_revealBtn->setText(shown ? "Hide" : "Show");
+    });
+    pwFieldRow->addWidget(m_revealBtn);
+    pwLayout->addLayout(pwFieldRow);
 
     auto* pwBtnRow = new QHBoxLayout;
     m_connectBtn = new QPushButton("Connect");
@@ -294,6 +312,9 @@ void WifiDialog::showPasswordRow(const QString& /* ssid */)
 {
     m_forgetRow->setVisible(false);
     m_passwordEdit->clear();
+    // Start hidden every time, so a key left revealed does not stay on screen
+    // for the next network.
+    m_revealBtn->setChecked(false);
     m_connectBtn->setEnabled(false);
     m_passwordRow->setVisible(true);
     m_passwordEdit->setFocus();
