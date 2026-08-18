@@ -4,6 +4,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QProgressBar>
+#include <QInputMethod>
 #include <QLabel>
 #include <QTimer>
 #include <QAction>
@@ -174,6 +175,15 @@ int main(int argc, char** argv)
     lanButton->setVisible(showLan && networkController.lanAvailable());
     toolbar->addWidget(lanButton);
 
+    // Manual keyboard toggle. The keyboard normally follows the focused field,
+    // but an operator needs a way to dismiss it while reading, and a way to
+    // raise it if it fails to appear.
+    QToolButton* keyboardButton = new QToolButton;
+    keyboardButton->setIconSize(QSize(48, 48));
+    keyboardButton->setAutoRaise(true);
+    keyboardButton->setIcon(QIcon(":/images/keyboard.png"));
+    toolbar->addWidget(keyboardButton);
+
     // Clock
     DigitalClock* clock = new DigitalClock;
     toolbar->addWidget(clock);
@@ -265,6 +275,20 @@ int main(int argc, char** argv)
     // showed "disconnected" indefinitely.
     updateLanIcon();
     updateWifiIcon();
+
+    QObject::connect(keyboardButton, &QToolButton::clicked,
+                     [keyboard, &webPageController]() {
+        if (keyboard->isShowing()) {
+            keyboard->setForceVisible(false);
+            QGuiApplication::inputMethod()->hide();
+        } else {
+            // Focus the page first: with the panel up and nothing focused,
+            // keystrokes would go nowhere.
+            webPageController.webView()->setFocus();
+            keyboard->setForceVisible(true);
+            QGuiApplication::inputMethod()->show();
+        }
+    });
 
     // Kiosk focus policy: web content owns keyboard focus, the toolbar never
     // takes it. Without this the first QToolButton holds focus from startup, so

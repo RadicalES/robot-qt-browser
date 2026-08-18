@@ -78,6 +78,24 @@ public:
         connect(root, SIGNAL(heightChanged()), this, SLOT(onRootHeightChanged()));
     }
 
+    // Show the keyboard regardless of the input context, and hide it again.
+    // Driven by the toolbar button: an operator who cannot get the keyboard up
+    // has no other way out, and one who wants it gone while reading a page
+    // should not have to find somewhere neutral to tap.
+    void setForceVisible(bool force)
+    {
+        if (QQuickItem* root = rootObject())
+            root->setProperty("forceVisible", force);
+    }
+
+    // Not isVisible(): the widget is always visible and collapses to zero
+    // height instead, so widget visibility says nothing about the keyboard.
+    bool isShowing() const
+    {
+        const QQuickItem* root = rootObject();
+        return root && root->property("keyboardActive").toBool();
+    }
+
     // Match the keyboard to the window width. InputPanel derives its height
     // from this, so the widget resizes to suit.
     void setPanelWidth(int width)

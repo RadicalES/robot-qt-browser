@@ -19,7 +19,12 @@ Item {
     id: root
 
     // Mirrored to C++ so the widget can show/hide itself in the layout.
-    property bool keyboardActive: inputPanel.active
+    property bool keyboardActive: inputPanel.active || forceVisible
+
+    // Set from the toolbar's keyboard button. Shows the panel even when the
+    // input context has not activated it — the manual override for when the
+    // keyboard does not come up on its own.
+    property bool forceVisible: false
 
     // Keyboard height as a fraction of the panel width. The style's own
     // 2560x800 design ratio yields rows too short to hit on a touch screen at
@@ -38,7 +43,7 @@ Item {
     // updating, and the keyboard then came back with no height at all even
     // though the input method had asked for it.
     width: 800
-    height: inputPanel.active ? inputPanel.height : 0
+    height: (inputPanel.active || forceVisible) ? inputPanel.height : 0
 
     Component.onCompleted: {
         // The T420 terminal's keyboard: red lettering on dark keys. Shipped in
@@ -52,7 +57,7 @@ Item {
         id: inputPanel
         width: root.width
         anchors.bottom: parent.bottom
-        visible: active
+        visible: active || root.forceVisible
 
         // Stretch the key rows to a usable height. keyboardDesignHeight is the
         // reference the style scales against, so lowering it relative to the

@@ -6,6 +6,7 @@
         <file alias="images/back.png">images/back.png</file>
         <file alias="images/info.png">images/info.png</file>
         <file alias="images/wifi-off.png">images/wifi-off.png</file>
+        <file alias="images/keyboard.png">images/keyboard.png</file>
         <file alias="images/lan-up.png">images/lan-up.png</file>
         <file alias="images/lan-down.png">images/lan-down.png</file>
         <file alias="images/wifi-0.png">images/wifi-0.png</file>
