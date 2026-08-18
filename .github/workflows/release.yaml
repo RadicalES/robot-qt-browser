@@ -10,7 +10,8 @@ name: Release
 on:
   push:
     tags:
-      - '*-v*'
+      - 'v*'          # releases from main
+      - '*-v*'        # pre-releases from dev/beta
 
 permissions:
   contents: write
@@ -26,9 +27,17 @@ jobs:
         id: meta
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          # Tag format: {branch}-v{version} (e.g., dev-v2.1.0)
-          BRANCH="${TAG%-v*}"
-          VERSION="${TAG#*-v}"
+          # vX.Y.Z is a release from main; {branch}-vX.Y.Z is a pre-release.
+          if [[ "$TAG" == v* ]]; then
+            BRANCH="main"
+            VERSION="${TAG#v}"
+            PRERELEASE="false"
+          else
+            BRANCH="${TAG%-v*}"
+            VERSION="${TAG#*-v}"
+            PRERELEASE="true"
+          fi
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -65,5 +74,5 @@ jobs:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: "${{ steps.meta.outputs.branch }} v${{ steps.meta.outputs.version }}"
           body_path: /tmp/release-notes.md
-          prerelease: ${{ steps.meta.outputs.branch != 'master' }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
           generate_release_notes: false

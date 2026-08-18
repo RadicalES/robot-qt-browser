@@ -15,7 +15,14 @@ VERSION_FILE="$SCRIPT_DIR/VERSION"
 
 VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-TAG="${BRANCH}-v${VERSION}"
+# Releases from the release branch are tagged plain vX.Y.Z; everything else is
+# branch-prefixed, so a pre-release tag can never be mistaken for a release.
+# Both branch names are accepted while the rename from master to main is
+# outstanding.
+case "$BRANCH" in
+    main|master) TAG="v${VERSION}" ;;
+    *)           TAG="${BRANCH}-v${VERSION}" ;;
+esac
 
 echo "Version:  $VERSION"
 echo "Branch:   $BRANCH"
