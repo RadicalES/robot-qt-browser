@@ -39,7 +39,7 @@ static QVariantMap getAllProperties(const QString& path, const char* iface)
     return QVariantMap();
 }
 
-NetworkController::NetworkController(QObject* parent)
+NetworkController::NetworkController(bool wifiEnabled, bool lanEnabled, QObject* parent)
     : QObject(parent)
     , m_signalLevel(-1)
     , m_connected(false)
@@ -51,8 +51,10 @@ NetworkController::NetworkController(QObject* parent)
     qDBusRegisterMetaType<NMVariantMap>();
     qDBusRegisterMetaType<NMSettingsMap>();
 
-    findWifiDevice();
-    findLanDevice();
+    if (wifiEnabled)
+        findWifiDevice();
+    if (lanEnabled)
+        findLanDevice();
 
     if (m_available) {
         // Listen for device property changes (state, active AP)
@@ -80,7 +82,9 @@ NetworkController::NetworkController(QObject* parent)
         pollStatus();
         qDebug() << "NetworkController: initialized on" << m_wifiDevicePath;
     } else {
-        qWarning() << "NetworkController: no WiFi device found via NetworkManager";
+        qWarning() << (wifiEnabled
+                           ? "NetworkController: no WiFi device found via NetworkManager"
+                           : "NetworkController: WiFi disabled by configuration");
     }
 }
 

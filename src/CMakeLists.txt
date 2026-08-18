@@ -45,6 +45,7 @@ add_executable(robot-browser
     ipconfigdialog.h
     ipconfig.h
     nmdefs.h
+    appconfig.h
     dialogstyle.h
     pagefocusguard.h
     kioskstyle.h
@@ -63,6 +64,7 @@ add_executable(robot-browser
     landialog.cpp
     ipconfigdialog.cpp
     ipconfig.cpp
+    appconfig.cpp
     robot-browser.qrc
 )
 

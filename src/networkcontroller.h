@@ -26,7 +26,10 @@ class NetworkController : public QObject {
     Q_PROPERTY(bool hotspotActive READ hotspotActive NOTIFY connectedChanged)
 
 public:
-    explicit NetworkController(QObject* parent = nullptr);
+    // wifiEnabled/lanEnabled come from the deployment config. When a link type
+    // is off the device is never looked up, so no polling, no scanning and no
+    // D-Bus traffic for hardware this terminal is not meant to use.
+    NetworkController(bool wifiEnabled, bool lanEnabled, QObject* parent = nullptr);
 
     int signalLevel() const { return m_signalLevel; }
     bool connected() const { return m_connected; }

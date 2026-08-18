@@ -24,6 +24,7 @@
 #include "pagefocusguard.h"
 #include "dialogstyle.h"
 #include "kioskstyle.h"
+#include "appconfig.h"
 
 int main(int argc, char** argv)
 {
@@ -37,15 +38,36 @@ int main(int argc, char** argv)
     // Engine settings and persistent storage are configured per-profile in
     // WebPageController — QtWebEngine has no equivalent of QWebSettings globals.
 
-    // Parse URLs: robot-browser <remote_url> [local_url]
-    QUrl localUrl("http://127.0.0.1");
-    QUrl remoteUrl("http://127.0.0.1");
+    // Settings: built-in defaults, then the package's own config file, then the
+    // command line. The package is installed standalone from the CDN, so it
+    // runs from the file alone; a provisioning layer integrates by passing what
+    // it holds as arguments, without this needing to know that layer exists.
+    //
+    //   robot-browser [--config=PATH] [--wifi=auto|on|off] [--lan=...]
+    //                 [remote_url] [local_url]
+    AppConfig config;
+    QStringList positional;
+    QString configPath = AppConfig::defaultPath();
+    const QStringList args = app.arguments();
+    for (int i = 1; i < args.size(); ++i) {
+        const QString arg = args.at(i);
+        if (arg.startsWith("--config="))
+            configPath = arg.mid(strlen("--config="));
+        else if (!arg.startsWith("--"))
+            positional << arg;
+    }
+    config.loadFile(configPath);
+    for (int i = 1; i < args.size(); ++i) {
+        if (args.at(i).startsWith("--"))
+            config.applyArgument(args.at(i));
+    }
+    if (positional.size() > 0)
+        config.setRemoteUrl(positional.at(0));
+    if (positional.size() > 1)
+        config.setLocalUrl(positional.at(1));
 
-    QStringList args = app.arguments();
-    if (args.size() > 1)
-        remoteUrl = QUrl(args.at(1));
-    if (args.size() > 2)
-        localUrl = QUrl(args.at(2));
+    const QUrl remoteUrl(config.remoteUrl());
+    const QUrl localUrl(config.localUrl());
 
     // Unix signal handling for systemd
     UnixSignalNotifier::instance()->installSignalHandler(SIGINT);
@@ -57,7 +79,8 @@ int main(int argc, char** argv)
     WebsockServer debugSvr(7070, false, &app);
 
     // C++ backend controllers
-    NetworkController networkController;
+    NetworkController networkController(config.wifi() != AppConfig::Off,
+                                        config.lan() != AppConfig::Off);
     SystemController systemController;
     WebPageController webPageController;
     webPageController.init(localUrl, remoteUrl, &debugSvr);
@@ -129,10 +152,16 @@ int main(int argc, char** argv)
     toolbar->addWidget(spacer);
 
     // WiFi icon button
+    const bool showWifi = (config.wifi() == AppConfig::On)
+        || (config.wifi() == AppConfig::Auto);
+    const bool showLan = (config.lan() == AppConfig::On)
+        || (config.lan() == AppConfig::Auto);
+
     QToolButton* wifiButton = new QToolButton;
     wifiButton->setIconSize(QSize(48, 48));
     wifiButton->setAutoRaise(true);
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
+    wifiButton->setVisible(showWifi);
     toolbar->addWidget(wifiButton);
 
     // LAN icon button, beside WiFi: the T430 terminals run wired, so the
@@ -142,7 +171,7 @@ int main(int argc, char** argv)
     lanButton->setIconSize(QSize(48, 48));
     lanButton->setAutoRaise(true);
     lanButton->setIcon(QIcon(":/images/lan-down.png"));
-    lanButton->setVisible(networkController.lanAvailable());
+    lanButton->setVisible(showLan && networkController.lanAvailable());
     toolbar->addWidget(lanButton);
 
     // Clock
@@ -206,8 +235,13 @@ int main(int argc, char** argv)
     });
 
     // Wired state: shown only when the terminal has an ethernet port at all.
-    auto updateLanIcon = [lanButton, &networkController]() {
-        lanButton->setVisible(networkController.lanAvailable());
+    auto updateLanIcon = [lanButton, showLan, &config, &networkController]() {
+        // "on" keeps the button even with no device, so a terminal that is
+        // supposed to be wired shows that it is not, rather than hiding the
+        // problem.
+        lanButton->setVisible(showLan
+                              && (config.lan() == AppConfig::On
+                                  || networkController.lanAvailable()));
         lanButton->setIcon(QIcon(networkController.lanConnected()
                                      ? ":/images/lan-up.png"
                                      : ":/images/lan-down.png"));
