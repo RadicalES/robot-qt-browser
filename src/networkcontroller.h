@@ -50,11 +50,15 @@ private slots:
     void onAccessPointAdded(const QDBusObjectPath& apPath);
     void onAccessPointRemoved(const QDBusObjectPath& apPath);
     void pollStatus();
+    void checkScanProgress();
 
 private:
     void findWifiDevice();
     void updateActiveConnection();
     void updateAccessPoints();
+    qint64 lastScanValue();         // raw NM LastScan, CLOCK_BOOTTIME ms, -1 if never
+    qint64 lastScanElapsedMs();     // ms since NM last completed a scan, -1 if never
+    void finishScan();
     QVariantMap readAccessPointProperties(const QString& apPath);
     int strengthToLevel(int strength);
     QString securityString(uint flags, uint wpaFlags, uint rsnFlags);
@@ -67,6 +71,9 @@ private:
     QString m_ssid;
     QString m_ipAddress;
     bool m_scanning;
+    qint64 m_scanRequestedAt;       // LastScan when we asked, to spot completion
+    int m_scanWaitElapsed;
+    QTimer m_scanWaitTimer;
     QVariantList m_networks;
     QString m_error;
     QTimer m_pollTimer;

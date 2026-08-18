@@ -73,6 +73,13 @@ chmod 0755 /usr/bin/startlxde-pi-robot \
            /etc/xdg/lxsession/LXDE-pi-robot/pi-app.sh \
            /etc/xdg/lxsession/LXDE-pi-robot/pi-browser.sh
 
+# WiFi configuration from the kiosk needs polkit permission for the writes.
+# Scanning and reading state do not, so this only matters once an operator
+# tries to join a network.
+install -D -m 0644 "$OVERLAY/etc/polkit-1/rules.d/50-robot-network.rules" \
+    /etc/polkit-1/rules.d/50-robot-network.rules
+echo "  /etc/polkit-1/rules.d/50-robot-network.rules"
+
 if [ ! -f /etc/formfactor/app.conf ]; then
     install -D -m 0644 "$OVERLAY/etc/formfactor/app.conf" /etc/formfactor/app.conf
     echo "  /etc/formfactor/app.conf (seeded)"

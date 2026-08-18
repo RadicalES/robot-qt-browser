@@ -1,4 +1,6 @@
 #include "networkcontroller.h"
+
+#include <QFile>
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusReply>
@@ -56,6 +58,8 @@ NetworkController::NetworkController(QObject* parent)
     , m_signalLevel(-1)
     , m_connected(false)
     , m_scanning(false)
+    , m_scanRequestedAt(-1)
+    , m_scanWaitElapsed(0)
     , m_available(false)
 {
     qDBusRegisterMetaType<NMVariantMap>();
@@ -77,9 +81,13 @@ NetworkController::NetworkController(QObject* parent)
             NM_SERVICE, m_wifiDevicePath, NM_WIRELESS, "AccessPointRemoved",
             this, SLOT(onAccessPointRemoved(QDBusObjectPath)));
 
-        // Poll status periodically
+        // Poll device state periodically. This reads D-Bus properties only —
+        // it never triggers a scan, so it does not touch the radio.
         connect(&m_pollTimer, &QTimer::timeout, this, &NetworkController::pollStatus);
         m_pollTimer.start(5000);
+
+        connect(&m_scanWaitTimer, &QTimer::timeout,
+                this, &NetworkController::checkScanProgress);
 
         // Initial status read
         pollStatus();
@@ -186,6 +194,75 @@ void NetworkController::pollStatus()
     }
 }
 
+// How long NM's cached scan results are considered fresh. The radio can scan
+// while associated, so this is not about protecting the link — it is about not
+// asking for a fresh scan every time the operator opens the WiFi dialog when NM
+// already has results from seconds ago. NM throttles RequestScan itself and
+// errors if asked too often.
+static const qint64 kScanCacheMs = 15000;
+
+// Give up waiting for a requested scan after this long.
+static const int kScanTimeoutMs = 10000;
+static const int kScanPollMs = 500;
+
+// Milliseconds since boot, the clock NetworkManager's LastScan uses.
+static qint64 bootTimeMs()
+{
+    QFile uptime("/proc/uptime");
+    if (!uptime.open(QIODevice::ReadOnly))
+        return -1;
+    bool ok = false;
+    const double seconds = uptime.readLine().split(' ').value(0).toDouble(&ok);
+    return ok ? qint64(seconds * 1000.0) : -1;
+}
+
+// Raw LastScan: CLOCK_BOOTTIME milliseconds, or -1 if NM has never scanned.
+qint64 NetworkController::lastScanValue()
+{
+    const QVariant value = getProperty(m_wifiDevicePath, NM_WIRELESS, "LastScan");
+    if (!value.isValid())
+        return -1;
+    const qint64 lastScan = value.toLongLong();
+    return lastScan < 0 ? -1 : lastScan;
+}
+
+qint64 NetworkController::lastScanElapsedMs()
+{
+    const qint64 lastScan = lastScanValue();
+    const qint64 now = bootTimeMs();
+    if (lastScan < 0 || now < 0)
+        return -1;
+    return qMax<qint64>(0, now - lastScan);
+}
+
+void NetworkController::finishScan()
+{
+    m_scanWaitTimer.stop();
+    updateAccessPoints();
+    if (m_scanning) {
+        m_scanning = false;
+        emit scanningChanged();
+    }
+}
+
+// Called on the wait timer while a scan is outstanding.
+void NetworkController::checkScanProgress()
+{
+    m_scanWaitElapsed += kScanPollMs;
+
+    const qint64 current = lastScanValue();
+    if (current >= 0 && current != m_scanRequestedAt) {
+        qDebug() << "NetworkController: scan completed";
+        finishScan();
+        return;
+    }
+    if (m_scanWaitElapsed >= kScanTimeoutMs) {
+        qDebug() << "NetworkController: scan did not report completion in"
+                 << kScanTimeoutMs << "ms — showing what we have";
+        finishScan();
+    }
+}
+
 void NetworkController::scan()
 {
     if (!m_available) {
@@ -193,24 +270,39 @@ void NetworkController::scan()
         return;
     }
 
+    setError("");
+
+    // Show what NetworkManager already has immediately, so the list is
+    // populated the instant the dialog opens rather than a scan round later.
+    updateAccessPoints();
+
+    const qint64 sinceLastScan = lastScanElapsedMs();
+    if (sinceLastScan >= 0 && sinceLastScan < kScanCacheMs) {
+        qDebug() << "NetworkController: cached scan is" << sinceLastScan
+                 << "ms old, not rescanning";
+        return;
+    }
+
     m_scanning = true;
     emit scanningChanged();
-    setError("");
+    m_scanRequestedAt = lastScanValue();
+    m_scanWaitElapsed = 0;
 
     QDBusInterface wireless(NM_SERVICE, m_wifiDevicePath, NM_WIRELESS,
                             QDBusConnection::systemBus());
     QDBusMessage reply = wireless.call("RequestScan", QVariantMap());
     if (reply.type() == QDBusMessage::ErrorMessage) {
-        qWarning() << "NetworkController: scan failed:" << reply.errorMessage();
-        // NM may return error if scan was requested too recently — still read APs
+        // Usually NM's own "scanning too frequently" throttle. Cached results
+        // are already on screen, so this is not worth showing the operator.
+        qDebug() << "NetworkController: scan request refused:" << reply.errorMessage();
+        finishScan();
+        return;
     }
 
-    // Wait for scan to complete, then update list
-    QTimer::singleShot(3000, this, [this]() {
-        updateAccessPoints();
-        m_scanning = false;
-        emit scanningChanged();
-    });
+    // Finish when NM reports a new LastScan rather than after a fixed delay:
+    // the old blind 3s wait both truncated slow scans and dawdled after quick
+    // ones.
+    m_scanWaitTimer.start(kScanPollMs);
 }
 
 void NetworkController::updateAccessPoints()
