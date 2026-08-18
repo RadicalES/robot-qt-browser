@@ -42,6 +42,34 @@ public:
     State state() const { return m_state; }
     RobotHead::Variant variant() const { return variantFor(m_state); }
     QString station() const { return read("station"); }
+
+    // The MAC the server knows this terminal by. robot-scada-client keys
+    // provisioning on the first non-loopback interface in name order, which on
+    // these terminals is the wired one; that is asked for explicitly here, so a
+    // terminal that gains an interface sorting ahead of eth0 still reports the
+    // MAC provisioning actually used. The client's own rule is the fallback,
+    // for a terminal with no wired port at all.
+    QString macAddress() const
+    {
+        const QStringList ifaces = QDir("/sys/class/net").entryList(
+            QDir::AllEntries | QDir::NoDotAndDotDot | QDir::System, QDir::Name);
+
+        for (const QString& iface : ifaces) {
+            if (iface.startsWith("eth") || iface.startsWith("en")) {
+                const QString mac = readMac(iface);
+                if (!mac.isEmpty())
+                    return mac;
+            }
+        }
+        for (const QString& iface : ifaces) {
+            if (iface == "lo")
+                continue;
+            const QString mac = readMac(iface);
+            if (!mac.isEmpty())
+                return mac;
+        }
+        return QString();
+    }
     QString serverUrl() const { return read("serverURL"); }
     QString statusText() const { return m_statusText; }
 
@@ -99,6 +127,15 @@ private:
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             return QString();
         return QString::fromUtf8(file.readAll()).trimmed();
+    }
+
+    static QString readMac(const QString& iface)
+    {
+        QFile file("/sys/class/net/" + iface + "/address");
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return QString();
+        const QString mac = QString::fromUtf8(file.readAll()).trimmed().toUpper();
+        return mac == "00:00:00:00:00:00" ? QString() : mac;
     }
 
     static RobotHead::Variant variantFor(State state)

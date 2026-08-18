@@ -310,10 +310,15 @@ int main(int argc, char** argv)
 
         const QString station = scadaIndicator->station();
         const QString server = scadaIndicator->serverUrl();
+        // The MAC is what the server identifies the terminal by, so it is what
+        // someone provisioning it has to read off the screen and type in.
+        const QString mac = scadaIndicator->macAddress();
         auto* body = new QLabel(
             "Status: " + scadaIndicator->statusText() + "\n"
             "Station: " + (station.isEmpty() ? QString("-") : station) + "\n"
+            "MAC: " + (mac.isEmpty() ? QString("-") : mac) + "\n"
             "Server: " + (server.isEmpty() ? QString("-") : server));
+        body->setTextInteractionFlags(Qt::TextSelectableByMouse);
         body->setWordWrap(true);
         body->setStyleSheet(
             "font-family: monospace; font-size: 19px; background: white; "
