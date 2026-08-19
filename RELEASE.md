@@ -4,6 +4,19 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.2.0] - 2026-08-19
+
+### Fixed
+
+- **The virtual keyboard failed to load on a clean install.** The package did
+  not depend on `qml6-module-qtquick-layouts`, `-window`, `-controls` or
+  `-templates`, so on a freshly imaged terminal the keyboard's QML aborted with
+  `module "QtQuick.Layouts" is not installed`. The panel then held its space
+  without drawing anything: half the screen grey, the load bar stranded in the
+  middle, and no keyboard. Development machines had the modules from other work,
+  which is why it only appeared on a bare device.
+
+
 ## [3.1.1] - 2026-08-19
 
 ### Fixed
