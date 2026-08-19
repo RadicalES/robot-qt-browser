@@ -51,9 +51,9 @@ WebPageController::WebPageController(QObject* parent)
     // fold, and nothing to drag — the operator has to guess that a flick works.
     settings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
 
-    // Chromium's scrollbar is ~15px, which is a thin target for a finger on a
-    // 720px panel. Widened for touch, in the toolbar's own greys so it reads as
-    // part of the terminal rather than the page.
+    // Chromium's scrollbar is ~15px. These terminals are used in a packhouse,
+    // by an operator wearing gloves, so it is widened well past what a mouse
+    // would need — 28px of track with a 18px thumb inside it.
     QWebEngineScript scrollbarStyle;
     scrollbarStyle.setName("kiosk-scrollbars");
     scrollbarStyle.setInjectionPoint(QWebEngineScript::DocumentReady);
@@ -61,10 +61,10 @@ WebPageController::WebPageController(QObject* parent)
     scrollbarStyle.setRunsOnSubFrames(true);
     scrollbarStyle.setSourceCode(R"JS(
 (function () {
-    var css = '::-webkit-scrollbar { width: 18px; height: 18px; }' +
+    var css = '::-webkit-scrollbar { width: 28px; height: 28px; }' +
               '::-webkit-scrollbar-track { background: #e6e6e6; }' +
-              '::-webkit-scrollbar-thumb { background: #9e9e9e; border-radius: 9px;' +
-              ' border: 4px solid #e6e6e6; }' +
+              '::-webkit-scrollbar-thumb { background: #9e9e9e; border-radius: 14px;' +
+              ' border: 5px solid #e6e6e6; min-height: 60px; }' +
               '::-webkit-scrollbar-thumb:active { background: #ff4500; }';
     var style = document.createElement('style');
     style.appendChild(document.createTextNode(css));
