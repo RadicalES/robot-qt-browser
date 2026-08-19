@@ -1,7 +1,8 @@
-robot-browser (3.1.1-1) bookworm; urgency=medium
+robot-browser (3.2.0-1) bookworm; urgency=medium
 
-  * Show scrollbars again; the Qt 6 port had disabled them
-  * Widen the scrollbar to 28px for gloved use in a packhouse
+  * Depend on the QML modules the virtual keyboard needs: QtQuick.Layouts,
+    QtQuick.Window, QtQuick.Controls and QtQuick.Templates. Without them the
+    keyboard failed to load and left a dead panel occupying half the screen
 
- -- Jan Zwiegers <jan@radicalsystems.co.za>  Wed, 19 Aug 2026 09:45:00 +0200
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Wed, 19 Aug 2026 12:30:00 +0200
 
