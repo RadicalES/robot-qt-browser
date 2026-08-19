@@ -1,9 +1,7 @@
-robot-browser (3.0.2-1) bookworm; urgency=medium
+robot-browser (3.1.1-1) bookworm; urgency=medium
 
-  * Add a $ key to the symbols keyboard page, replacing the quote key
-  * Add a Show/Hide toggle to the WiFi password field
-  * Tighten toolbar spacing so WiFi, LAN and the SCADA head all fit
-  * Retire the BeagleBone and labwc overlays, and the QtWebKit-era docs
+  * Show scrollbars again; the Qt 6 port had disabled them
+  * Widen the scrollbar to 28px for gloved use in a packhouse
 
- -- Jan Zwiegers <jan@radicalsystems.co.za>  Tue, 18 Aug 2026 17:30:00 +0200
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Wed, 19 Aug 2026 09:45:00 +0200
 
