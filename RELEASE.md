@@ -4,6 +4,20 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.1.1] - 2026-08-19
+
+### Fixed
+
+- **Scrollbars are back.** The Qt 6 port disabled them — reasonable for a page
+  that fits the screen, wrong for the long forms these terminals show: there
+  was nothing to say the page continued below the fold, and nothing to drag.
+- **Sized for gloves.** Chromium's ~15px scrollbar is a mouse-sized target. The
+  track is now 28px with an 18px thumb and a minimum thumb height, so a long
+  page cannot shrink it to something a gloved hand cannot grab. Injected per
+  profile rather than written into any page, since the transaction pages are
+  not ours.
+
+
 ## [3.0.2] - 2026-08-18
 
 ### Added
