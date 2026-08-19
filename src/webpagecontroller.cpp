@@ -2,6 +2,8 @@
 
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#include <QWebEngineScript>
+#include <QWebEngineScriptCollection>
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
@@ -44,7 +46,32 @@ WebPageController::WebPageController(QObject* parent)
     settings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
     settings->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     settings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, true);
-    settings->setAttribute(QWebEngineSettings::ShowScrollBars, false);
+    // Scrollbars stay on. Hiding them suited a page that fits the screen, but
+    // on a long form there is then nothing to say the page continues below the
+    // fold, and nothing to drag — the operator has to guess that a flick works.
+    settings->setAttribute(QWebEngineSettings::ShowScrollBars, true);
+
+    // Chromium's scrollbar is ~15px, which is a thin target for a finger on a
+    // 720px panel. Widened for touch, in the toolbar's own greys so it reads as
+    // part of the terminal rather than the page.
+    QWebEngineScript scrollbarStyle;
+    scrollbarStyle.setName("kiosk-scrollbars");
+    scrollbarStyle.setInjectionPoint(QWebEngineScript::DocumentReady);
+    scrollbarStyle.setWorldId(QWebEngineScript::ApplicationWorld);
+    scrollbarStyle.setRunsOnSubFrames(true);
+    scrollbarStyle.setSourceCode(R"JS(
+(function () {
+    var css = '::-webkit-scrollbar { width: 18px; height: 18px; }' +
+              '::-webkit-scrollbar-track { background: #e6e6e6; }' +
+              '::-webkit-scrollbar-thumb { background: #9e9e9e; border-radius: 9px;' +
+              ' border: 4px solid #e6e6e6; }' +
+              '::-webkit-scrollbar-thumb:active { background: #ff4500; }';
+    var style = document.createElement('style');
+    style.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(style);
+})();
+)JS");
+    m_profile->scripts()->insert(scrollbarStyle);
 
     // Suppress context menu for kiosk
     m_webView->setContextMenuPolicy(Qt::NoContextMenu);
