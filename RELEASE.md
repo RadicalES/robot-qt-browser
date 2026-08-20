@@ -4,6 +4,18 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.2.1] - 2026-08-20
+
+### Changed
+
+- **Password reveal moved inside the WiFi password field.** A separate
+  Show/Hide button beside the field is not the convention; the eye belongs at
+  the trailing edge. Uses `QLineEdit::addAction` with `TrailingPosition`, so the
+  icon sits inside the frame and the row loses a widget. The field re-masks
+  whenever the password row is reopened, so a key left revealed cannot carry
+  over to the next network.
+
+
 ## [3.2.0] - 2026-08-19
 
 ### Fixed
