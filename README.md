@@ -45,11 +45,35 @@ command line overrides the file. Both URLs default to `http://127.0.0.1`.
 ## Installing
 
 Published to the RadicalES package repository, so a terminal installs it like
-any other package:
+any other package. Add the repository once:
+
+```sh
+# Signing key (binary form, for apt's signed-by)
+sudo install -d -m 0755 /etc/apt/keyrings
+sudo curl -fsSL https://packages.radicales.net/keys/public/radical-debian-binary.gpg \
+    -o /etc/apt/keyrings/radical-systems.gpg
+sudo chmod 0644 /etc/apt/keyrings/radical-systems.gpg
+
+# Repository — bookworm only
+echo "deb [signed-by=/etc/apt/keyrings/radical-systems.gpg] https://packages.radicales.net/debian bookworm main" \
+    | sudo tee /etc/apt/sources.list.d/radical-systems.list
+```
+
+Then install as usual:
 
 ```sh
 sudo apt-get update && sudo apt-get install robot-browser
 ```
+
+Verify the key before trusting it — the fingerprint is
+`E455 6EB6 7025 FB34 4051  ED4B 66B8 F7A3 8EB7 2B1C`:
+
+```sh
+curl -fsSL https://packages.radicales.net/keys/public/radical-debian.gpg | gpg --with-fingerprint -
+```
+
+Note the repository metadata is cached at the edge, so a version published in
+the last few hours may not be offered yet.
 
 The package is self-contained: it configures itself from its own config file
 and needs no other Radical software present. A provisioning layer, where there
