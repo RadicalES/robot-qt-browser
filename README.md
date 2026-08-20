@@ -44,8 +44,8 @@ command line overrides the file. Both URLs default to `http://127.0.0.1`.
 
 ## Installing
 
-Published to the RadicalES package repository, so a terminal installs it like
-any other package. Add the repository once:
+Published to the [RadicalES package repository](https://radicales.net/packages/),
+so a terminal installs it like any other package. Add the repository once:
 
 ```sh
 # Signing key (binary form, for apt's signed-by)
@@ -74,6 +74,9 @@ curl -fsSL https://packages.radicales.net/keys/public/radical-debian.gpg | gpg -
 
 Note the repository metadata is cached at the edge, so a version published in
 the last few hours may not be offered yet.
+
+Setup instructions for other distributions, and the current package list, are at
+<https://radicales.net/packages/>.
 
 The package is self-contained: it configures itself from its own config file
 and needs no other Radical software present. A provisioning layer, where there
