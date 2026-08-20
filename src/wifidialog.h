@@ -6,6 +6,7 @@
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QAction>
 #include <QWidget>
 
 class NetworkController;
@@ -39,7 +40,7 @@ private:
     QListWidget* m_networkList;
     QWidget* m_passwordRow;
     QLineEdit* m_passwordEdit;
-    QPushButton* m_revealBtn;
+    QAction* m_revealAction;
     QPushButton* m_connectBtn;
     QWidget* m_forgetRow;
     QLabel* m_forgetLabel;
