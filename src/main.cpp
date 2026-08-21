@@ -27,6 +27,7 @@
 #include "virtualkeyboardpanel.h"
 #include "pagefocusguard.h"
 #include "scadaindicator.h"
+#include "runprofile.h"
 #include "robothead.h"
 #include "dialogstyle.h"
 #include "kioskstyle.h"
@@ -49,40 +50,73 @@ int main(int argc, char** argv)
     // runs from the file alone; a provisioning layer integrates by passing what
     // it holds as arguments, without this needing to know that layer exists.
     //
-    //   robot-browser [--config=PATH] [--wifi=auto|on|off] [--lan=...]
+    //   robot-browser [--profile=kiosk|t430|t440|desktop] [--config=PATH]
+    //                 [--wifi=auto|on|off] [--lan=...]
     //                 [--windowed[=WxH]] [--no-toolbar] [remote_url] [local_url]
     AppConfig config;
     QStringList positional;
-    // Kiosk by default: fullscreen, toolbar, the whole panel. The flags below
-    // exist for the other case — the browser opened from a desktop session as a
-    // single-purpose tool (the WiFi setup page, say), where a fullscreen window
-    // with no exit traps whoever opened it and the kiosk toolbar means nothing.
+    // A profile says how this instance is meant to run — see runprofile.h. The
+    // default is the terminal: fullscreen, toolbar, keyboard, the lot.
     //
+    // The individual flags still work and still win, because they are how the
+    // desktop launchers open the browser as a single-purpose tool (the WiFi
+    // setup page opens it windowed with no toolbar), and because a developer
+    // will want a device profile at some size other than 1:1 sooner or later.
+    //
+    //   --profile=NAME     kiosk (default), t430, t440, desktop
     //   --windowed[=WxH]   a normal window the compositor can decorate and close
     //   --no-toolbar       drop the bottom bar; the page is the whole point
-    bool windowed = false;
-    bool showToolbar = true;
-    QSize windowSize;
+    RunProfile profile;
+    RunProfile::lookup("kiosk", &profile);
+    bool windowedFlag = false;
+    bool noToolbarFlag = false;
+    QSize windowSizeFlag;
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
         const QString arg = args.at(i);
         if (arg.startsWith("--config="))
             configPath = arg.mid(strlen("--config="));
+        else if (arg.startsWith("--profile=")) {
+            const QString name = arg.section('=', 1);
+            if (!RunProfile::lookup(name, &profile)) {
+                // Not guessed at: a typo would otherwise hand a developer a
+                // window of the wrong size and a wrong impression of their page.
+                fprintf(stderr, "robot-browser: unknown profile '%s' (known: %s)\n",
+                        qPrintable(name),
+                        qPrintable(RunProfile::names().join(", ")));
+                return 2;
+            }
+        }
         else if (arg == "--windowed" || arg.startsWith("--windowed=")) {
-            windowed = true;
+            windowedFlag = true;
             if (arg.contains('=')) {
                 const QStringList wh = arg.section('=', 1).split('x');
                 if (wh.size() == 2)
-                    windowSize = QSize(wh.at(0).toInt(), wh.at(1).toInt());
+                    windowSizeFlag = QSize(wh.at(0).toInt(), wh.at(1).toInt());
             }
         }
         else if (arg == "--no-toolbar")
-            showToolbar = false;
+            noToolbarFlag = true;
         else if (!arg.startsWith("--"))
             positional << arg;
     }
+
+    if (windowedFlag) {
+        profile.fullscreen = false;
+        if (windowSizeFlag.isValid())
+            profile.windowSize = windowSizeFlag;
+    }
+    if (noToolbarFlag)
+        profile.toolbar = false;
     config.loadFile(configPath);
+    if (profile.pinNetwork) {
+        // A t440 profile shows WiFi and no LAN wherever it runs, because that
+        // is what a T440 has. Reading it from this machine's config file would
+        // describe this machine instead of the device being reproduced.
+        config.applyArgument("--wifi=" + AppConfig::describe(profile.wifi));
+        config.applyArgument("--lan=" + AppConfig::describe(profile.lan));
+    }
     for (int i = 1; i < args.size(); ++i) {
         if (args.at(i).startsWith("--"))
             config.applyArgument(args.at(i));
@@ -149,8 +183,13 @@ int main(int argc, char** argv)
         "QProgressBar::chunk { background: #ff4500; }");
     centralLayout->addWidget(loadBar);
 
-    VirtualKeyboardPanel* keyboard = new VirtualKeyboardPanel;
-    centralLayout->addWidget(keyboard);
+    // The on-screen keyboard exists because a terminal has no other one. On a
+    // desktop there is a real keyboard, and loading this costs a QQuickWidget,
+    // the QtVirtualKeyboard QML module and its dependencies — which a desktop
+    // install has no reason to have present at all.
+    VirtualKeyboardPanel* keyboard = profile.keyboard ? new VirtualKeyboardPanel : nullptr;
+    if (keyboard)
+        centralLayout->addWidget(keyboard);
 
     window.setCentralWidget(central);
 
@@ -207,8 +246,12 @@ int main(int argc, char** argv)
     // SCADA server status, mirroring the desktop tray indicator: grey when no
     // server or service is detected, orange when the terminal is not
     // provisioned, green when it is talking to a server.
-    ScadaIndicator* scadaIndicator = new ScadaIndicator;
-    toolbar->addWidget(scadaIndicator);
+    // Device chrome: kept in a device profile even off-device, because the
+    // space it takes is part of what the page has to live with. Dropped on a
+    // plain desktop, where there is no /run/robot and nothing it could report.
+    ScadaIndicator* scadaIndicator = profile.scadaIndicator ? new ScadaIndicator : nullptr;
+    if (scadaIndicator)
+        toolbar->addWidget(scadaIndicator);
 
     // Manual keyboard toggle. The keyboard normally follows the focused field,
     // but an operator needs a way to dismiss it while reading, and a way to
@@ -217,6 +260,7 @@ int main(int argc, char** argv)
     keyboardButton->setIconSize(QSize(48, 48));
     keyboardButton->setAutoRaise(true);
     keyboardButton->setIcon(QIcon(":/images/keyboard.png"));
+    keyboardButton->setVisible(profile.keyboard);
     toolbar->addWidget(keyboardButton);
 
     // Clock
@@ -229,7 +273,10 @@ int main(int argc, char** argv)
     // Dialogs
     WifiDialog* wifiDialog = new WifiDialog(&networkController, &window);
     LanDialog* lanDialog = new LanDialog(&networkController, &window);
+    // Reboot and Reset Defaults act on the machine this runs on. On a terminal
+    // that is the terminal; on a developer's PC it is their workstation.
     InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
+    infoDialog->setSystemActionsVisible(profile.systemActions);
 
     // Connect toolbar actions to controllers
     QObject::connect(homeAction, &QAction::triggered,
@@ -275,7 +322,8 @@ int main(int argc, char** argv)
     QObject::connect(infoAction, &QAction::triggered,
                      [infoDialog, scadaIndicator, refocusPage]() {
         DialogStyle::closeKeyboard();
-        infoDialog->setStatus(scadaIndicator->variant());
+        infoDialog->setStatus(scadaIndicator ? scadaIndicator->variant()
+                                             : RobotHead::Off);
         infoDialog->exec();
         refocusPage();
     });
@@ -312,6 +360,8 @@ int main(int argc, char** argv)
     updateLanIcon();
     updateWifiIcon();
 
+    // Only wired up when the indicator exists — a desktop profile has none.
+    if (scadaIndicator) {
     QObject::connect(scadaIndicator, &QToolButton::clicked,
                      [scadaIndicator, &window, refocusPage]() {
         DialogStyle::closeKeyboard();
@@ -361,9 +411,12 @@ int main(int argc, char** argv)
         dialog.exec();
         refocusPage();
     });
+    }
 
     QObject::connect(keyboardButton, &QToolButton::clicked,
                      [keyboard, &webPageController]() {
+        if (!keyboard)
+            return;
         if (keyboard->isShowing()) {
             keyboard->setForceVisible(false);
             QGuiApplication::inputMethod()->hide();
@@ -421,14 +474,27 @@ int main(int argc, char** argv)
     // where operators spend their time, Home is the exception.
     webPageController.loadRemote();
 
-    if (!showToolbar)
+    if (!profile.toolbar)
         toolbar->hide();
 
     QScreen* screen = app.primaryScreen();
-    if (windowed) {
+    if (!profile.fullscreen) {
         const QRect avail = screen->availableGeometry();
-        if (windowSize.isValid() && windowSize.width() > 0 && windowSize.height() > 0) {
-            window.resize(windowSize.boundedTo(avail.size()));
+        const QSize wanted = profile.windowSize;
+        if (wanted.isValid() && wanted.width() > 0 && wanted.height() > 0) {
+            // A device profile is only useful at 1:1 — the whole point is that
+            // a page overflowing the panel overflows here too. Warn rather
+            // than silently shrink, so nobody trusts a viewport that is not
+            // the device's.
+            if (!avail.size().expandedTo(wanted).isNull()
+                && (wanted.width() > avail.width() || wanted.height() > avail.height())) {
+                fprintf(stderr,
+                        "robot-browser: profile '%s' wants %dx%d but this screen "
+                        "offers %dx%d — the window is not the device's viewport\n",
+                        qPrintable(profile.name), wanted.width(), wanted.height(),
+                        avail.width(), avail.height());
+            }
+            window.resize(wanted.boundedTo(avail.size()));
         } else {
             // Inset, so the window is obviously a window and its title bar —
             // and the close button on it — is reachable.
@@ -440,7 +506,8 @@ int main(int argc, char** argv)
         window.showFullScreen();
     }
     webPageController.webView()->setFocus();
-    keyboard->setPanelWidth(screen->geometry().width());
+    if (keyboard)
+        keyboard->setPanelWidth(screen->geometry().width());
 
     return app.exec();
 }

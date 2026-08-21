@@ -100,7 +100,14 @@ void AppConfig::applyArgument(const QString& argument)
     if (parts.size() != 2)
         return;
 
+    // Only the settings this class owns. Other flags — --profile, --config,
+    // --windowed — are handled where they belong, and complaining about them
+    // here produced a warning about a value that is perfectly valid for the
+    // argument it actually belongs to.
     const QString name = parts.at(0);
+    if (name != "--wifi" && name != "--lan")
+        return;
+
     Availability parsed;
     if (!parseAvailability(parts.at(1), &parsed)) {
         qWarning() << "AppConfig: value not understood:" << argument;
@@ -109,6 +116,6 @@ void AppConfig::applyArgument(const QString& argument)
 
     if (name == "--wifi")
         m_wifi = parsed;
-    else if (name == "--lan")
+    else
         m_lan = parsed;
 }

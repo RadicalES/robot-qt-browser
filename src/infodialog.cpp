@@ -47,6 +47,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     auto* buttonRow = new QHBoxLayout;
 
     auto* resetBtn = new QPushButton("Reset Defaults");
+    m_resetBtn = resetBtn;
     resetBtn->setStyleSheet(
         DialogStyle::Colour::danger());
     connect(resetBtn, &QPushButton::clicked, [sysCtrl]() {
@@ -57,6 +58,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     buttonRow->addStretch();
 
     auto* rebootBtn = new QPushButton("Reboot");
+    m_rebootBtn = rebootBtn;
     rebootBtn->setStyleSheet(
         DialogStyle::Colour::warning());
     connect(rebootBtn, &QPushButton::clicked, [this, sysCtrl]() {
@@ -80,4 +82,10 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 void InfoDialog::setStatus(RobotHead::Variant variant)
 {
     m_head->setPixmap(RobotHead::pixmap(56, variant));
+}
+
+void InfoDialog::setSystemActionsVisible(bool visible)
+{
+    m_resetBtn->setVisible(visible);
+    m_rebootBtn->setVisible(visible);
 }

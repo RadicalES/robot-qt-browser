@@ -36,11 +36,29 @@ workflow.
 ## Running
 
 ```sh
-robot-browser [--config=PATH] [--wifi=auto|on|off] [--lan=...] [remote_url] [local_url]
+robot-browser [--profile=kiosk|t430|t440|desktop] [--config=PATH]
+              [--wifi=auto|on|off] [--lan=...]
+              [--windowed[=WxH]] [--no-toolbar] [remote_url] [local_url]
 ```
 
 Settings come from `/etc/robot-browser/browser.config`, and anything on the
 command line overrides the file. Both URLs default to `http://127.0.0.1`.
+
+### Profiles
+
+A profile says how this instance is meant to run — geometry, which controls
+exist, and what is left out because it could not work:
+
+| Profile | Runs as | Notes |
+|---------|---------|-------|
+| `kiosk` (default) | The terminal | Fullscreen on the panel, toolbar, on-screen keyboard |
+| `t430` | A Robot-T430, on a PC | 800×480 window, LAN control, no reboot |
+| `t440` | A Robot-T440, on a PC | 800×1280 window, WiFi control, no reboot |
+| `desktop` | An application on a PC | Resizable window, no on-screen keyboard, no device controls |
+
+The device profiles exist so somebody writing a webapp for a terminal can see
+it at the terminal's exact viewport without having a terminal — see
+[docs/WEBAPP-DEVELOPERS.md](docs/WEBAPP-DEVELOPERS.md).
 
 ## Installing
 
