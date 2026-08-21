@@ -1,7 +1,19 @@
 #!/bin/sh
 # Build Debian package for robot-browser
-# Usage: ./scripts/build-deb.sh <arch>
-#   arch: arm64, armhf, or amd64
+#
+# Usage: ./scripts/build-deb.sh <target>
+#
+#   arm64                 Pi CM4 / Pi 5, cross-built against Debian 12's Qt
+#   bookworm              Debian 12 amd64, in a container
+#   trixie                Debian 13 amd64, in a container
+#   ubuntu-24.04          Ubuntu 24.04 amd64, in a container
+#   ubuntu-26.04          Ubuntu 26.04 amd64, in a container
+#   amd64                 whatever Qt is installed on THIS machine (dev only)
+#
+# A desktop target is a distro, not an architecture. Each ships its own Qt 6 and
+# QtWebEngine and a binary built against one does not run on another, so the
+# package version carries the suite it was built for — 3.3.1-1~trixie — and apt
+# on a terminal or a PC installs the one built for it.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -13,36 +25,62 @@ PKG_VERSION=$(cat "${PROJECT_DIR}/VERSION" | tr -d '[:space:]')
 PKG_REVISION="1"
 PKG_FULL="${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}"
 
-ARCH="${1:-amd64}"
+TARGET="${1:-amd64}"
+SUITE=""
 
-case "$ARCH" in
-    arm64|amd64) ;;
+case "$TARGET" in
     armhf)
         echo "ERROR: armhf (BeagleBone Black) is retired - QtWebEngine cannot"
         echo "       target linuxfb. The last QtWebKit build is on the 'webkit' branch."
         exit 1 ;;
-    *) echo "Usage: $0 <arm64|amd64>"; exit 1 ;;
+    ubuntu-22.04|jammy)
+        echo "ERROR: Ubuntu 22.04 ships Qt 6.2 and the floor is Qt 6.4."
+        exit 1 ;;
 esac
 
-echo "=== Building robot-browser for ${ARCH} ==="
+echo "=== Building robot-browser for ${TARGET} ==="
 
 # Step 1: Build the binary
-case "$ARCH" in
+case "$TARGET" in
     arm64)
         "${PROJECT_DIR}/docker/build-cm4.sh"
         BINARY="${PROJECT_DIR}/build-cm4/robot-browser"
+        ARCH="arm64"
+        # The terminals run Debian 12, and this is cross-built against its Qt.
+        SUITE="bookworm"
+        ;;
+    bookworm|trixie|ubuntu-24.04|ubuntu-26.04)
+        "${PROJECT_DIR}/docker/build-desktop.sh" "$TARGET"
+        BINARY="${PROJECT_DIR}/build-${TARGET}/robot-browser"
+        # Read back from the build, not assumed: the container reports the
+        # codename its own /etc/os-release gives, so a release whose codename
+        # we guessed cannot be mislabelled.
+        SUITE="$(cat "${PROJECT_DIR}/build-${TARGET}/SUITE" 2>/dev/null)"
+        ARCH="$(cat "${PROJECT_DIR}/build-${TARGET}/ARCH" 2>/dev/null || echo amd64)"
         ;;
     amd64)
         echo "=== Building locally for amd64 ==="
+        echo "    (against this machine's Qt - for development, not for release)"
         BUILD_DIR="${PROJECT_DIR}/build-amd64"
         mkdir -p "$BUILD_DIR"
         cd "$BUILD_DIR"
         cmake "${PROJECT_DIR}/src" -DCMAKE_BUILD_TYPE=Release
         cmake --build . -- -j$(nproc)
         BINARY="${BUILD_DIR}/robot-browser"
+        ARCH="amd64"
         cd "$PROJECT_DIR"
         ;;
+    *)
+        echo "Usage: $0 <arm64|bookworm|trixie|ubuntu-24.04|ubuntu-26.04|amd64>"
+        exit 1 ;;
 esac
+
+# A suite-qualified version, so the four desktop builds can coexist in the
+# repository and apt offers each machine the one built against its own Qt.
+if [ -n "$SUITE" ] && [ "$SUITE" != "unknown" ]; then
+    PKG_REVISION="${PKG_REVISION}~${SUITE}"
+    PKG_FULL="${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}"
+fi
 
 if [ ! -f "$BINARY" ]; then
     echo "ERROR: Binary not found at $BINARY"
@@ -60,6 +98,11 @@ mkdir -p "$STAGE/usr/lib/robot-browser"
 mkdir -p "$STAGE/usr/lib/systemd/system"
 mkdir -p "$STAGE/etc/robot-browser"
 mkdir -p "$STAGE/etc/udev/rules.d"
+# Menu entry and its icon. Global, in /usr/share — a PC install should put the
+# browser in the applications menu for everyone on the machine, not for
+# whoever ran apt.
+mkdir -p "$STAGE/usr/share/applications"
+mkdir -p "$STAGE/usr/share/icons/hicolor/scalable/apps"
 
 # Step 3: Install files
 cp "$BINARY" "$STAGE/usr/bin/robot-browser"
@@ -76,6 +119,11 @@ chmod 644 "$STAGE/etc/robot-browser/browser.config"
 
 cp "${PROJECT_DIR}/packaging/udev/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
+
+cp "${PROJECT_DIR}/packaging/desktop/robot-browser.desktop" "$STAGE/usr/share/applications/robot-browser.desktop"
+chmod 644 "$STAGE/usr/share/applications/robot-browser.desktop"
+cp "${PROJECT_DIR}/src/images/robot-head-ok.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
+chmod 644 "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
 
 # Custom virtual keyboard style (red lettering, from the T420 terminal).
 # Must sit at QtQuick/VirtualKeyboard/Styles/<name> under a QML import root.

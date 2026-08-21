@@ -37,10 +37,12 @@ void AppConfig::loadFile(const QString& path)
 {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        // Absent is normal: the defaults describe a general terminal.
+        // Absent is normal: the defaults describe a general terminal, and a
+        // desktop install has no such file at all.
         qDebug() << "AppConfig: no config at" << path << "— using defaults";
         return;
     }
+    m_hasFile = true;
 
     QTextStream in(&file);
     while (!in.atEnd()) {

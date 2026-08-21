@@ -1,0 +1,27 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Robot Browser
+GenericName=Kiosk Browser
+Comment=Two-URL kiosk browser for RadicalES Robot terminals
+# Installed to /usr/share/applications, so it is in the menu for every user on
+# the machine rather than for whoever happened to install it.
+Exec=robot-browser --profile=desktop
+Icon=robot-browser
+Terminal=false
+Categories=Network;WebBrowser;
+Keywords=robot;kiosk;terminal;radicales;
+StartupNotify=true
+StartupWMClass=robot-browser
+# The device profiles, so somebody writing a webapp for a terminal can start
+# one at the terminal's own viewport without remembering the flag. Right-click
+# the menu entry (or the launcher) to reach them.
+Actions=T430;T440;
+
+[Desktop Action T430]
+Name=Open as a Robot-T430
+Exec=robot-browser --profile=t430
+
+[Desktop Action T440]
+Name=Open as a Robot-T440
+Exec=robot-browser --profile=t440

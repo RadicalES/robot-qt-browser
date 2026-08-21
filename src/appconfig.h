@@ -32,6 +32,11 @@ public:
     void loadFile(const QString& path);
     void applyArgument(const QString& argument);   // --wifi=off, --lan=on, ...
 
+    // Whether a config file was actually read. A profile's starting URLs are
+    // for an install that has no file at all; a terminal with one has already
+    // been told what it points at, and must not be overridden by a default.
+    bool hasFile() const { return m_hasFile; }
+
     Availability wifi() const { return m_wifi; }
     Availability lan() const { return m_lan; }
     QString remoteUrl() const { return m_remoteUrl; }
@@ -46,6 +51,7 @@ public:
 private:
     static bool parseAvailability(const QString& text, Availability* out);
 
+    bool m_hasFile = false;
     Availability m_wifi;
     Availability m_lan;
     QString m_remoteUrl;

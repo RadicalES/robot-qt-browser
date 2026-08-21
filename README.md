@@ -21,7 +21,29 @@ info, reboot — is in the toolbar.
 
 ```sh
 ./docker/build-cm4.sh              # arm64 cross-build → build-cm4/robot-browser
-./scripts/build-deb.sh arm64       # → build-deb/robot-browser_<version>-1_arm64.deb
+./scripts/build-deb.sh arm64       # → build-deb/robot-browser_<version>-1~bookworm_arm64.deb
+```
+
+Desktop targets each build inside their own distro, because each ships a
+different Qt 6 and QtWebEngine and a binary built against one does not run on
+another. Qt 6.4 is the floor, which is why Ubuntu 22.04 (Qt 6.2) is not a
+target:
+
+```sh
+./docker/build-desktop.sh bookworm|trixie|ubuntu-24.04|ubuntu-26.04
+./docker/build-desktop.sh all
+./scripts/build-deb.sh trixie      # → robot-browser_<version>-1~trixie_amd64.deb
+```
+
+The package version carries the suite it was built for, so apt offers each
+machine the build made against its own Qt.
+
+To run one on this machine — installed from its own `.deb`, in its own distro,
+with a window on your desktop:
+
+```sh
+./docker/run-desktop.sh trixie --profile=t440 https://example.com http://localhost:3000
+./docker/run-desktop.sh ubuntu-26.04 --check    # install only: do the Depends resolve?
 ```
 
 Local amd64 build for UI work:
@@ -59,6 +81,9 @@ exist, and what is left out because it could not work:
 The device profiles exist so somebody writing a webapp for a terminal can see
 it at the terminal's exact viewport without having a terminal — see
 [docs/WEBAPP-DEVELOPERS.md](docs/WEBAPP-DEVELOPERS.md).
+
+On a PC the package installs a menu entry (**Robot Browser**) for every user on
+the machine, with the two device profiles as right-click actions on it.
 
 ## Installing
 

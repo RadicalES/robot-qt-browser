@@ -121,6 +121,12 @@ int main(int argc, char** argv)
         if (args.at(i).startsWith("--"))
             config.applyArgument(args.at(i));
     }
+    // A profile's URLs sit under the config file and the command line: they are
+    // a starting point for an install that has neither, not a policy.
+    if (!profile.remoteUrl.isEmpty() && !config.hasFile())
+        config.setRemoteUrl(profile.remoteUrl);
+    if (!profile.localUrl.isEmpty() && !config.hasFile())
+        config.setLocalUrl(profile.localUrl);
     if (positional.size() > 0)
         config.setRemoteUrl(positional.at(0));
     if (positional.size() > 1)

@@ -51,6 +51,14 @@ struct RunProfile {
     AppConfig::Availability wifi = AppConfig::Auto;
     AppConfig::Availability lan = AppConfig::Auto;
 
+    // Where a PC install lands when nobody has said otherwise. A terminal is
+    // told its two URLs by its config file or its provisioning layer and these
+    // stay empty; a desktop install has neither, and defaulting both to
+    // 127.0.0.1 gives a new user two error pages and no clue what the two
+    // buttons are for.
+    QString remoteUrl;
+    QString localUrl;
+
     static QStringList names()
     {
         return {"kiosk", "t430", "t440", "desktop"};
@@ -101,6 +109,11 @@ struct RunProfile {
         }
 
         if (name == "desktop") {
+            // Something useful on first run, and obviously editable after:
+            // the product page explains what this is, and Home points at a
+            // local web UI, which is what Home means on a terminal.
+            p.remoteUrl = "https://radicales.net/";
+            p.localUrl = "http://localhost/";
             // A window among other windows on somebody's PC. The desktop owns
             // the network, the keyboard is real, and the machine is not ours
             // to reboot.

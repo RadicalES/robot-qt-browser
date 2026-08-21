@@ -1,0 +1,45 @@
+# Native build environment for one desktop target.
+#
+# Parameterised by base image, because that is the only thing that actually
+# differs between bookworm, trixie, Ubuntu 24.04 and Ubuntu 26.04 — each brings
+# its own Qt 6 and its own QtWebEngine, which is the whole reason a target
+# cannot be built anywhere but on its own distro:
+#
+#   debian:12     Qt 6.4.2      (also the terminals' target)
+#   debian:13     Qt 6.8
+#   ubuntu:24.04  Qt 6.4.2
+#   ubuntu:26.04  Qt 6.8+
+#
+# Qt 6.4 is the floor. Ubuntu 22.04 ships 6.2 and is deliberately not a target.
+#
+# Used by docker/build-desktop.sh. The arm64 cross-build is a different problem
+# and lives in Dockerfile.cm4-qt6.
+
+ARG BASE_IMAGE=debian:12
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    ninja-build \
+    pkg-config \
+    file \
+    ccache \
+    # Host tools — moc, rcc, uic
+    qt6-base-dev-tools \
+    # Qt 6 modules this links against
+    qt6-base-dev \
+    qt6-webengine-dev \
+    qt6-websockets-dev \
+    qt6-declarative-dev \
+    qt6-virtualkeyboard-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Compiler cache, on the volume the build script mounts. A rebuild after a
+# one-line change should not recompile QtWebEngine's headers four times over.
+ENV CCACHE_DIR=/ccache
+ENV PATH=/usr/lib/ccache:$PATH
+
+WORKDIR /build
