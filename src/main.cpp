@@ -50,15 +50,35 @@ int main(int argc, char** argv)
     // it holds as arguments, without this needing to know that layer exists.
     //
     //   robot-browser [--config=PATH] [--wifi=auto|on|off] [--lan=...]
-    //                 [remote_url] [local_url]
+    //                 [--windowed[=WxH]] [--no-toolbar] [remote_url] [local_url]
     AppConfig config;
     QStringList positional;
+    // Kiosk by default: fullscreen, toolbar, the whole panel. The flags below
+    // exist for the other case — the browser opened from a desktop session as a
+    // single-purpose tool (the WiFi setup page, say), where a fullscreen window
+    // with no exit traps whoever opened it and the kiosk toolbar means nothing.
+    //
+    //   --windowed[=WxH]   a normal window the compositor can decorate and close
+    //   --no-toolbar       drop the bottom bar; the page is the whole point
+    bool windowed = false;
+    bool showToolbar = true;
+    QSize windowSize;
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
         const QString arg = args.at(i);
         if (arg.startsWith("--config="))
             configPath = arg.mid(strlen("--config="));
+        else if (arg == "--windowed" || arg.startsWith("--windowed=")) {
+            windowed = true;
+            if (arg.contains('=')) {
+                const QStringList wh = arg.section('=', 1).split('x');
+                if (wh.size() == 2)
+                    windowSize = QSize(wh.at(0).toInt(), wh.at(1).toInt());
+            }
+        }
+        else if (arg == "--no-toolbar")
+            showToolbar = false;
         else if (!arg.startsWith("--"))
             positional << arg;
     }
@@ -401,10 +421,24 @@ int main(int argc, char** argv)
     // where operators spend their time, Home is the exception.
     webPageController.loadRemote();
 
-    // Show fullscreen for kiosk
+    if (!showToolbar)
+        toolbar->hide();
+
     QScreen* screen = app.primaryScreen();
-    window.setGeometry(screen->geometry());
-    window.showFullScreen();
+    if (windowed) {
+        const QRect avail = screen->availableGeometry();
+        if (windowSize.isValid() && windowSize.width() > 0 && windowSize.height() > 0) {
+            window.resize(windowSize.boundedTo(avail.size()));
+        } else {
+            // Inset, so the window is obviously a window and its title bar —
+            // and the close button on it — is reachable.
+            window.resize(avail.width() * 9 / 10, avail.height() * 4 / 5);
+        }
+        window.show();
+    } else {
+        window.setGeometry(screen->geometry());
+        window.showFullScreen();
+    }
     webPageController.webView()->setFocus();
     keyboard->setPanelWidth(screen->geometry().width());
 
