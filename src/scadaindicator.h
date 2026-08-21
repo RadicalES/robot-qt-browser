@@ -8,6 +8,9 @@
 #include <QPainter>
 #include <QDateTime>
 #include <QDir>
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusReply>
 
 #include "robothead.h"
 
@@ -85,9 +88,19 @@ private slots:
         State state;
         QString text;
         if (status.isEmpty()) {
-            // No /run/robot at all: the client is not installed or not running.
+            // No /run/robot at all. That covers three different situations —
+            // the client is not installed, it is installed and switched off,
+            // or it is meant to be running and is not — and only systemd knows
+            // which. Reporting all three as "not running" sent people looking
+            // for a crash when the service had simply been disabled.
             state = Offline;
-            text = "service not running";
+            const QString unit = unitFileState();
+            if (unit.isEmpty())
+                text = "service not installed";
+            else if (unit == "disabled" || unit == "masked")
+                text = "service disabled";
+            else
+                text = "service not running";
         } else if (status == "ONLINE" && age >= 0 && age <= kStaleSeconds) {
             state = Online;
             text = "connected";
@@ -120,6 +133,36 @@ signals:
 private:
     // Matches the tray indicator: three ping intervals without contact is stale.
     static const int kStaleSeconds = 90;
+    static const int kUnitStateSeconds = 30;
+
+    // systemd's own answer for robot-scada-client, or empty when there is no
+    // such unit. Asked only when /run/robot is silent — the common path never
+    // touches D-Bus — and cached, because the answer changes when somebody
+    // runs systemctl, not every five seconds.
+    QString unitFileState() const
+    {
+        const qint64 now = QDateTime::currentSecsSinceEpoch();
+        if (now - m_unitStateAt < kUnitStateSeconds)
+            return m_unitState;
+
+        QDBusInterface systemd("org.freedesktop.systemd1",
+                               "/org/freedesktop/systemd1",
+                               "org.freedesktop.systemd1.Manager",
+                               QDBusConnection::systemBus());
+        QString value;
+        if (systemd.isValid()) {
+            // Errors for a unit systemd has never heard of, which is the
+            // "not installed" answer rather than a failure to handle.
+            const QDBusReply<QString> reply =
+                systemd.call("GetUnitFileState", QString("robot-scada-client.service"));
+            if (reply.isValid())
+                value = reply.value();
+        }
+
+        m_unitState = value;
+        m_unitStateAt = now;
+        return m_unitState;
+    }
 
     static QString read(const QString& name)
     {
@@ -150,6 +193,8 @@ private:
     State m_state;
     QString m_statusText;
     QTimer m_timer;
+    mutable QString m_unitState;
+    mutable qint64 m_unitStateAt = 0;
 };
 
 #endif
