@@ -4,6 +4,17 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.2.2] - 2026-08-21
+
+### Added
+
+- **`--windowed[=WxH]` and `--no-toolbar`.** The browser is a kiosk by default —
+  fullscreen, toolbar, the whole panel — but it is also the best way to show the
+  terminal's own WiFi setup page from a desktop session, where a fullscreen
+  window with no way out traps whoever opened it and the kiosk toolbar means
+  nothing. Both flags are off by default, so kiosk behaviour is unchanged.
+
+
 ## [3.2.1] - 2026-08-20
 
 ### Changed
