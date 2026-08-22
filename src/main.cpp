@@ -574,7 +574,19 @@ int main(int argc, char** argv)
         if (!keyboard)
             return;
         if (keyboard->isShowing()) {
+            // Blur whatever is focused on the page first.
+            //
+            // Hiding the panel while a text field still holds focus does not
+            // stick: the field is an input-method client, Qt re-shows the panel
+            // for it immediately, and the keyboard flickers and comes straight
+            // back. Taking the focus away removes the thing that keeps asking.
+            if (webPageController.webView() && webPageController.webView()->page()) {
+                webPageController.webView()->page()->runJavaScript(
+                    "if (document.activeElement && document.activeElement.blur)"
+                    " document.activeElement.blur();");
+            }
             keyboard->setForceVisible(false);
+            QGuiApplication::inputMethod()->commit();
             QGuiApplication::inputMethod()->hide();
         } else {
             // Focus the page first: with the panel up and nothing focused,

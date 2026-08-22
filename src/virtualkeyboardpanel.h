@@ -216,6 +216,17 @@ private slots:
     {
         QQuickItem* root = rootObject();
         const bool active = root && root->property("keyboardActive").toBool();
+        // Side-docked, the page has to get the width back when the keyboard
+        // goes away. The bottom-docked panel collapses on its own — the QML
+        // root's height goes to zero — but nothing collapses a width, so the
+        // column sat there empty holding a quarter of the screen.
+        //
+        // Zero width rather than hiding the widget: a hidden QQuickWidget
+        // stops rendering, and the QML inside it is what tells us the keyboard
+        // has become active again.
+        if (m_sideDocked)
+            setFixedWidth(active ? m_panelWidth : 0);
+
         if (active && root) {
             // Re-apply the width on every show, in case the window resized
             // while the keyboard was collapsed.

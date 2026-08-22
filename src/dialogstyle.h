@@ -62,6 +62,20 @@ inline qreal scale() { return scaleRef(); }
 // calls, so a new dialog cannot forget to ask.
 inline void applyWindowFlags(QDialog* dialog)
 {
+    // A dialog opened FROM a dialog keeps its title bar.
+    //
+    // Frameless windows are not stacked above their parent by labwc, so the IP
+    // settings dialog opened from the LAN dialog appeared behind it — and
+    // because it is modal, its parent ignored every tap: no way forward and no
+    // way out of a kiosk. raise() on show did not fix it either.
+    //
+    // A title bar on a second-level dialog is a small price for a terminal
+    // that cannot get stuck. The dialogs opened from the toolbar — System
+    // Info, Settings, WiFi, LAN — are the ones an operator sees constantly,
+    // and those stay clean.
+    if (qobject_cast<QDialog*>(dialog->parentWidget()))
+        return;
+
     dialog->setWindowFlags(dialog->windowFlags() | Qt::FramelessWindowHint);
 }
 
@@ -236,6 +250,16 @@ inline bool HostSizeGuard::eventFilter(QObject* watched, QEvent* event)
             }
             dialog->adjustSize();
             centerOnScreen(dialog);
+
+            // Stack above whatever opened it. A frameless window is not raised
+            // by the compositor the way a decorated one is, so a dialog opened
+            // FROM a dialog — LAN then IP settings — appeared behind its
+            // parent, and because it is modal the parent ignored every tap:
+            // no way forward and no way out.
+            //
+            // raise() only. Pairing it with activateWindow() here once left
+            // dialogs that could not be closed at all.
+            dialog->raise();
 
         }
     }

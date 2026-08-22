@@ -52,6 +52,19 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     infoText->setTextInteractionFlags(Qt::TextSelectableByMouse);
     layout->addWidget(infoText);
 
+    // Who to call. A terminal in a packhouse is a long way from whoever
+    // supports it, and this dialog is the one place an operator already goes
+    // when something is wrong — so the number belongs here, not in a manual
+    // nobody has to hand.
+    auto* contact = new QLabel(
+        "Radical Electronic Systems\n"
+        "http://www.radicalsystems.co.za\n"
+        "Tel: +27 76 224 2224");
+    contact->setStyleSheet(QString("color: #555; font-size: %1px;")
+                               .arg(DialogStyle::px(18)));
+    contact->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    layout->addWidget(contact);
+
     // Action buttons
     auto* buttonRow = new QHBoxLayout;
     m_buttonRow = buttonRow;

@@ -33,38 +33,34 @@ KeyboardLayoutLoader {
         KeyboardLayout {
             keyWeight: 160
 
+            // PC numpad order: 7-8-9 on top, arithmetic down the right, as on
+            // every keyboard and calculator anyone entering figures has used.
+            KeyboardRow {
+                Key { key: Qt.Key_7; text: "7" }
+                Key { key: Qt.Key_8; text: "8" }
+                Key { key: Qt.Key_9; text: "9" }
+                Key { key: Qt.Key_Minus; text: "-" }
+            }
+            KeyboardRow {
+                Key { key: Qt.Key_4; text: "4" }
+                Key { key: Qt.Key_5; text: "5" }
+                Key { key: Qt.Key_6; text: "6" }
+                Key { key: Qt.Key_Plus; text: "+" }
+            }
             KeyboardRow {
                 Key { key: Qt.Key_1; text: "1" }
                 Key { key: Qt.Key_2; text: "2" }
                 Key { key: Qt.Key_3; text: "3" }
-                Key { key: Qt.Key_4; text: "4" }
-            }
-            KeyboardRow {
-                Key { key: Qt.Key_5; text: "5" }
-                Key { key: Qt.Key_6; text: "6" }
-                Key { key: Qt.Key_7; text: "7" }
-                Key { key: Qt.Key_8; text: "8" }
-            }
-            KeyboardRow {
-                Key { key: Qt.Key_9; text: "9" }
-                Key { key: Qt.Key_0; text: "0" }
-                Key { key: Qt.Key_Period; text: "." }
-                Key { key: Qt.Key_Comma; text: "," }
-            }
-            // Arithmetic with the numbers, where someone entering figures
-            // expects it, rather than a page away with the punctuation.
-            KeyboardRow {
-                Key { key: Qt.Key_Plus;     text: "+" }
-                Key { key: Qt.Key_Minus;    text: "-" }
                 Key { key: Qt.Key_Asterisk; text: "*" }
-                Key { key: Qt.Key_Slash;    text: "/" }
+            }
+            KeyboardRow {
+                Key { key: Qt.Key_0; text: "0" }
+                Key { key: Qt.Key_Comma; text: "," }
+                Key { key: Qt.Key_Period; text: "." }
+                Key { key: Qt.Key_Slash; text: "/" }
             }
             // No space key: someone entering figures is not typing words, so
             // the slot carries the way to the punctuation page instead.
-            //
-            // Identical to the narrow keyboard's number page, deliberately: an
-            // operator moving between a T430 and a T440 should not have to
-            // learn two keypads.
             KeyboardRow {
                 SymbolModeKey { displayText: "ABC" }
                 BackspaceKey {}
@@ -89,7 +85,7 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_Percent; text: "%" }
                 Key { key: Qt.Key_Ampersand; text: "&" }
                 Key { key: Qt.Key_Asterisk; text: "*" }
-                BackspaceKey {}
+                Key { key: Qt.Key_Dollar; text: "$" }
             }
             KeyboardRow {
                 Key { key: Qt.Key_Minus; text: "-" }
@@ -97,7 +93,7 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_Plus; text: "+" }
                 Key { key: Qt.Key_Equal; text: "=" }
                 Key { key: Qt.Key_Slash; text: "/" }
-                EnterKey {}
+                Key { key: Qt.Key_Backslash; text: "\\" }
             }
             KeyboardRow {
                 Key { key: Qt.Key_Colon; text: ":" }
@@ -108,14 +104,24 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_Exclam; text: "!" }
             }
             KeyboardRow {
+                Key { key: Qt.Key_QuoteDbl; text: "\"" }
+                Key { key: Qt.Key_Apostrophe; text: "'" }
+                Key { key: Qt.Key_Comma; text: "," }
+                Key { key: Qt.Key_Period; text: "." }
+                Key { key: Qt.Key_Less; text: "<" }
+                Key { key: Qt.Key_Greater; text: ">" }
+            }
+            // Every key that leaves this page, on one row: the same idea as the
+            // number pad, where the mode keys sit together at the bottom
+            // instead of being scattered among the characters.
+            KeyboardRow {
                 SymbolModeKey { displayText: "ABC" }
                 ModeKey {
                     displayText: "123"
                     onClicked: secondPage = false
                 }
-                Key { key: Qt.Key_Dollar; text: "$" }
-                Key { key: Qt.Key_Comma; text: "," }
-                Key { key: Qt.Key_Period; text: "." }
+                BackspaceKey {}
+                EnterKey {}
                 SpaceKey {}
             }
         }
