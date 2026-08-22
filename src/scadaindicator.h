@@ -31,7 +31,7 @@ public:
         : QToolButton(parent)
         , m_state(Offline)
     {
-        setIconSize(QSize(48, 48));
+        setIconSize(QSize(m_iconPixels, m_iconPixels));
         setAutoRaise(true);
         setFocusPolicy(Qt::NoFocus);   // the toolbar never takes keyboard focus
         refresh();
@@ -40,6 +40,15 @@ public:
         // in place, which QFileSystemWatcher handles unreliably.
         connect(&m_timer, &QTimer::timeout, this, &ScadaIndicator::refresh);
         m_timer.start(5000);
+    }
+
+    // Toolbar icons shrink with the rest of the chrome when a device profile
+    // is drawn scaled, so the head keeps its proportion to everything else.
+    void setIconPixels(int pixels)
+    {
+        m_iconPixels = pixels;
+        setIconSize(QSize(pixels, pixels));
+        setIcon(QIcon(RobotHead::pixmap(pixels, variantFor(m_state))));
     }
 
     State state() const { return m_state; }
@@ -120,7 +129,7 @@ private slots:
         if (state != m_state || text != m_statusText) {
             m_state = state;
             m_statusText = text;
-            setIcon(QIcon(RobotHead::pixmap(48, variantFor(state))));
+            setIcon(QIcon(RobotHead::pixmap(m_iconPixels, variantFor(state))));
             const QString site = station();
             setToolTip("SCADA server: " + text + (site.isEmpty() ? "" : " — " + site));
             emit stateChanged();
@@ -132,6 +141,7 @@ signals:
 
 private:
     // Matches the tray indicator: three ping intervals without contact is stale.
+    int m_iconPixels = 48;
     static const int kStaleSeconds = 90;
     static const int kUnitStateSeconds = 30;
 

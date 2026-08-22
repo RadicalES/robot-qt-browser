@@ -74,13 +74,18 @@ exist, and what is left out because it could not work:
 | Profile | Runs as | Notes |
 |---------|---------|-------|
 | `kiosk` (default) | The terminal | Fullscreen on the panel, toolbar, on-screen keyboard |
-| `t430` | A Robot-T430, on a PC | 800×480 window, LAN control, no reboot |
-| `t440` | A Robot-T440, on a PC | 800×1280 window, WiFi control, no reboot |
+| `t430` | A Robot-T430, on a PC | 800×480 viewport, LAN control, no reboot |
+| `t440` | A Robot-T440, on a PC | 800×1280 viewport, WiFi control, no reboot |
 | `desktop` | An application on a PC | Resizable window, no on-screen keyboard, no device controls |
 
 The device profiles exist so somebody writing a webapp for a terminal can see
 it at the terminal's exact viewport without having a terminal — see
 [docs/WEBAPP-DEVELOPERS.md](docs/WEBAPP-DEVELOPERS.md).
+
+A device that does not fit the screen — a T440's 800×1280 portrait panel on a
+1080-tall monitor — is drawn scaled rather than cropped: window, chrome and
+page are multiplied by one fraction and the page is zoomed by it, so the layout
+is still the device's. `--scale=1|fit|N` overrides the choice.
 
 On a PC the package installs a menu entry (**Robot Browser**) for every user on
 the machine, with the two device profiles as right-click actions on it.

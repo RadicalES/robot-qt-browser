@@ -39,6 +39,17 @@ struct RunProfile {
     bool fullscreen = true;
     QSize windowSize;            // used when !fullscreen; empty = let it be
 
+    // How much of 1:1 the device viewport is drawn at. Set at startup from the
+    // screen it finds itself on, never in the table below.
+    //
+    // A T440 is 800x1280 portrait, which does not fit on a 1080-tall desktop,
+    // so 1:1 was clamped to whatever the screen allowed — quietly changing the
+    // viewport the developer was trying to see. Scaling instead keeps the page
+    // at the device's own CSS size and draws it smaller: the browser window,
+    // the toolbar and the page are all multiplied by this, and the web view
+    // gets it as a zoom factor, so the page still lays out as 800x1280.
+    qreal scale = 1.0;
+
     bool toolbar = true;         // the bottom bar
     bool keyboard = true;        // host the virtual keyboard in-process
     bool scadaIndicator = true;  // SCADA state from /run/robot
@@ -58,6 +69,19 @@ struct RunProfile {
     // buttons are for.
     QString remoteUrl;
     QString localUrl;
+
+    // Largest scale at which the device viewport fits the space available,
+    // never above 1:1. The margin leaves room for the window's own title bar
+    // and a little breathing space, so the window is obviously a window.
+    static qreal fitScale(const QSize& want, const QSize& available,
+                          qreal margin = 0.92)
+    {
+        if (!want.isValid() || want.isEmpty() || available.isEmpty())
+            return 1.0;
+        const qreal byWidth  = qreal(available.width())  * margin / want.width();
+        const qreal byHeight = qreal(available.height()) * margin / want.height();
+        return qMin(qreal(1.0), qMin(byWidth, byHeight));
+    }
 
     static QStringList names()
     {

@@ -30,9 +30,33 @@ That is the whole interface: a profile, and two URLs.
 | `kiosk` | The terminal itself — fullscreen on its panel | The panel |
 
 > The `t430` and `t440` sizes are taken from the panel each terminal ships with.
-> If your window is smaller than the profile asks for, the browser says so on
-> stderr — the viewport is then **not** the device's, and a layout that fits
-> your window may still overflow the terminal.
+
+### When the device is bigger than your screen
+
+A T440 is 800×1280 portrait, which does not fit above a taskbar on a 1080-tall
+monitor. Rather than crop the viewport — which would quietly change the thing
+you are trying to look at — the browser draws the whole device smaller:
+
+```
+robot-browser: profile 't440' is 800x1280, drawn at 78% to fit this screen
+(1920x1080). The page still lays out as 800x1280.
+```
+
+The window, the toolbar and the page are all multiplied by that fraction, and
+the page is given it as a zoom factor. Your CSS still sees `800x1280`; only the
+physical size on your monitor is smaller. A media query written for the device
+matches here, and a layout that overflows the device overflows here.
+
+Override it if you want to:
+
+```sh
+robot-browser --profile=t440 --scale=1     # 1:1, even though it will not fit
+robot-browser --profile=t440 --scale=0.5   # half size
+robot-browser --profile=t440 --scale=fit   # the default
+```
+
+`--scale=1` is worth using on a tall monitor, or with the window moved, when
+you want real device pixels.
 
 ## The two URLs
 

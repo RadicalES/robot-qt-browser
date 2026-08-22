@@ -64,6 +64,7 @@ int main(int argc, char** argv)
     // will want a device profile at some size other than 1:1 sooner or later.
     //
     //   --profile=NAME     kiosk (default), t430, t440, desktop
+    //   --scale=N|fit|1    how large to draw a device profile (see below)
     //   --windowed[=WxH]   a normal window the compositor can decorate and close
     //   --no-toolbar       drop the bottom bar; the page is the whole point
     RunProfile profile;
@@ -71,6 +72,7 @@ int main(int argc, char** argv)
     bool windowedFlag = false;
     bool noToolbarFlag = false;
     QSize windowSizeFlag;
+    double scaleFlag = -1.0;        // < 0 means "not given"
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
@@ -98,6 +100,23 @@ int main(int argc, char** argv)
         }
         else if (arg == "--no-toolbar")
             noToolbarFlag = true;
+        else if (arg.startsWith("--scale=")) {
+            const QString value = arg.section('=', 1);
+            if (value == "fit")
+                scaleFlag = 0.0;            // recomputed from the screen below
+            else if (value == "1" || value == "1.0")
+                scaleFlag = 1.0;            // 1:1, even if it does not fit
+            else {
+                bool ok = false;
+                const double parsed = value.toDouble(&ok);
+                if (!ok || parsed <= 0.0 || parsed > 1.0) {
+                    fprintf(stderr, "robot-browser: --scale wants a fraction "
+                                    "0 < N <= 1, or 'fit'\n");
+                    return 2;
+                }
+                scaleFlag = parsed;
+            }
+        }
         else if (!arg.startsWith("--"))
             positional << arg;
     }
@@ -109,6 +128,41 @@ int main(int argc, char** argv)
     }
     if (noToolbarFlag)
         profile.toolbar = false;
+
+    // How large to draw a device profile.
+    //
+    // A T440 is 800x1280 portrait and does not fit on a 1080-tall desktop. It
+    // used to be clamped to whatever the screen allowed, which silently
+    // changed the viewport the developer was trying to look at. Scaling keeps
+    // the page at the device's own size — the window, the chrome and the page
+    // are all multiplied by this, and the web view gets it as a zoom factor —
+    // so the layout is the device's and only the physical size differs.
+    if (!profile.fullscreen && profile.windowSize.isValid()) {
+        const QSize available = app.primaryScreen()->availableGeometry().size();
+        if (scaleFlag > 0.0)
+            profile.scale = scaleFlag;
+        else
+            profile.scale = RunProfile::fitScale(profile.windowSize, available);
+
+        if (profile.scale < 1.0) {
+            fprintf(stderr, "robot-browser: profile '%s' is %dx%d, drawn at %d%% "
+                            "to fit this screen (%dx%d). The page still lays out "
+                            "as %dx%d.\n",
+                    qPrintable(profile.name),
+                    profile.windowSize.width(), profile.windowSize.height(),
+                    int(profile.scale * 100 + 0.5),
+                    available.width(), available.height(),
+                    profile.windowSize.width(), profile.windowSize.height());
+        }
+    }
+
+    // Toolbar metrics follow the scale, so the page keeps the same share of
+    // the window it has on the device. Chrome that stayed 76px tall over a
+    // scaled page would take a bigger bite than it does on the terminal, and
+    // the preview would be wrong in exactly the way it exists to prevent.
+    const auto px = [&profile](int deviceValue) {
+        return qMax(1, int(qRound(deviceValue * profile.scale)));
+    };
     config.loadFile(configPath);
     if (profile.pinNetwork) {
         // A t440 profile shows WiFi and no LAN wherever it runs, because that
@@ -204,16 +258,17 @@ int main(int argc, char** argv)
     QToolBar* toolbar = new QToolBar(&window);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
-    toolbar->setIconSize(QSize(48, 48));
-    toolbar->setFixedHeight(76);
+    toolbar->setIconSize(QSize(px(48), px(48)));
+    toolbar->setFixedHeight(px(76));
     // Tight spacing: with WiFi, LAN and the SCADA head all present the row is
     // nine buttons plus the clock, which at a comfortable 10px gap and 60px
     // buttons overflows a 720px panel. The 48px icons still give a finger-sized
     // target on their own, so the padding around them is what gives way.
-    toolbar->setStyleSheet(
-        "QToolBar { background: #4d4d4d; spacing: 2px; padding: 2px; border: none; }"
-        "QToolButton { border: none; padding: 3px; min-width: 54px; }"
-        "QToolButton:pressed { background: #808080; border-radius: 6px; }");
+    toolbar->setStyleSheet(QString(
+        "QToolBar { background: #4d4d4d; spacing: %1px; padding: %1px; border: none; }"
+        "QToolButton { border: none; padding: %2px; min-width: %3px; }"
+        "QToolButton:pressed { background: #808080; border-radius: 6px; }")
+        .arg(px(2)).arg(px(3)).arg(px(54)));
     window.addToolBar(Qt::BottomToolBarArea, toolbar);
 
     // Navigation buttons
@@ -233,7 +288,7 @@ int main(int argc, char** argv)
         || (config.lan() == AppConfig::Auto);
 
     QToolButton* wifiButton = new QToolButton;
-    wifiButton->setIconSize(QSize(48, 48));
+    wifiButton->setIconSize(QSize(px(48), px(48)));
     wifiButton->setAutoRaise(true);
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
     wifiButton->setVisible(showWifi);
@@ -243,7 +298,7 @@ int main(int argc, char** argv)
     // operator needs the same at-a-glance state and the same way in to
     // settings for either link.
     QToolButton* lanButton = new QToolButton;
-    lanButton->setIconSize(QSize(48, 48));
+    lanButton->setIconSize(QSize(px(48), px(48)));
     lanButton->setAutoRaise(true);
     lanButton->setIcon(QIcon(":/images/lan-down.png"));
     lanButton->setVisible(showLan && networkController.lanAvailable());
@@ -256,14 +311,16 @@ int main(int argc, char** argv)
     // space it takes is part of what the page has to live with. Dropped on a
     // plain desktop, where there is no /run/robot and nothing it could report.
     ScadaIndicator* scadaIndicator = profile.scadaIndicator ? new ScadaIndicator : nullptr;
-    if (scadaIndicator)
+    if (scadaIndicator) {
+        scadaIndicator->setIconPixels(px(48));
         toolbar->addWidget(scadaIndicator);
+    }
 
     // Manual keyboard toggle. The keyboard normally follows the focused field,
     // but an operator needs a way to dismiss it while reading, and a way to
     // raise it if it fails to appear.
     QToolButton* keyboardButton = new QToolButton;
-    keyboardButton->setIconSize(QSize(48, 48));
+    keyboardButton->setIconSize(QSize(px(48), px(48)));
     keyboardButton->setAutoRaise(true);
     keyboardButton->setIcon(QIcon(":/images/keyboard.png"));
     keyboardButton->setVisible(profile.keyboard);
@@ -271,6 +328,7 @@ int main(int argc, char** argv)
 
     // Clock
     DigitalClock* clock = new DigitalClock;
+    clock->setFontPixels(px(24));
     toolbar->addWidget(clock);
 
     // Info button
@@ -476,6 +534,12 @@ int main(int argc, char** argv)
 
     // Load initial page. Remote is the landing page: the transaction page is
     // where operators spend their time, Home is the exception.
+    // The page lays out at the device's size and is drawn smaller. Without
+    // this the window would simply be a smaller viewport, which is the thing a
+    // device profile exists to avoid.
+    if (profile.scale < 1.0 && webPageController.webView())
+        webPageController.webView()->setZoomFactor(profile.scale);
+
     webPageController.loadRemote();
 
     if (!profile.toolbar)
@@ -484,7 +548,9 @@ int main(int argc, char** argv)
     QScreen* screen = app.primaryScreen();
     if (!profile.fullscreen) {
         const QRect avail = screen->availableGeometry();
-        const QSize wanted = profile.windowSize;
+        const QSize wanted = profile.windowSize.isValid()
+            ? QSize(px(profile.windowSize.width()), px(profile.windowSize.height()))
+            : profile.windowSize;
         if (wanted.isValid() && wanted.width() > 0 && wanted.height() > 0) {
             // A device profile is only useful at 1:1 — the whole point is that
             // a page overflowing the panel overflows here too. Warn rather
@@ -505,13 +571,29 @@ int main(int argc, char** argv)
             window.resize(avail.width() * 9 / 10, avail.height() * 4 / 5);
         }
         window.show();
+        if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY")) {
+            fprintf(stderr, "geometry: asked %dx%d, got %dx%d, minimumSizeHint %dx%d "
+                            "(central %dx%d, toolbar %dx%d)\n",
+                    wanted.width(), wanted.height(),
+                    window.width(), window.height(),
+                    window.minimumSizeHint().width(), window.minimumSizeHint().height(),
+                    central->minimumSizeHint().width(), central->minimumSizeHint().height(),
+                    toolbar->minimumSizeHint().width(), toolbar->minimumSizeHint().height());
+        }
     } else {
         window.setGeometry(screen->geometry());
         window.showFullScreen();
     }
     webPageController.webView()->setFocus();
-    if (keyboard)
-        keyboard->setPanelWidth(screen->geometry().width());
+    if (keyboard) {
+        // The window's width, not the screen's. On a terminal they are the
+        // same thing; in a window they are not, and sizing the keyboard to the
+        // screen gave the QQuickWidget a 1920px-wide root, which became the
+        // window's minimum width — so a device profile could not be drawn at
+        // the size it asked for.
+        keyboard->setPanelWidth(profile.fullscreen ? screen->geometry().width()
+                                                   : window.width());
+    }
 
     return app.exec();
 }
