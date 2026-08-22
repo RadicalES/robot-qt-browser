@@ -20,10 +20,14 @@ This repository's release branch is still named `master`; the two names mean
 the same thing here, and the release and publish scripts accept either.
 
 **Packages published to the CDN are built from `main`.** A `.deb` on
-`packages.radicales.net` is what terminals install by `apt-get install`, so it
+`cdn.radsys.io` is what terminals install by `apt-get install`, so it
 must come from the released branch. Test builds from `dev` or `beta` go onto a
 device by hand (see [Manual install](#manual-install)), never through the
 repository.
+
+`packages.radicales.net` is the same bucket under its old name and still
+resolves, so terminals shipped before the move keep updating. Publish to
+`cdn.radsys.io`; there is nothing to publish twice.
 
 ## Version Numbering
 

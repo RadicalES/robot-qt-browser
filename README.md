@@ -108,12 +108,12 @@ so a terminal installs it like any other package. Add the repository once:
 ```sh
 # Signing key (binary form, for apt's signed-by)
 sudo install -d -m 0755 /etc/apt/keyrings
-sudo curl -fsSL https://packages.radicales.net/keys/public/radical-debian-binary.gpg \
+sudo curl -fsSL https://cdn.radsys.io/keys/public/radical-debian-binary.gpg \
     -o /etc/apt/keyrings/radical-systems.gpg
 sudo chmod 0644 /etc/apt/keyrings/radical-systems.gpg
 
 # Repository — bookworm only
-echo "deb [signed-by=/etc/apt/keyrings/radical-systems.gpg] https://packages.radicales.net/debian bookworm main" \
+echo "deb [signed-by=/etc/apt/keyrings/radical-systems.gpg] https://cdn.radsys.io/debian bookworm main" \
     | sudo tee /etc/apt/sources.list.d/radical-systems.list
 ```
 
@@ -127,7 +127,7 @@ Verify the key before trusting it — the fingerprint is
 `E455 6EB6 7025 FB34 4051  ED4B 66B8 F7A3 8EB7 2B1C`:
 
 ```sh
-curl -fsSL https://packages.radicales.net/keys/public/radical-debian.gpg | gpg --with-fingerprint -
+curl -fsSL https://cdn.radsys.io/keys/public/radical-debian.gpg | gpg --with-fingerprint -
 ```
 
 Note the repository metadata is cached at the edge, so a version published in
