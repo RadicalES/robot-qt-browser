@@ -49,16 +49,26 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_7; text: "7" }
                 Key { key: Qt.Key_8; text: "8" }
                 Key { key: Qt.Key_9; text: "9" }
-                ModeKey {
-                    displayText: "SYM"
-                    onClicked: secondPage = true
-                }
+                Key { key: Qt.Key_Comma; text: "," }
             }
+            // Arithmetic with the numbers, where someone entering figures
+            // expects it, rather than a page away with the punctuation.
+            KeyboardRow {
+                Key { key: Qt.Key_Plus;     text: "+" }
+                Key { key: Qt.Key_Minus;    text: "-" }
+                Key { key: Qt.Key_Asterisk; text: "*" }
+                Key { key: Qt.Key_Slash;    text: "/" }
+            }
+            // No space key: someone entering figures is not typing words, so
+            // the slot carries the way to the punctuation page instead.
             KeyboardRow {
                 SymbolModeKey { displayText: "ABC" }
                 Key { key: Qt.Key_0; text: "0" }
                 Key { key: Qt.Key_Period; text: "." }
-                SpaceKey {}
+                ModeKey {
+                    displayText: "SYM"
+                    onClicked: secondPage = true
+                }
             }
         }
     }
