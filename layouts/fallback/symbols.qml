@@ -37,18 +37,18 @@ KeyboardLayoutLoader {
                 Key { key: Qt.Key_1; text: "1" }
                 Key { key: Qt.Key_2; text: "2" }
                 Key { key: Qt.Key_3; text: "3" }
-                BackspaceKey {}
+                Key { key: Qt.Key_4; text: "4" }
             }
             KeyboardRow {
-                Key { key: Qt.Key_4; text: "4" }
                 Key { key: Qt.Key_5; text: "5" }
                 Key { key: Qt.Key_6; text: "6" }
-                EnterKey {}
-            }
-            KeyboardRow {
                 Key { key: Qt.Key_7; text: "7" }
                 Key { key: Qt.Key_8; text: "8" }
+            }
+            KeyboardRow {
                 Key { key: Qt.Key_9; text: "9" }
+                Key { key: Qt.Key_0; text: "0" }
+                Key { key: Qt.Key_Period; text: "." }
                 Key { key: Qt.Key_Comma; text: "," }
             }
             // Arithmetic with the numbers, where someone entering figures
@@ -61,10 +61,14 @@ KeyboardLayoutLoader {
             }
             // No space key: someone entering figures is not typing words, so
             // the slot carries the way to the punctuation page instead.
+            //
+            // Identical to the narrow keyboard's number page, deliberately: an
+            // operator moving between a T430 and a T440 should not have to
+            // learn two keypads.
             KeyboardRow {
                 SymbolModeKey { displayText: "ABC" }
-                Key { key: Qt.Key_0; text: "0" }
-                Key { key: Qt.Key_Period; text: "." }
+                BackspaceKey {}
+                EnterKey {}
                 ModeKey {
                     displayText: "SYM"
                     onClicked: secondPage = true
