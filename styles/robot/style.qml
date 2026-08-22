@@ -445,16 +445,38 @@ KeyboardStyle {
             color: "#ff4500"
             anchors.fill: spaceKeyPanel
             anchors.margins: keyBackgroundMargin
-            Text {
+            // A space-bar glyph, drawn rather than written.
+            //
+            // This used to be the word "Space", hardcoded here — the panel
+            // ignores the key's displayText, so no layout could change it. On
+            // the narrow keyboard the key is 64px wide and the word does not
+            // fit; a mark does, at any size, in any font.
+            Item {
                 id: spaceKeyText
-                text: "Space"
-                color: "#d9d9d9"
-                Behavior on color { PropertyAnimation { duration: 250 } }
                 anchors.centerIn: parent
-                font {
-                    family: fontFamily
-                    weight: Font.Normal
-                    pixelSize: 96 * scaleHint
+                width: 140 * scaleHint
+                height: 60 * scaleHint
+
+                // Two ticks and a bar: the ⎵ mark.
+                Rectangle {
+                    x: 0
+                    y: parent.height * 0.35
+                    width: 8 * scaleHint
+                    height: parent.height * 0.65
+                    color: "#d9d9d9"
+                }
+                Rectangle {
+                    x: parent.width - width
+                    y: parent.height * 0.35
+                    width: 8 * scaleHint
+                    height: parent.height * 0.65
+                    color: "#d9d9d9"
+                }
+                Rectangle {
+                    anchors.bottom: parent.bottom
+                    width: parent.width
+                    height: 8 * scaleHint
+                    color: "#d9d9d9"
                 }
             }
         }

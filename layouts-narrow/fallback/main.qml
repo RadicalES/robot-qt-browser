@@ -77,12 +77,16 @@ KeyboardLayout {
 
     KeyboardRow {
         ShiftKey {}
-        SymbolModeKey {}
+        // "&123" is the stock label and it does not fit a 64px key — shortened
+        // rather than shrunk, so it stays the size of every other key's text.
+        SymbolModeKey { displayText: "123" }
         BackspaceKey {}
         EnterKey {}
     }
 
     KeyboardRow {
+        // The stock space key shows the language name, which does not fit a
+        // 64px key. A space-bar glyph does.
         SpaceKey {}
     }
 }
