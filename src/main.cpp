@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     // whatever it cached for this binary, and keeps showing an icon shipped by
     // a version that is no longer installed.
     app.setWindowIcon(QIcon(":/images/robot-head.svg"));
-    app.setDesktopFileName("za.co.radicalsystems.RobotBrowser");
+    app.setDesktopFileName("io.radsys.RobotBrowser");
 
     // Engine settings and persistent storage are configured per-profile in
     // WebPageController — QtWebEngine has no equivalent of QWebSettings globals.

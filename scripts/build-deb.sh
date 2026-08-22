@@ -98,7 +98,7 @@ mkdir -p "$STAGE/usr/lib/robot-browser"
 mkdir -p "$STAGE/usr/lib/systemd/system"
 mkdir -p "$STAGE/etc/robot-browser"
 mkdir -p "$STAGE/etc/udev/rules.d"
-DESKTOP_ID="za.co.radicalsystems.RobotBrowser"
+DESKTOP_ID="io.radsys.RobotBrowser"
 
 # Menu entry and its icon. Global, in /usr/share — a PC install should put the
 # browser in the applications menu for everyone on the machine, not for
@@ -125,7 +125,7 @@ chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 # The entry is named for the application ID, reverse-DNS, which is what a
 # desktop matches a window to and what it keys its own cache on.
 #
-# It was robot-browser.desktop until 3.5.0, and the rename is deliberate:
+# It was robot-browser.desktop before 3.5.0, and the rename is deliberate:
 # GNOME Shell caches an app by that id for the life of a session, so a machine
 # that had seen an older entry kept launching the old Exec and drawing the old
 # icon no matter what the package installed - for months, on a workstation that

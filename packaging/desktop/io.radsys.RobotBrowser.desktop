@@ -10,11 +10,11 @@ Exec=robot-browser --profile=user
 # Named for the application ID, and installed under that name in
 # hicolor/scalable/apps.
 #
-# Not the bare "robot-browser" it was until 3.5.0: a desktop caches an icon
+# Not the bare "robot-browser" it was before 3.5.0: a desktop caches an icon
 # under the name it was asked for and does not reload it when the file behind
 # that name changes, so machines that had seen 3.3.1's green mark kept drawing
 # it for the life of the session - months, on a workstation.
-Icon=za.co.radicalsystems.RobotBrowser
+Icon=io.radsys.RobotBrowser
 Terminal=false
 Categories=Network;WebBrowser;
 Keywords=robot;kiosk;terminal;radicales;
