@@ -40,7 +40,11 @@ done
 
 VERSION=$(tr -d '[:space:]' < "${PROJECT_DIR}/VERSION")
 BRANCH=$(git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD)
-DEB="${PROJECT_DIR}/build-deb/${PACKAGE}_${VERSION}-1_${ARCH}.deb"
+# The package version carries the suite it was built for — 3.4.0-1~bookworm —
+# because a build made against one distro's Qt does not run on another's. The
+# exact suffix comes from the build, so it is matched rather than assumed.
+DEB=$(ls -1 "${PROJECT_DIR}/build-deb/${PACKAGE}_${VERSION}-1"*"_${ARCH}.deb" 2>/dev/null | head -1)
+[ -n "$DEB" ] || DEB="${PROJECT_DIR}/build-deb/${PACKAGE}_${VERSION}-1_${ARCH}.deb"
 POOL="${PACKAGE_REPO}/debian/pool/main/${ARCH}"
 
 echo "Package:  ${PACKAGE} ${VERSION}-1 (${ARCH})"
@@ -78,7 +82,14 @@ fi
 if [ ! -f "$DEB" ]; then
     echo "Package not built yet — building."
     "${PROJECT_DIR}/scripts/build-deb.sh" "$ARCH"
+    DEB=$(ls -1 "${PROJECT_DIR}/build-deb/${PACKAGE}_${VERSION}-1"*"_${ARCH}.deb" 2>/dev/null | head -1)
+    if [ -z "$DEB" ]; then
+        echo "ERROR: no package built for ${ARCH} at version ${VERSION}"
+        exit 1
+    fi
 fi
+
+echo "Package file: $(basename "$DEB")"
 
 # --- Publish ----------------------------------------------------------------
 
