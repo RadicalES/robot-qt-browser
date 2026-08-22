@@ -63,6 +63,7 @@ struct RunProfile {
     // the browser at a dev server is the entire workflow.
     bool settings = false;
 
+
     // Network controls. A device profile pins these to what the device has; the
     // kiosk profile leaves them to the config file, which is what a deployment
     // uses to say what the terminal IS.

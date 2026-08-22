@@ -50,6 +50,21 @@ inline void setScale(qreal scale)
 
 inline qreal scale() { return scaleRef(); }
 
+// No title bar on any dialog, anywhere.
+//
+// These are modal dialogs that already carry their own Close, so minimise,
+// maximise and close are duplicated at best. On a terminal they are worse than
+// that: there is no window management and no way to reach a minimised dialog
+// again, so the buttons offer an operator a way to lose the dialog and no way
+// back. On a PC they are simply redundant.
+//
+// Applied by widthToScreen() and sizeToScreen(), which every dialog already
+// calls, so a new dialog cannot forget to ask.
+inline void applyWindowFlags(QDialog* dialog)
+{
+    dialog->setWindowFlags(dialog->windowFlags() | Qt::FramelessWindowHint);
+}
+
 // A device pixel value, at the current scale.
 inline int px(int deviceValue)
 {
@@ -144,6 +159,7 @@ inline void widthToScreen(QDialog* dialog, qreal widthFraction)
     const QRect host = hostRect(dialog);
     dialog->setMinimumWidth(int(host.width() * widthFraction));
     dialog->setMaximumWidth(host.width());
+    applyWindowFlags(dialog);
     new HostSizeGuard(dialog, widthFraction, 0.0);
 }
 
@@ -155,6 +171,7 @@ inline void sizeToScreen(QDialog* dialog, qreal widthFraction, qreal heightFract
     dialog->setMinimumSize(int(host.width() * widthFraction),
                            int(host.height() * heightFraction));
     dialog->setMaximumSize(host.width(), host.height());
+    applyWindowFlags(dialog);
     new HostSizeGuard(dialog, widthFraction, heightFraction);
 }
 
