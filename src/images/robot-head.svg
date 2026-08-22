@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
 <!-- Robot mascot head - THE STANDARD MARK (orange)
+
+     This comment sits INSIDE the element on purpose. gdk-pixbuf identifies a
+     file by sniffing its first few hundred bytes, so a comment long enough to
+     push <svg past that window makes the file unreadable to every GTK
+     consumer - including the desktop menu, which drew no icon at all. Qt has
+     its own parser and never noticed, so the mark looked right in the
+     application and was missing from the menu entry that points at this file.
 
      This is the application icon and the face in the Info dialog. It is a
      brand mark, not a status: it does not change colour with the SCADA
@@ -13,7 +21,6 @@
      Robot mascot head, traced from robot-scada-client's 48px tray pixmaps
      (robot-head-{ok,warn,error,off}.png) so the kiosk shows the same mark at
      any size. warn variant: terminal not provisioned. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
   <g fill="#ff9800">
     <!-- Antennae: bulb, neck, base block — one either side of the head. -->
     <circle cx="2.5" cy="5.5" r="2.5"/>
