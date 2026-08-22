@@ -139,6 +139,13 @@ if [ -d "${PROJECT_DIR}/layouts" ]; then
     cp -r "${PROJECT_DIR}/layouts/"* "$STAGE/usr/share/robot-browser/layouts/"
 fi
 
+# The narrow layout — six keys per row — for short landscape panels, chosen at
+# runtime by pointing QT_VIRTUALKEYBOARD_LAYOUT_PATH here.
+if [ -d "${PROJECT_DIR}/layouts-narrow" ]; then
+    mkdir -p "$STAGE/usr/share/robot-browser/layouts-narrow"
+    cp -r "${PROJECT_DIR}/layouts-narrow/"* "$STAGE/usr/share/robot-browser/layouts-narrow/"
+fi
+
 # Step 4: Calculate installed size (in KB)
 INSTALLED_SIZE=$(du -sk "$STAGE" | awk '{print $1}')
 

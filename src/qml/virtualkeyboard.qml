@@ -35,6 +35,11 @@ Item {
     // shorter keypad. 0.465 suits the three-row letter layout (the digit row
     // was removed); it was 0.62 when that layout had four rows.
     property real heightRatio: 0.465
+    // The style sizes everything by scaleHint = keyboard width / design width,
+    // so a narrow keyboard gets tiny letters unless the design width narrows
+    // with it. C++ sets this when it narrows the panel; 2560 is the style's
+    // own value, for the full-width case.
+    property real designWidth: 2560
 
     // Width is set from C++ to the window width; height follows the keyboard,
     // collapsing to zero when it is not wanted.
@@ -64,8 +69,13 @@ Item {
         // design width makes each row taller for the same panel width.
         Binding {
             target: inputPanel.keyboard.style
+            property: "keyboardDesignWidth"
+            value: root.designWidth
+        }
+        Binding {
+            target: inputPanel.keyboard.style
             property: "keyboardDesignHeight"
-            value: inputPanel.keyboard.style.keyboardDesignWidth * root.heightRatio
+            value: root.designWidth * root.heightRatio
         }
     }
 }

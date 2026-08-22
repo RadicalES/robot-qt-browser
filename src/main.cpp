@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QAction>
 #include <QScreen>
+#include <QDir>
 #include <QDebug>
 
 
@@ -230,10 +231,49 @@ int main(int argc, char** argv)
     // Main window — web view fills the window, with the virtual keyboard
     // sharing the central area so it pushes content up rather than covering it.
     QMainWindow window;
+
+    // Where the keyboard goes, and how tall the toolbar is, both follow the
+    // shape of the panel.
+    //
+    // The keyboard's height is a fixed share of its width, so on a short
+    // landscape panel a full-width keyboard leaves almost nothing to type
+    // into: a T431 is 1024x600 and the keyboard wants 476 of those 600 pixels.
+    // Docking it down the side instead costs width, which a landscape panel
+    // has, rather than height, which it does not.
+    const QSize panel = profile.windowSize.isValid()
+        ? profile.windowSize
+        : app.primaryScreen()->geometry().size();
+    const bool sideKeyboard = panel.width() > panel.height()
+                              && panel.height() < 760;
+
+    // A short landscape panel also needs a different key ARRANGEMENT, not just
+    // a smaller keyboard: a third of 1024px is 341px, and ten keys across that
+    // is 34px each — unhittable however the text is scaled. The narrow layout
+    // is six keys per row over six rows, so the keys stay finger-sized.
+    //
+    // Selected by pointing QtVirtualKeyboard at a different layout directory.
+    // Set here rather than in the launcher because the browser is what knows
+    // the panel's shape; a launcher would have to be told, per terminal, and
+    // would be wrong the moment a unit shipped with a different screen.
+    if (profile.keyboard && sideKeyboard) {
+        const QString narrow = "/usr/share/robot-browser/layouts-narrow";
+        if (QDir(narrow).exists())
+            qputenv("QT_VIRTUALKEYBOARD_LAYOUT_PATH", narrow.toUtf8());
+    }
+
     QWidget* central = new QWidget;
-    QVBoxLayout* centralLayout = new QVBoxLayout(central);
+
+    // The page column: banner, page, load bar — and the keyboard too, unless
+    // it is going down the side.
+    QWidget* pageColumn = new QWidget;
+    QVBoxLayout* centralLayout = new QVBoxLayout(pageColumn);
     centralLayout->setContentsMargins(0, 0, 0, 0);
     centralLayout->setSpacing(0);
+
+    QHBoxLayout* centralRow = new QHBoxLayout(central);
+    centralRow->setContentsMargins(0, 0, 0, 0);
+    centralRow->setSpacing(0);
+    centralRow->addWidget(pageColumn, 1);
     // Offline notice: an inline strip rather than a modal. A packhouse dead
     // zone is routine, and a dialog would block the operator and steal focus
     // from the page for something that fixes itself when they move.
@@ -271,8 +311,12 @@ int main(int argc, char** argv)
     // the QtVirtualKeyboard QML module and its dependencies — which a desktop
     // install has no reason to have present at all.
     VirtualKeyboardPanel* keyboard = profile.keyboard ? new VirtualKeyboardPanel : nullptr;
-    if (keyboard)
-        centralLayout->addWidget(keyboard);
+    if (keyboard) {
+        if (sideKeyboard)
+            centralRow->addWidget(keyboard, 0, Qt::AlignBottom);
+        else
+            centralLayout->addWidget(keyboard, 0, Qt::AlignHCenter);
+    }
 
     window.setCentralWidget(central);
 
@@ -281,8 +325,14 @@ int main(int argc, char** argv)
     QToolBar* toolbar = new QToolBar(&window);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
-    toolbar->setIconSize(QSize(px(48), px(48)));
-    toolbar->setFixedHeight(px(76));
+    // 76px is right on a 1280-tall portrait panel and a big bite out of a
+    // 480-tall one, so it scales with the panel and stops at a size a finger
+    // can still hit. A tenth of the panel: 76px on a T440, 60px on a 600-tall
+    // T431, 48px on a standard 800x480 T430.
+    const int barHeight = qBound(px(44), panel.height() / 10, px(76));
+    const int barIcon = qBound(px(28), barHeight * 5 / 8, px(48));
+    toolbar->setIconSize(QSize(barIcon, barIcon));
+    toolbar->setFixedHeight(barHeight);
     // Tight spacing: with WiFi, LAN and the SCADA head all present the row is
     // nine buttons plus the clock, which at a comfortable 10px gap and 60px
     // buttons overflows a 720px panel. The 48px icons still give a finger-sized
@@ -311,7 +361,7 @@ int main(int argc, char** argv)
         || (config.lan() == AppConfig::Auto);
 
     QToolButton* wifiButton = new QToolButton;
-    wifiButton->setIconSize(QSize(px(48), px(48)));
+    wifiButton->setIconSize(QSize(barIcon, barIcon));
     wifiButton->setAutoRaise(true);
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
     wifiButton->setVisible(showWifi);
@@ -321,7 +371,7 @@ int main(int argc, char** argv)
     // operator needs the same at-a-glance state and the same way in to
     // settings for either link.
     QToolButton* lanButton = new QToolButton;
-    lanButton->setIconSize(QSize(px(48), px(48)));
+    lanButton->setIconSize(QSize(barIcon, barIcon));
     lanButton->setAutoRaise(true);
     lanButton->setIcon(QIcon(":/images/lan-down.png"));
     lanButton->setVisible(showLan && networkController.lanAvailable());
@@ -335,7 +385,7 @@ int main(int argc, char** argv)
     // plain desktop, where there is no /run/robot and nothing it could report.
     ScadaIndicator* scadaIndicator = profile.scadaIndicator ? new ScadaIndicator : nullptr;
     if (scadaIndicator) {
-        scadaIndicator->setIconPixels(px(48));
+        scadaIndicator->setIconPixels(barIcon);
         toolbar->addWidget(scadaIndicator);
     }
 
@@ -343,7 +393,7 @@ int main(int argc, char** argv)
     // but an operator needs a way to dismiss it while reading, and a way to
     // raise it if it fails to appear.
     QToolButton* keyboardButton = new QToolButton;
-    keyboardButton->setIconSize(QSize(px(48), px(48)));
+    keyboardButton->setIconSize(QSize(barIcon, barIcon));
     keyboardButton->setAutoRaise(true);
     keyboardButton->setIcon(QIcon(":/images/keyboard.png"));
     keyboardButton->setVisible(profile.keyboard);
@@ -635,8 +685,25 @@ int main(int argc, char** argv)
         // screen gave the QQuickWidget a 1920px-wide root, which became the
         // window's minimum width — so a device profile could not be drawn at
         // the size it asked for.
-        keyboard->setPanelWidth(profile.fullscreen ? screen->geometry().width()
-                                                   : window.width());
+        const int hostWidth  = profile.fullscreen ? screen->geometry().width()
+                                                  : window.width();
+        int hostHeight = profile.fullscreen ? screen->geometry().height()
+                                            : window.height();
+        // What the CENTRAL widget has, not what the screen has. The toolbar is
+        // not part of it, and a side keyboard sized to the whole screen makes
+        // the window taller than the screen: the compositor then un-fullscreens
+        // it, which puts a title bar on the window and pushes the toolbar off
+        // the bottom — both of which is exactly what happened.
+        if (profile.toolbar && toolbar->isVisible())
+            hostHeight -= toolbar->height();
+        if (sideKeyboard) {
+            // Half the width, and as tall as it likes: down the side the
+            // constraint is horizontal, so the keys get the vertical room a
+            // short panel could not give them at the bottom.
+            keyboard->setSideDocked(hostWidth / 4, hostHeight);
+        } else {
+            keyboard->setPanelWidth(hostWidth, hostHeight);
+        }
     }
 
     return app.exec();

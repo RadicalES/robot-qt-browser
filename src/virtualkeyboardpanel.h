@@ -98,15 +98,116 @@ public:
 
     // Match the keyboard to the window width. InputPanel derives its height
     // from this, so the widget resizes to suit.
-    void setPanelWidth(int width)
+    void setPanelWidth(int width, int availableHeight = 0)
     {
-        if (QQuickItem* root = rootObject())
-            root->setWidth(width);
+        QQuickItem* root = rootObject();
+        if (!root)
+            return;
+
+        // The keyboard's height follows its width — the QML sets
+        // keyboardDesignHeight to 46.5% of the design width — which is right on
+        // a portrait panel and wrong on a short landscape one. A T431 is
+        // 1024x600, so a full-width keyboard wants 476 of those 600 pixels and
+        // covers the page it is typing into.
+        //
+        // Narrow it rather than squash it. Squashing was the first attempt and
+        // it made the letters enormous: the style sizes its text by scaleHint,
+        // which is width / keyboardDesignWidth, so changing only the height
+        // ratio shrinks the keys and leaves the font where it was. Narrowing
+        // takes height, width and text down together, and the keyboard keeps
+        // its proportions.
+        int effectiveWidth = width;
+        if (availableHeight > 0) {
+            const int maxHeight = int(availableHeight * kMaxHeightFraction);
+            const int widthForHeight = int(maxHeight / kAspect);
+            if (widthForHeight < width) {
+                // Narrowing is needed, so apply the width limit as well: a
+                // third of the panel each way. Both caps belong to the same
+                // case — a short landscape screen — and neither applies to a
+                // portrait panel, where a full-width keyboard is already well
+                // under a third of the height and a third of the width would
+                // leave keys too small to hit.
+                effectiveWidth = qMin(widthForHeight,
+                                      int(width * kMaxWidthFraction));
+            }
+        }
+
+        m_panelWidth = effectiveWidth;
+        setFixedWidth(effectiveWidth);
+        root->setWidth(effectiveWidth);
+
+        if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY")) {
+            qWarning("keyboard: asked %dx? avail-h %d -> width %d, root %.0fx%.0f, widget %dx%d",
+                     width, availableHeight, effectiveWidth,
+                     root->width(), root->height(), this->width(), this->height());
+        }
     }
+
+    // Dock the keyboard down the side of the page rather than under it.
+    //
+    // The panel keeps its own width and takes the full height available; the
+    // QML height ratio is set from that, so the keys grow vertically instead
+    // of the keyboard growing wider. Used on short landscape panels, where a
+    // full-width keyboard would leave a strip of page too small to read.
+    void setSideDocked(int width, int height)
+    {
+        QQuickItem* root = rootObject();
+        if (!root)
+            return;
+
+        m_sideDocked = true;
+        m_panelWidth = width;
+        setFixedWidth(width);
+        // A maximum, not a fixed size: if the layout has less to give — a
+        // banner is showing, or the window is smaller than the screen — the
+        // keyboard has to shrink rather than force the window taller.
+        setMaximumHeight(height);
+        setMinimumHeight(0);
+
+        // Fill the height: the whole point of docking to the side is that the
+        // vertical room is there to use.
+        if (width > 0)
+            root->setProperty("heightRatio", qreal(height) / width);
+
+        // Keep the letters the size they are on a full-width keyboard. The
+        // style scales its text by width / keyboardDesignWidth, so a quarter
+        // of the panel with the stock 2560 design width would give letters a
+        // quarter the size. Measured on a T431: a 512px keyboard against 2560
+        // reads well, which is a scale of 0.2.
+        root->setProperty("designWidth", qreal(width) / kGlyphScale);
+        root->setWidth(width);
+
+        if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY")) {
+            qWarning("keyboard(side): %dx%d ratio %.2f designWidth %.0f",
+                     width, height, qreal(height) / width, qreal(width) / kGlyphScale);
+        }
+    }
+
+private:
+    // A third of the screen, no more. The operator is typing into something and
+    // has to be able to see it: on a 600px panel even half the screen leaves
+    // too little page to work with.
+    //
+    // On a portrait panel the keyboard is well under this anyway — a T440's
+    // 720-wide keyboard is 335 of 1280 — so this only bites on the short
+    // landscape panels it is meant for.
+    static constexpr qreal kMaxHeightFraction = 1.0 / 3.0;
+    // The shape the QML asks for: keyboardDesignHeight = 46.5% of the width.
+    static constexpr qreal kAspect = 0.465;
+    static constexpr qreal kMaxWidthFraction = 1.0 / 3.0;
+    // Glyphs read well at this scale — 512px of keyboard against the style's
+    // 2560 design width, measured on a T431.
+    static constexpr qreal kGlyphScale = 0.2;
+    bool m_sideDocked = false;
+    int m_panelWidth = 0;
 
 private slots:
     void onRootHeightChanged()
     {
+        // Side-docked, the layout owns the height — pinning it to the QML root
+        // would collapse the column back to a bottom-strip shape.
+        if (m_sideDocked)
+            return;
         if (QQuickItem* root = rootObject())
             setFixedHeight(int(root->height()));
     }
@@ -115,12 +216,25 @@ private slots:
     {
         QQuickItem* root = rootObject();
         const bool active = root && root->property("keyboardActive").toBool();
-        if (active && parentWidget()) {
+        if (active && root) {
             // Re-apply the width on every show, in case the window resized
             // while the keyboard was collapsed.
-            root->setWidth(parentWidget()->width());
+            //
+            // The width we were GIVEN, not the parent's. Taking the parent's
+            // undid the narrowing on a short landscape panel every time the
+            // keyboard came up: it went back to full width, which is both half
+            // the screen tall and — because the style scales its text by
+            // width / keyboardDesignWidth — covered in enormous letters.
+            root->setWidth(m_panelWidth > 0 ? m_panelWidth
+                                            : (parentWidget() ? parentWidget()->width()
+                                                              : int(root->width())));
         }
 
+        if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY") && root) {
+            qWarning("keyboard(active=%d): root %.0fx%.0f widget %dx%d panelWidth %d",
+                     active, root->width(), root->height(),
+                     this->width(), this->height(), m_panelWidth);
+        }
         qDebug() << "VirtualKeyboardPanel: active=" << active
                 << "rootHeight=" << (root ? root->height() : -1)
                 << "widgetHeight=" << height();

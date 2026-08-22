@@ -84,6 +84,11 @@ inline QString neutral()   { return QStringLiteral("background: white; color: #3
 inline QString sheet()
 {
     return QString(
+        // The dialogs draw their own edge, because they have no title bar to
+        // draw one for them: without this a light dialog over a light page has
+        // no visible boundary at all, and an operator cannot see where it
+        // starts and the page ends.
+        "QDialog { border: %12px solid #4d4d4d; }"
         "QLabel { font-size: %1px; }"
         "QPushButton { font-size: %1px; padding: %2px %3px; border-radius: 6px;"
         "              min-height: %4px; min-width: %5px; border: none; }"
@@ -95,7 +100,7 @@ inline QString sheet()
         "QListWidget::item { padding: %10px %11px; }")
         .arg(px(20)).arg(px(14)).arg(px(24)).arg(px(34)).arg(px(90))
         .arg(px(22)).arg(px(12)).arg(px(26)).arg(px(36)).arg(px(16))
-        .arg(px(8));
+        .arg(px(8)).arg(px(3));
 }
 
 // What a dialog should size and position itself against.
@@ -231,6 +236,7 @@ inline bool HostSizeGuard::eventFilter(QObject* watched, QEvent* event)
             }
             dialog->adjustSize();
             centerOnScreen(dialog);
+
         }
     }
     return QObject::eventFilter(watched, event);
