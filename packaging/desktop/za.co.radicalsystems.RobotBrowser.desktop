@@ -7,14 +7,14 @@ Comment=Two-URL kiosk browser for RadicalES Robot terminals
 # Installed to /usr/share/applications, so it is in the menu for every user on
 # the machine rather than for whoever happened to install it.
 Exec=robot-browser --profile=user
-# An absolute path, not the icon NAME the theme would look up.
+# Named for the application ID, and installed under that name in
+# hicolor/scalable/apps.
 #
-# GNOME Shell caches icons by name and never invalidates that cache when the
-# file behind the name changes: 3.3.1 shipped a green mark, 3.4.0 replaced it
-# with the orange one, and shells that had seen the green one kept drawing it
-# for as long as the session lived - which can be months. A path is resolved
-# directly, so an upgrade that changes the file is seen.
-Icon=/usr/share/icons/hicolor/scalable/apps/robot-browser.svg
+# Not the bare "robot-browser" it was until 3.5.0: a desktop caches an icon
+# under the name it was asked for and does not reload it when the file behind
+# that name changes, so machines that had seen 3.3.1's green mark kept drawing
+# it for the life of the session - months, on a workstation.
+Icon=za.co.radicalsystems.RobotBrowser
 Terminal=false
 Categories=Network;WebBrowser;
 Keywords=robot;kiosk;terminal;radicales;

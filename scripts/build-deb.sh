@@ -98,6 +98,8 @@ mkdir -p "$STAGE/usr/lib/robot-browser"
 mkdir -p "$STAGE/usr/lib/systemd/system"
 mkdir -p "$STAGE/etc/robot-browser"
 mkdir -p "$STAGE/etc/udev/rules.d"
+DESKTOP_ID="za.co.radicalsystems.RobotBrowser"
+
 # Menu entry and its icon. Global, in /usr/share — a PC install should put the
 # browser in the applications menu for everyone on the machine, not for
 # whoever ran apt.
@@ -128,11 +130,14 @@ chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 # that had seen an older entry kept launching the old Exec and drawing the old
 # icon no matter what the package installed - for months, on a workstation that
 # is never logged out. A new id is one the shell has never seen.
-DESKTOP_ID="za.co.radicalsystems.RobotBrowser"
 cp "${PROJECT_DIR}/packaging/desktop/${DESKTOP_ID}.desktop" "$STAGE/usr/share/applications/${DESKTOP_ID}.desktop"
 chmod 644 "$STAGE/usr/share/applications/${DESKTOP_ID}.desktop"
-cp "${PROJECT_DIR}/src/images/robot-head.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
-chmod 644 "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
+# The icon is named for the application ID, like the entry itself. That is
+# what a themed icon for an app is supposed to be called, and it means the
+# desktop finds it by name - through the theme, so it picks the right size and
+# scale - rather than being handed a path to one fixed file.
+cp "${PROJECT_DIR}/src/images/robot-head.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/${DESKTOP_ID}.svg"
+chmod 644 "$STAGE/usr/share/icons/hicolor/scalable/apps/${DESKTOP_ID}.svg"
 
 # Custom virtual keyboard style (red lettering, from the T420 terminal).
 # Must sit at QtQuick/VirtualKeyboard/Styles/<name> under a QML import root.
