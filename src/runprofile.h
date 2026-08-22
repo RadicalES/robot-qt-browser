@@ -52,6 +52,20 @@ struct RunProfile {
 
     bool toolbar = true;         // the bottom bar
     bool keyboard = true;        // host the virtual keyboard in-process
+
+    // Which keyboard to render:
+    //
+    //   auto      decide from the panel — the default, and right for a
+    //             terminal, which knows its own screen
+    //   full      numbers, letters and symbols on one page, twelve across.
+    //             For a wide panel: a T432 or an ITPC-200
+    //   standard  ten across, letters only, with number and symbol pages
+    //   narrow    four across, docked down the side. For a short landscape
+    //             panel like a T431, where nothing else fits
+    //
+    // A deployment that disagrees with the automatic choice says so with
+    // --keyboard=; the panel is a good guess, not a rule.
+    QString keyboardLayout = "auto";
     bool scadaIndicator = true;  // SCADA state from /run/robot
     bool systemActions = true;   // Reboot and Reset Defaults
 

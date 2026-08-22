@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QAction>
 #include <QScreen>
+#include <QSizeF>
 #include <QDir>
 #include <QDebug>
 
@@ -34,6 +35,11 @@
 #include "dialogstyle.h"
 #include "kioskstyle.h"
 #include "appconfig.h"
+
+// Both bottom-docked keyboards are four rows, and a touch key wants about
+// 11mm — the size of a fingertip, not a fraction of whatever screen it is on.
+static constexpr int kRows = 4;
+static constexpr qreal kKeyMillimetres = 11.0;
 
 int main(int argc, char** argv)
 {
@@ -68,6 +74,7 @@ int main(int argc, char** argv)
     //   --profile=NAME     kiosk (default), t430, t440, desktop
     //   --scale=N|fit|1    how large to draw a device profile (see below)
     //   --settings=on|off  offer "Settings…" in System Info
+    //   --keyboard=auto|full|standard|narrow|off   which keyboard to render
     //   --windowed[=WxH]   a normal window the compositor can decorate and close
     //   --no-toolbar       drop the bottom bar; the page is the whole point
     RunProfile profile;
@@ -77,6 +84,7 @@ int main(int argc, char** argv)
     QSize windowSizeFlag;
     double scaleFlag = -1.0;        // < 0 means "not given"
     int settingsFlag = -1;          // < 0 means "not given"
+    QString keyboardFlag;
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
@@ -104,6 +112,19 @@ int main(int argc, char** argv)
         }
         else if (arg == "--no-toolbar")
             noToolbarFlag = true;
+        else if (arg.startsWith("--keyboard=")) {
+            const QString value = arg.section('=', 1);
+            if (value == "off") {
+                keyboardFlag = value;
+            } else if (value == "auto" || value == "full"
+                       || value == "standard" || value == "narrow") {
+                keyboardFlag = value;
+            } else {
+                fprintf(stderr, "robot-browser: --keyboard wants auto, full, "
+                                "standard, narrow or off\n");
+                return 2;
+            }
+        }
         else if (arg.startsWith("--settings=")) {
             const QString value = arg.section('=', 1);
             if (value != "on" && value != "off") {
@@ -142,6 +163,18 @@ int main(int argc, char** argv)
         profile.toolbar = false;
     if (settingsFlag >= 0)
         profile.settings = (settingsFlag == 1);
+    if (!keyboardFlag.isEmpty()) {
+        if (keyboardFlag == "off") {
+            profile.keyboard = false;
+        } else {
+            // Naming a layout turns the keyboard ON as well as choosing it.
+            // The desktop profile has none by default — a PC has a real
+            // keyboard — but a touch-screen PC is still a PC, and
+            // "--profile=desktop --keyboard=full" should mean what it says.
+            profile.keyboard = true;
+            profile.keyboardLayout = keyboardFlag;
+        }
+    }
 
     // How large to draw a device profile.
     //
@@ -243,25 +276,60 @@ int main(int argc, char** argv)
     const QSize panel = profile.windowSize.isValid()
         ? profile.windowSize
         : app.primaryScreen()->geometry().size();
-    const bool sideKeyboard = panel.width() > panel.height()
-                              && panel.height() < 760;
+    // "auto" asks the panel; anything else was asked for explicitly and is
+    // taken at its word, even where it is a poor fit — a deployment that says
+    // --keyboard=full on a small screen has its reasons.
+    const QString wanted = profile.keyboardLayout == "auto"
+        ? (panel.width() > panel.height() && panel.height() < 760
+               ? QStringLiteral("narrow")
+               : panel.width() >= 1200 ? QStringLiteral("full")
+                                       : QStringLiteral("standard"))
+        : profile.keyboardLayout;
 
-    // A short landscape panel also needs a different key ARRANGEMENT, not just
-    // a smaller keyboard: a third of 1024px is 341px, and ten keys across that
-    // is 34px each — unhittable however the text is scaled. The narrow layout
-    // is six keys per row over six rows, so the keys stay finger-sized.
+    const bool sideKeyboard = (wanted == "narrow");
+
+    // Three keyboards, chosen by pointing QtVirtualKeyboard at a different
+    // layout directory:
     //
-    // Selected by pointing QtVirtualKeyboard at a different layout directory.
-    // Set here rather than in the launcher because the browser is what knows
-    // the panel's shape; a launcher would have to be told, per terminal, and
-    // would be wrong the moment a unit shipped with a different screen.
-    if (profile.keyboard && sideKeyboard) {
-        const QString narrow = "/usr/share/robot-browser/layouts-narrow";
-        if (QDir(narrow).exists())
-            qputenv("QT_VIRTUALKEYBOARD_LAYOUT_PATH", narrow.toUtf8());
+    //   narrow    four across, down the side. A short landscape panel has no
+    //             room under the page: a third of 1024px is 341px, and ten
+    //             keys across that is 34px each, unhittable however the text
+    //             is scaled. The arrangement has to change, not the size.
+    //   full      twelve across with numbers and symbols on the same page, for
+    //             a panel wide enough that switching pages is a limitation
+    //             with no cause.
+    //   standard  the package's own ten-across, for everything else.
+    //
+    // Decided here rather than in the launcher because the browser knows the
+    // panel; a launcher would have to be told, per terminal, and would be
+    // wrong the moment a unit shipped with a different screen. --keyboard=
+    // overrides it for a deployment that knows better.
+    // A wide panel has room for every key at once: numbers, letters and the
+    // everyday symbols, with no page to switch. A T432 is 1280x800 and an
+    // ITPC-200 is 1920x1080; making an operator press SYM to type a digit on
+    // one of those is a limitation with no cause.
+    const bool fullKeyboard = (wanted == "full");
+
+    if (profile.keyboard) {
+        const QString path = sideKeyboard
+            ? QStringLiteral("/usr/share/robot-browser/layouts-narrow")
+            : fullKeyboard ? QStringLiteral("/usr/share/robot-browser/layouts-full")
+                           : QString();   // standard: the package's own layouts
+        if (!path.isEmpty() && QDir(path).exists())
+            qputenv("QT_VIRTUALKEYBOARD_LAYOUT_PATH", path.toUtf8());
+        if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY")) {
+            fprintf(stderr, "keyboard: %s (panel %dx%d)\n",
+                    qPrintable(wanted), panel.width(), panel.height());
+        }
     }
 
     QWidget* central = new QWidget;
+    // Black, the same ground the keyboard draws on, so the space around a
+    // keyboard that does not span the full width — and any gap the page does
+    // not fill — reads as part of the terminal rather than as a light band
+    // nobody chose.
+    central->setAutoFillBackground(true);
+    central->setStyleSheet("background: black;");
 
     // The page column: banner, page, load bar — and the keyboard too, unless
     // it is going down the side.
@@ -325,11 +393,16 @@ int main(int argc, char** argv)
     QToolBar* toolbar = new QToolBar(&window);
     toolbar->setMovable(false);
     toolbar->setFloatable(false);
-    // 76px is right on a 1280-tall portrait panel and a big bite out of a
-    // 480-tall one, so it scales with the panel and stops at a size a finger
-    // can still hit. A tenth of the panel: 76px on a T440, 60px on a 600-tall
-    // T431, 48px on a standard 800x480 T430.
-    const int barHeight = qBound(px(44), panel.height() / 10, px(76));
+    // A tenth of the panel's height, floored at a size a finger can still hit
+    // and capped by the shape of the screen.
+    //
+    // On a portrait panel there is height to spare and 76px is right. On a
+    // landscape one height is the scarce dimension — it is shared with the
+    // page and the keyboard — so the bar stops at 60px there: 60 on a T431 and
+    // a T432, 48 on a standard 800x480 T430, and 76 unchanged on a T440 or a
+    // desktop.
+    const int barCap = (panel.width() > panel.height()) ? px(60) : px(76);
+    const int barHeight = qBound(px(44), panel.height() / 10, barCap);
     const int barIcon = qBound(px(28), barHeight * 5 / 8, px(48));
     toolbar->setIconSize(QSize(barIcon, barIcon));
     toolbar->setFixedHeight(barHeight);
@@ -364,7 +437,12 @@ int main(int argc, char** argv)
     wifiButton->setIconSize(QSize(barIcon, barIcon));
     wifiButton->setAutoRaise(true);
     wifiButton->setIcon(QIcon(":/images/wifi-off.png"));
-    wifiButton->setVisible(showWifi);
+    // "auto" means offer it when the hardware is there — the same rule the LAN
+    // button follows. It was shown unconditionally, so a wired terminal with no
+    // radio, or one whose radio the deployment does not use, still had a WiFi
+    // button that opened a dialog with nothing in it. An ITPC-200 is wired.
+    wifiButton->setVisible(config.wifi() == AppConfig::On
+                           || (showWifi && !networkController.wifiDevicePath().isEmpty()));
     toolbar->addWidget(wifiButton);
 
     // LAN icon button, beside WiFi: the T430 terminals run wired, so the
@@ -482,6 +560,19 @@ int main(int argc, char** argv)
     });
 
     // Wired state: shown only when the terminal has an ethernet port at all.
+    // The radio can appear after startup — a USB adapter, or NetworkManager
+    // taking longer than the browser to enumerate — so the button follows it
+    // rather than being decided once.
+    auto updateWifiVisible = [wifiButton, showWifi, &config, &networkController]() {
+        wifiButton->setVisible(config.wifi() == AppConfig::On
+                               || (showWifi
+                                   && !networkController.wifiDevicePath().isEmpty()));
+    };
+    QObject::connect(&networkController, &NetworkController::connectedChanged,
+                     updateWifiVisible);
+    QObject::connect(&networkController, &NetworkController::networksChanged,
+                     updateWifiVisible);
+
     auto updateLanIcon = [lanButton, showLan, &config, &networkController]() {
         // "on" keeps the button even with no device, so a terminal that is
         // supposed to be wired shows that it is not, rather than hiding the
@@ -714,7 +805,52 @@ int main(int argc, char** argv)
             // short panel could not give them at the bottom.
             keyboard->setSideDocked(hostWidth / 4, hostHeight);
         } else {
-            keyboard->setPanelWidth(hostWidth, hostHeight);
+            // Four rows across about seventeen columns — far wider than the
+            // ten-across layout's 0.465 — and allowed a larger share of the
+            // screen, because it is the only page: there is no mode key to
+            // press and nothing hidden behind one.
+            // 22 "key widths" for the glyph scale, which is not the column
+            // count — it is tuned so the letters are about 55% of the key's
+            // HEIGHT.
+            //
+            // The style sizes text by width / keyboardDesignWidth, which is
+            // right when keys are square. On this layout they are much wider
+            // than tall — 66x44 on an ITPC-200 — so a width-derived glyph is
+            // too tall for the key: at 19 the "." and "," were drawn past the
+            // bottom edge, and at 28 (rows / aspect) everything was minute.
+            // Measured on the hardware, between those.
+            //
+            // 0.14, well below the geometric 4/17, because height is the
+            // scarce dimension and width is not. At the square ratio the keys
+            // came out 35px wide and 44px tall on a 1920px panel with 1100px
+            // of it unused. This spends that width on the keys: about 74px
+            // each on an ITPC-200, and the full panel width on a T432.
+            //
+            // A third of the screen, the same as every other keyboard here.
+            // It was given 45% on the grounds that it replaces three pages,
+            // but half the view is half the view — the operator still has to
+            // see what they are typing into.
+            // How tall the keyboard may be in millimetres, not in pixels.
+            //
+            // Both bottom-docked layouts are four rows, and a touch key wants
+            // about 11mm however big the display is — on an 18.5" ITPC-200 a
+            // third of the screen gives 18mm keys and eats 73mm of panel.
+            // Falls back to the pixel fraction where the screen reports no
+            // physical size.
+            int maxHeightPx = 0;
+            const QSizeF physical = screen->physicalSize();
+            if (physical.height() > 0 && screen->geometry().height() > 0) {
+                const qreal mmPerPixel = physical.height()
+                                         / screen->geometry().height();
+                if (mmPerPixel > 0)
+                    maxHeightPx = int(kRows * kKeyMillimetres / mmPerPixel);
+            }
+
+            keyboard->setPanelWidth(hostWidth, hostHeight,
+                                    fullKeyboard ? 0.14 : 0.0,
+                                    0.0,
+                                    fullKeyboard ? 22 : 0,
+                                    maxHeightPx);
         }
     }
 

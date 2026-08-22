@@ -98,7 +98,13 @@ public:
 
     // Match the keyboard to the window width. InputPanel derives its height
     // from this, so the widget resizes to suit.
-    void setPanelWidth(int width, int availableHeight = 0)
+    // columns: how many keys wide the layout is. The style scales its text by
+    // width / keyboardDesignWidth, so the design width has to follow the key
+    // count or the glyphs are sized for a different keyboard — 17 columns
+    // against the stock 2560 gave 77px letters on a 72px key.
+    void setPanelWidth(int width, int availableHeight = 0, qreal aspect = 0.0,
+                       qreal maxHeightFraction = 0.0, int columns = 0,
+                       int maxHeightPixels = 0)
     {
         QQuickItem* root = rootObject();
         if (!root)
@@ -116,21 +122,44 @@ public:
         // ratio shrinks the keys and leaves the font where it was. Narrowing
         // takes height, width and text down together, and the keyboard keeps
         // its proportions.
+        // A layout with a different number of rows has a different shape; the
+        // caller passes it, because the caller is what chose the layout.
+        const qreal shape = aspect > 0.0 ? aspect : kAspect;
+        if (aspect > 0.0)
+            root->setProperty("heightRatio", aspect);
+
         int effectiveWidth = width;
         if (availableHeight > 0) {
-            const int maxHeight = int(availableHeight * kMaxHeightFraction);
-            const int widthForHeight = int(maxHeight / kAspect);
-            if (widthForHeight < width) {
-                // Narrowing is needed, so apply the width limit as well: a
-                // third of the panel each way. Both caps belong to the same
-                // case — a short landscape screen — and neither applies to a
-                // portrait panel, where a full-width keyboard is already well
-                // under a third of the height and a third of the width would
-                // leave keys too small to hit.
-                effectiveWidth = qMin(widthForHeight,
-                                      int(width * kMaxWidthFraction));
-            }
+            const qreal heightShare = maxHeightFraction > 0.0 ? maxHeightFraction
+                                                              : kMaxHeightFraction;
+            int maxHeight = int(availableHeight * heightShare);
+
+            // A share of the screen is the wrong measure on a large panel: a
+            // finger is the same size whatever the display is. A third of an
+            // 18.5" 1920x1080 screen is 73mm of keyboard and 18mm keys, when a
+            // touch target wants about 11mm. Where the caller knows the
+            // physical size, that wins.
+            if (maxHeightPixels > 0)
+                maxHeight = qMin(maxHeight, maxHeightPixels);
+            const int widthForHeight = int(maxHeight / shape);
+            // Height decides the width, and nothing else does. The keyboard's
+            // shape is fixed, so capping the height at a third of the panel
+            // already sets how wide it can be: 572px on a 1280x800 T432,
+            // 774px on a 1920x1080 ITPC-200 — the full ten-across keypad at a
+            // comfortable size in both cases.
+            //
+            // There used to be a width cap of a third as well, which came from
+            // the 1024x600 panel where it was right. On a wide screen it made
+            // the keyboard needlessly small: 426px of keyboard in the middle
+            // of a 1280px display, when the room was there to use.
+            effectiveWidth = qMin(width, widthForHeight);
         }
+
+        // A key reads well when its glyph is about half its width, which is
+        // what the side-docked keyboard was tuned to: 320 design units per
+        // column. Same rule here, so every layout looks like the others.
+        if (columns > 0)
+            root->setProperty("designWidth", qreal(kDesignPerColumn * columns));
 
         m_panelWidth = effectiveWidth;
         setFixedWidth(effectiveWidth);
@@ -194,10 +223,12 @@ private:
     static constexpr qreal kMaxHeightFraction = 1.0 / 3.0;
     // The shape the QML asks for: keyboardDesignHeight = 46.5% of the width.
     static constexpr qreal kAspect = 0.465;
-    static constexpr qreal kMaxWidthFraction = 1.0 / 3.0;
     // Glyphs read well at this scale — 512px of keyboard against the style's
     // 2560 design width, measured on a T431.
     static constexpr qreal kGlyphScale = 0.2;
+    // 320 design units per key column — the same ratio kGlyphScale gives for
+    // the four-across side keyboard (256px / 0.2 = 1280 = 4 x 320).
+    static constexpr int kDesignPerColumn = 320;
     bool m_sideDocked = false;
     int m_panelWidth = 0;
 

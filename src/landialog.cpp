@@ -7,8 +7,37 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QDir>
+#include <QFile>
 #include <QPushButton>
 #include <QShowEvent>
+
+namespace {
+
+// The wired interface's MAC, straight from sysfs.
+//
+// eth*/en* in name order, which is the wired port on these terminals — the
+// same rule the SCADA indicator uses to report the MAC a server knows this
+// terminal by, so the two agree.
+QString wiredMacAddress()
+{
+    const QStringList ifaces = QDir("/sys/class/net").entryList(
+        QDir::AllEntries | QDir::NoDotAndDotDot | QDir::System, QDir::Name);
+
+    for (const QString& iface : ifaces) {
+        if (!iface.startsWith("eth") && !iface.startsWith("en"))
+            continue;
+        QFile file("/sys/class/net/" + iface + "/address");
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            continue;
+        const QString mac = QString::fromLatin1(file.readAll()).trimmed();
+        if (!mac.isEmpty())
+            return mac.toUpper();
+    }
+    return QStringLiteral("unavailable");
+}
+
+} // namespace
 
 LanDialog::LanDialog(NetworkController* netCtrl, QWidget* parent)
     : QDialog(parent)
@@ -43,6 +72,18 @@ LanDialog::LanDialog(NetworkController* netCtrl, QWidget* parent)
     m_detailLabel = new QLabel;
     statusLayout->addWidget(m_detailLabel);
     layout->addWidget(m_statusBox);
+
+    // The MAC, always shown, connected or not.
+    //
+    // It is what a site needs to give this terminal a DHCP reservation, and
+    // that is exactly the job someone is doing when the cable is in and the
+    // address is wrong — or not in yet at all. Reading it from sysfs rather
+    // than NetworkManager means it is there even when the link is down.
+    auto* macLabel = new QLabel("MAC: " + wiredMacAddress());
+    macLabel->setStyleSheet(QString("color: #555; font-size: %1px;")
+                                .arg(DialogStyle::px(18)));
+    macLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    layout->addWidget(macLabel);
 
     auto* buttons = new QHBoxLayout;
     auto* ipBtn = new QPushButton("IP Settings");

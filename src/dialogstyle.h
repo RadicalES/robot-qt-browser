@@ -6,6 +6,7 @@
 #include <QScreen>
 #include <QRect>
 #include <QEvent>
+#include <QWindow>
 #include <QObject>
 #include <QString>
 #include <QAbstractButton>
@@ -60,23 +61,23 @@ inline qreal scale() { return scaleRef(); }
 //
 // Applied by widthToScreen() and sizeToScreen(), which every dialog already
 // calls, so a new dialog cannot forget to ask.
-inline void applyWindowFlags(QDialog* dialog)
+// Window flags are left alone.
+//
+// Qt::FramelessWindowHint was tried, to drop title bars these dialogs do not
+// need — they carry their own Close — and then Qt::CustomizeWindowHint to drop
+// just minimise and maximise, which are meaningless on a terminal: there is no
+// taskbar to restore a minimised dialog from, so it leaves a black screen.
+//
+// Neither works, because labwc draws its own decorations and ignores what the
+// client asks for. The frameless attempt also cost a real bug: a frameless
+// dialog opened FROM a dialog was not stacked above its parent, so IP settings
+// appeared behind the LAN dialog, and being modal it left no way forward and
+// no way out.
+//
+// The button layout belongs to the compositor, and is set there — see
+// <theme><titlebar><layout> in the rootfs rc.xml.
+inline void applyWindowFlags(QDialog*)
 {
-    // A dialog opened FROM a dialog keeps its title bar.
-    //
-    // Frameless windows are not stacked above their parent by labwc, so the IP
-    // settings dialog opened from the LAN dialog appeared behind it — and
-    // because it is modal, its parent ignored every tap: no way forward and no
-    // way out of a kiosk. raise() on show did not fix it either.
-    //
-    // A title bar on a second-level dialog is a small price for a terminal
-    // that cannot get stuck. The dialogs opened from the toolbar — System
-    // Info, Settings, WiFi, LAN — are the ones an operator sees constantly,
-    // and those stay clean.
-    if (qobject_cast<QDialog*>(dialog->parentWidget()))
-        return;
-
-    dialog->setWindowFlags(dialog->windowFlags() | Qt::FramelessWindowHint);
 }
 
 // A device pixel value, at the current scale.
@@ -251,6 +252,17 @@ inline bool HostSizeGuard::eventFilter(QObject* watched, QEvent* event)
             dialog->adjustSize();
             centerOnScreen(dialog);
 
+            if (qEnvironmentVariableIsSet("ROBOT_BROWSER_DEBUG_GEOMETRY")) {
+                const QRect host = hostRect(dialog);
+                qWarning("dialog show: \"%s\" %dx%d at %d,%d "
+                         "(host %dx%d at %d,%d) modal=%d visible=%d",
+                         qPrintable(dialog->windowTitle()),
+                         dialog->width(), dialog->height(),
+                         dialog->x(), dialog->y(),
+                         host.width(), host.height(), host.x(), host.y(),
+                         int(dialog->isModal()), int(dialog->isVisible()));
+            }
+
             // Stack above whatever opened it. A frameless window is not raised
             // by the compositor the way a decorated one is, so a dialog opened
             // FROM a dialog — LAN then IP settings — appeared behind its
@@ -260,6 +272,21 @@ inline bool HostSizeGuard::eventFilter(QObject* watched, QEvent* event)
             // raise() only. Pairing it with activateWindow() here once left
             // dialogs that could not be closed at all.
             dialog->raise();
+
+            // And ask the compositor to activate it.
+            //
+            // A frameless window is not activated by a click the way a
+            // decorated one is, so the first tap on a button went into
+            // activating the dialog and only the second pressed it — every
+            // dialog needed two taps to close.
+            //
+            // requestActivate() on the window handle, not activateWindow():
+            // the widget-level call also moves keyboard focus, and these
+            // dialogs deliberately refuse focus everywhere except their text
+            // fields, which is how an earlier attempt left dialogs that could
+            // not be closed at all.
+            if (QWindow* handle = dialog->windowHandle())
+                handle->requestActivate();
 
         }
     }
