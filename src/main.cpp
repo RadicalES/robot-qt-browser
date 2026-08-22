@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QIcon>
 #include <QMainWindow>
 #include <QToolBar>
 #include <QToolButton>
@@ -49,7 +50,19 @@ int main(int argc, char** argv)
     app.setStyle(new KioskStyle);
     app.setOrganizationName("Radical Electronic Systems");
     app.setApplicationName("RobotBrowser");
-    app.setApplicationVersion("2.1");
+    app.setApplicationVersion(APP_VERSION);
+
+    // The product mark, orange — the same head the toolbar shows in its
+    // neutral state, and the icon the package installs for the menu entry.
+    //
+    // Both lines matter and neither replaces the other. setWindowIcon dresses
+    // the window itself, which is what X11 taskbars read. Wayland ignores it
+    // entirely and instead matches the surface's app-id to a .desktop file, so
+    // without setDesktopFileName a GNOME dock finds no entry, falls back to
+    // whatever it cached for this binary, and keeps showing an icon shipped by
+    // a version that is no longer installed.
+    app.setWindowIcon(QIcon(":/images/robot-head.svg"));
+    app.setDesktopFileName("robot-browser");
 
     // Engine settings and persistent storage are configured per-profile in
     // WebPageController — QtWebEngine has no equivalent of QWebSettings globals.

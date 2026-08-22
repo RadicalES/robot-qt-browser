@@ -22,6 +22,23 @@ if [ "$1" = "configure" ]; then
         echo "  Session-launched deployments need nothing further."
         echo "  Standalone:  systemctl enable --now robot-browser"
     fi
+
+    # Refresh the desktop and icon caches.
+    #
+    # An upgrade that changes the launcher icon otherwise keeps showing the old
+    # one indefinitely: the caches are keyed on the directory, and a desktop
+    # already running reads them and not the files. 3.3.1 shipped the green
+    # head and 3.4.0 the orange product mark, and the green one stayed in menus
+    # of machines that had upgraded.
+    #
+    # Both tools are optional — a headless terminal has neither, and there is
+    # nothing to refresh there anyway.
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -q -f -t /usr/share/icons/hicolor || true
+    fi
 fi
 
 #DEBHELPER#
