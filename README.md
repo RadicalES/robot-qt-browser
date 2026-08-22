@@ -58,7 +58,7 @@ workflow.
 ## Running
 
 ```sh
-robot-browser [--profile=kiosk|t430|t440|desktop] [--config=PATH]
+robot-browser [--profile=kiosk|t430|t431|t432|t440|itpc200|desktop|user] [--config=PATH]
               [--wifi=auto|on|off] [--lan=...] [--scale=N|fit|1]
               [--settings=on|off]
               [--windowed[=WxH]] [--no-toolbar] [remote_url] [local_url]

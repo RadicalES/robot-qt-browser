@@ -85,7 +85,8 @@ int main(int argc, char** argv)
     // setup page opens it windowed with no toolbar), and because a developer
     // will want a device profile at some size other than 1:1 sooner or later.
     //
-    //   --profile=NAME     kiosk (default), t430, t440, desktop
+    //   --profile=NAME     kiosk (default), t430, t440, desktop, or "user"
+    //                      for the one saved in Settings
     //   --scale=N|fit|1    how large to draw a device profile (see below)
     //   --settings=on|off  offer "Settings…" in System Info
     //   --keyboard=auto|full|standard|narrow|off   which keyboard to render
@@ -108,11 +109,20 @@ int main(int argc, char** argv)
             configPath = arg.mid(strlen("--config="));
         else if (arg.startsWith("--profile=")) {
             const QString name = arg.section('=', 1);
+            // "user" is not a profile — it means "whatever the Settings dialog
+            // last saved, and desktop until it has saved anything". The menu
+            // entry passes it, so a device chosen in Settings survives a
+            // restart; every other name is a deliberate choice that outranks
+            // the saved one, so --profile=desktop still means desktop.
+            if (name == "user") {
+                RunProfile::lookup("desktop", &profile);
+                continue;
+            }
             profileFlagGiven = true;
             if (!RunProfile::lookup(name, &profile)) {
                 // Not guessed at: a typo would otherwise hand a developer a
                 // window of the wrong size and a wrong impression of their page.
-                fprintf(stderr, "robot-browser: unknown profile '%s' (known: %s)\n",
+                fprintf(stderr, "robot-browser: unknown profile '%s' (known: %s, user)\n",
                         qPrintable(name),
                         qPrintable(RunProfile::names().join(", ")));
                 return 2;
@@ -192,6 +202,29 @@ int main(int argc, char** argv)
         }
     }
 
+
+    config.loadFile(configPath);
+    // Then this user's own settings, which the Settings dialog writes. Only
+    // where that dialog exists: a terminal must take its configuration from
+    // the file its deployment controls, and nothing else.
+    if (profile.settings)
+        config.loadFile(SettingsDialog::savePath());
+
+    // A profile saved by the Settings dialog, applied when the command line did
+    // not name one. The flag still wins: a launcher that says --profile=t440
+    // means it, whatever a developer last picked in the dialog.
+    //
+    // This has to happen BEFORE the scale is worked out below. It used to come
+    // after, so a saved t440 arrived too late to be fitted to the screen and
+    // opened at a size the desktop then refused - the device chosen in
+    // Settings behaved differently from the same device named on the command
+    // line, which is the one thing a saved setting must never do.
+    if (!profileFlagGiven && !config.profileName().isEmpty()) {  // --profile=user
+        RunProfile saved;
+        if (RunProfile::lookup(config.profileName(), &saved))
+            profile = saved;
+    }
+
     // How large to draw a device profile.
     //
     // A T440 is 800x1280 portrait and does not fit on a 1080-tall desktop. It
@@ -219,6 +252,10 @@ int main(int argc, char** argv)
         }
     }
 
+    // The dialogs read their own sizes from here, and they are built further
+    // down, so this has to be set before any of them exists.
+    DialogStyle::setScale(profile.scale);
+
     // Toolbar metrics follow the scale, so the page keeps the same share of
     // the window it has on the device. Chrome that stayed 76px tall over a
     // scaled page would take a bigger bite than it does on the terminal, and
@@ -226,29 +263,12 @@ int main(int argc, char** argv)
     const auto px = [&profile](int deviceValue) {
         return qMax(1, int(qRound(deviceValue * profile.scale)));
     };
-
-    // The dialogs read their own sizes from here, and they are built further
-    // down, so this has to be set before any of them exists.
-    DialogStyle::setScale(profile.scale);
-    config.loadFile(configPath);
-    // Then this user's own settings, which the Settings dialog writes. Only
-    // where that dialog exists: a terminal must take its configuration from
-    // the file its deployment controls, and nothing else.
-    if (profile.settings)
-        config.loadFile(SettingsDialog::savePath());
-
-    // A profile saved by the Settings dialog, applied when the command line did
-    // not name one. The flag still wins: a launcher that says --profile=t440
-    // means it, whatever a developer last picked in the dialog.
-    if (!profileFlagGiven && !config.profileName().isEmpty()) {
-        RunProfile saved;
-        if (RunProfile::lookup(config.profileName(), &saved))
-            profile = saved;
-    }
     if (profile.pinNetwork) {
-        // A t440 profile shows WiFi and no LAN wherever it runs, because that
-        // is what a T440 has. Reading it from this machine's config file would
-        // describe this machine instead of the device being reproduced.
+        // A device profile reproduces a viewport, not a terminal: it shows no
+        // network indicators at all. Pinning them rather than leaving them to
+        // this machine's config file is what makes that true wherever it runs
+        // — otherwise a developer's own browser.config could put a WiFi icon
+        // in a preview of a wired terminal.
         config.applyArgument("--wifi=" + AppConfig::describe(profile.wifi));
         config.applyArgument("--lan=" + AppConfig::describe(profile.lan));
     }
@@ -530,8 +550,13 @@ int main(int argc, char** argv)
             // keyboard layout are all settled at startup, and pretending
             // otherwise would show a half-changed terminal.
             if (dialog.profileName() != profile.name) {
+                // --profile=user, not the name just chosen: the dialog has
+                // already saved it, and restarting through the saved value is
+                // the same path the next launch from the menu takes. Passing
+                // the name would work now and diverge later, which is how a
+                // setting comes to look like it did not persist.
                 QProcess::startDetached(QCoreApplication::applicationFilePath(),
-                                        {"--profile=" + dialog.profileName()});
+                                        {"--profile=user"});
                 app.quit();
                 return;
             }

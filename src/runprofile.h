@@ -172,20 +172,30 @@ struct RunProfile {
                          : (name == "t431") ? QSize(1024, 600)
                                             : QSize(800, 480);
             p.toolbar = true;
-            p.keyboard = true;
-            p.scadaIndicator = true;
-            // The terminal's Reboot reboots the terminal. Here it would reboot
-            // the developer's workstation.
+
+            // What a device profile reproduces is the VIEWPORT — the size and
+            // shape of the canvas a page gets — and nothing else.
+            //
+            // These profiles only ever run on a PC; the terminals themselves
+            // run the kiosk profile. So the device's own chrome would be
+            // furniture here: a WiFi indicator for a radio this machine does
+            // not have, a SCADA head reading a /run/robot that does not exist,
+            // a Reboot that would reboot the developer's workstation. Earlier
+            // this pinned WiFi on for a t440 preview on the grounds that a
+            // T440 has WiFi — true, and beside the point. The developer is
+            // laying out a page, not operating a terminal.
+            //
+            // The keyboard goes with them. It costs a third of the screen on a
+            // real terminal, which is worth seeing, but it is not on by
+            // default and a developer who wants to check the reflow can ask:
+            //   robot-browser --profile=t440 --keyboard=full
+            p.keyboard = false;
+            p.scadaIndicator = false;
             p.systemActions = false;
-            // These profiles only ever run on a PC — the terminals themselves
-            // run the kiosk profile.
             p.settings = true;
             p.pinNetwork = true;
-            // The T430 family is wired and has no radio; a T440 roams on WiFi
-            // and its wired port is off. Same two lines as their
-            // browser.config.
-            p.wifi = (name == "t440") ? AppConfig::On : AppConfig::Off;
-            p.lan  = (name == "t440") ? AppConfig::Off : AppConfig::On;
+            p.wifi = AppConfig::Off;
+            p.lan  = AppConfig::Off;
             // The ITPC-200 is an x86 panel PC on Xorg/XFCE rather than a Pi on
             // labwc, and it is wired. Its panel is a full 1920x1080, so on most
             // developer screens this profile is the one that will not fit 1:1

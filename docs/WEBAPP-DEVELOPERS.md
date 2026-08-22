@@ -31,6 +31,20 @@ That is the whole interface: a profile, and two URLs.
 | `itpc200` | ITPC-200, 19" panel, wired | 1920×1080 landscape |
 | `desktop` | A plain PC application | Resizable window |
 | `kiosk` | The terminal itself — fullscreen on its panel | The panel |
+| `user`  | Not a device — whatever you last chose in Settings, `desktop` until you choose | |
+
+A device profile reproduces the **viewport** and nothing else: the size and
+shape of the canvas your page gets, at the terminal's toolbar proportions.
+There is no WiFi indicator, no SCADA state and no on-screen keyboard, because
+none of them tell you anything about your page on a machine that is not a
+terminal. Ask for the keyboard when you want to see what it costs:
+
+```sh
+robot-browser --profile=t440 --keyboard=full
+```
+
+The menu entry runs `--profile=user`, so a device picked in **Info → Settings**
+is still there next time. Naming a profile on the command line overrides it.
 
 > The sizes are the panel each terminal ships with. The T430 family is one
 > terminal with more than one panel — a page laid out for a T430's 800×480 has

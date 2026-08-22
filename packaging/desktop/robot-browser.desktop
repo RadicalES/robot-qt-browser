@@ -6,7 +6,7 @@ GenericName=Kiosk Browser
 Comment=Two-URL kiosk browser for RadicalES Robot terminals
 # Installed to /usr/share/applications, so it is in the menu for every user on
 # the machine rather than for whoever happened to install it.
-Exec=robot-browser --profile=desktop
+Exec=robot-browser --profile=user
 Icon=robot-browser
 Terminal=false
 Categories=Network;WebBrowser;
