@@ -77,6 +77,7 @@ exist, and what is left out because it could not work:
 | `kiosk` (default) | The terminal | Fullscreen on the panel, toolbar, on-screen keyboard |
 | `t430` | A Robot-T430, on a PC | 800×480 viewport, LAN control, no reboot |
 | `t431` | A Robot-T431, on a PC | 1024×600 viewport — same terminal, larger panel |
+| `t432` | A Robot-T432, on a PC | 1280×800 viewport — 10" panel, rotated to landscape |
 | `t440` | A Robot-T440, on a PC | 800×1280 viewport, WiFi control, no reboot |
 | `desktop` | An application on a PC | Resizable window, no on-screen keyboard, no device controls |
 

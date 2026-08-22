@@ -16,7 +16,7 @@ StartupWMClass=robot-browser
 # The device profiles, so somebody writing a webapp for a terminal can start
 # one at the terminal's own viewport without remembering the flag. Right-click
 # the menu entry (or the launcher) to reach them.
-Actions=T430;T431;T440;
+Actions=T430;T431;T432;T440;
 
 [Desktop Action T430]
 Name=Open as a Robot-T430
@@ -25,6 +25,10 @@ Exec=robot-browser --profile=t430
 [Desktop Action T431]
 Name=Open as a Robot-T431
 Exec=robot-browser --profile=t431
+
+[Desktop Action T432]
+Name=Open as a Robot-T432
+Exec=robot-browser --profile=t432
 
 [Desktop Action T440]
 Name=Open as a Robot-T440

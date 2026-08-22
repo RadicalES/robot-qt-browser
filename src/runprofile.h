@@ -93,7 +93,7 @@ struct RunProfile {
 
     static QStringList names()
     {
-        return {"kiosk", "t430", "t431", "t440", "desktop"};
+        return {"kiosk", "t430", "t431", "t432", "t440", "desktop"};
     }
 
     // Unknown names are the caller's mistake and are reported, not guessed at:
@@ -110,28 +110,31 @@ struct RunProfile {
             return true;
         }
 
-        if (name == "t430" || name == "t431" || name == "t440") {
+        if (name == "t430" || name == "t431" || name == "t432"
+            || name == "t440") {
             // A terminal reproduced on a PC, for someone writing a webapp for
             // it. Windowed at the panel's exact size; device chrome kept so the
             // space it takes is visible; nothing that would act on the
             // developer's own machine.
             //
-            //   t430  7" panel,  800x480  landscape — the standard terminal
-            //   t431  7" panel, 1024x600  landscape — measured on a unit
-            //   t440  7" ILI9881, 800x1280 portrait — NOT yet measured
+            //   t430  7" panel,   800x480  landscape — the standard terminal
+            //   t431  7" panel,  1024x600  landscape — measured
+            //   t432  10" panel, 1280x800  landscape — measured
+            //   t440  7" ILI9881, 800x1280 portrait  — NOT measured, inferred
             //
             // The T430 family is one terminal with more than one panel, and
             // the difference is the whole point of a profile: a page laid out
             // for 800x480 has 224 more pixels to fill on a T431. Adding a
             // panel means adding a name here, not stretching an existing one.
             //
-            // A T432 exists with a 10" panel. It is deliberately absent until
-            // somebody reads QScreen::geometry() off one — a profile whose
-            // purpose is an exact viewport must not ship on a guess, which is
-            // exactly how the T430 came to be listed at 800x480 from an
-            // overlay name until a real unit answered 1024x600.
+            // The T432's panel is natively 800x1280 PORTRAIT and the session
+            // rotates it: labwc reports Transform 270 and Xwayland reports
+            // 1280x800, which is what Qt sees and therefore what a page gets.
+            // The number here is the rotated one for that reason — reading the
+            // panel's own mode would give the size of a screen nobody uses.
             p.fullscreen = false;
             p.windowSize = (name == "t440") ? QSize(800, 1280)
+                         : (name == "t432") ? QSize(1280, 800)
                          : (name == "t431") ? QSize(1024, 600)
                                             : QSize(800, 480);
             p.toolbar = true;
