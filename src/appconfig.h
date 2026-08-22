@@ -32,18 +32,20 @@ public:
     void loadFile(const QString& path);
     void applyArgument(const QString& argument);   // --wifi=off, --lan=on, ...
 
-    // Whether a config file was actually read. A profile's starting URLs are
-    // for an install that has no file at all; a terminal with one has already
-    // been told what it points at, and must not be overridden by a default.
-    bool hasFile() const { return m_hasFile; }
+    // Whether the config file named a URL. Not the same question as whether a
+    // file exists: the package installs one on every machine, so "has a file"
+    // is true even on a desktop that has never been configured. What matters
+    // is whether somebody said where this terminal points.
+    bool remoteUrlSet() const { return m_remoteUrlSet; }
+    bool localUrlSet() const { return m_localUrlSet; }
 
     Availability wifi() const { return m_wifi; }
     Availability lan() const { return m_lan; }
     QString remoteUrl() const { return m_remoteUrl; }
     QString localUrl() const { return m_localUrl; }
 
-    void setRemoteUrl(const QString& url) { m_remoteUrl = url; }
-    void setLocalUrl(const QString& url) { m_localUrl = url; }
+    void setRemoteUrl(const QString& url) { m_remoteUrl = url; m_remoteUrlSet = true; }
+    void setLocalUrl(const QString& url) { m_localUrl = url; m_localUrlSet = true; }
 
     static QString defaultPath() { return "/etc/robot-browser/browser.config"; }
     static QString describe(Availability value);
@@ -51,7 +53,8 @@ public:
 private:
     static bool parseAvailability(const QString& text, Availability* out);
 
-    bool m_hasFile = false;
+    bool m_remoteUrlSet = false;
+    bool m_localUrlSet = false;
     Availability m_wifi;
     Availability m_lan;
     QString m_remoteUrl;

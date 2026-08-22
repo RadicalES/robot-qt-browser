@@ -42,7 +42,6 @@ void AppConfig::loadFile(const QString& path)
         qDebug() << "AppConfig: no config at" << path << "— using defaults";
         return;
     }
-    m_hasFile = true;
 
     QTextStream in(&file);
     while (!in.atEnd()) {
@@ -67,13 +66,17 @@ void AppConfig::loadFile(const QString& path)
         // WB_* names match what the launcher scripts already source from this
         // same file, so one file serves both.
         if (key == "WB_REMOTE_URL") {
-            if (!value.isEmpty())
+            if (!value.isEmpty()) {
                 m_remoteUrl = value;
+                m_remoteUrlSet = true;
+            }
             continue;
         }
         if (key == "WB_LOCAL_URL") {
-            if (!value.isEmpty())
+            if (!value.isEmpty()) {
                 m_localUrl = value;
+                m_localUrlSet = true;
+            }
             continue;
         }
 
