@@ -2,6 +2,7 @@
 #include "rebootdialog.h"
 #include "systemcontroller.h"
 #include "dialogstyle.h"
+#include <QString>
 #include "robothead.h"
 
 #include <QVBoxLayout>
@@ -23,16 +24,19 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     auto* headerRow = new QHBoxLayout;
 
     m_head = new QLabel;
-    m_head->setFixedSize(56, 56);
+    m_head->setFixedSize(DialogStyle::px(56), DialogStyle::px(56));
     // The product mark, not the SCADA state. This used to be recoloured from
     // the connection, so opening System Info on an unprovisioned terminal
     // showed an orange-then-grey face that looked like a warning about
     // whatever the operator had just clicked.
-    m_head->setPixmap(RobotHead::pixmap(56, RobotHead::Standard));
+    // The pixmap has to scale with the label, not just the label: rendering
+    // at 56 into a 44px label is how the head came out clipped.
+    m_head->setPixmap(RobotHead::pixmap(DialogStyle::px(56), RobotHead::Standard));
     headerRow->addWidget(m_head);
 
     auto* header = new QLabel("System Info");
-    header->setStyleSheet("font-size: 30px; font-weight: bold;");
+    header->setStyleSheet(QString("font-size: %1px; font-weight: bold;")
+                              .arg(DialogStyle::px(30)));
     headerRow->addWidget(header);
     headerRow->addStretch();
 
@@ -41,7 +45,8 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     // System info text
     auto* infoText = new QLabel(sysCtrl->systemInfo());
     infoText->setStyleSheet(
-        "font-family: monospace; font-size: 19px; background: white; "
+        QString("font-family: monospace; font-size: %1px; background: white; ")
+            .arg(DialogStyle::px(19)) +
         "border: 1px solid #ccc; border-radius: 6px; padding: 14px;");
     infoText->setWordWrap(true);
     infoText->setTextInteractionFlags(Qt::TextSelectableByMouse);

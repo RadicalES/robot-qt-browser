@@ -1,6 +1,7 @@
 #include "wifidialog.h"
 #include "networkcontroller.h"
 #include "dialogstyle.h"
+#include <QString>
 #include "ipconfigdialog.h"
 
 #include <QVBoxLayout>
@@ -22,13 +23,16 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
     // --- Header ---
     auto* headerRow = new QHBoxLayout;
     auto* title = new QLabel("WiFi");
-    title->setStyleSheet("font-size: 28px; font-weight: bold;");
+    title->setStyleSheet(QString("font-size: %1px; font-weight: bold;")
+                             .arg(DialogStyle::px(28)));
     headerRow->addWidget(title);
     headerRow->addStretch();
     auto* closeHeaderBtn = new QPushButton(QString::fromUtf8("\xc3\x97")); // ×
-    closeHeaderBtn->setFixedSize(56, 56);
-    closeHeaderBtn->setStyleSheet("font-size: 30px; border: none; background: transparent;"
-                                  "min-width: 0px; padding: 0px;");
+    closeHeaderBtn->setFixedSize(DialogStyle::px(56), DialogStyle::px(56));
+    closeHeaderBtn->setStyleSheet(QString("font-size: %1px; border: none;"
+                                          "background: transparent;"
+                                          "min-width: 0px; padding: 0px;")
+                                      .arg(DialogStyle::px(30)));
     connect(closeHeaderBtn, &QPushButton::clicked, this, &QDialog::reject);
     headerRow->addWidget(closeHeaderBtn);
     layout->addLayout(headerRow);

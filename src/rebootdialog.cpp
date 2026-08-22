@@ -1,6 +1,7 @@
 #include "rebootdialog.h"
 #include "systemcontroller.h"
 #include "dialogstyle.h"
+#include <QString>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -18,7 +19,8 @@ RebootDialog::RebootDialog(SystemController* sysCtrl, QWidget* parent)
     auto* layout = new QVBoxLayout(this);
 
     auto* message = new QLabel("OK to restart?\nYour device will restart safely.");
-    message->setStyleSheet("font-size: 24px; border: none;");
+    message->setStyleSheet(QString("font-size: %1px; border: none;")
+                               .arg(DialogStyle::px(24)));
     message->setAlignment(Qt::AlignCenter);
     layout->addWidget(message);
 

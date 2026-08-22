@@ -27,6 +27,35 @@
 // the dialog's, so a button that sets just "background: ..." keeps these sizes.
 namespace DialogStyle {
 
+// Chrome scale, 0 < s <= 1.
+//
+// The dialogs are sized for a 7" panel: 20-26px text and 34px-tall buttons,
+// because a finger has to hit them. When a device profile is drawn smaller
+// than 1:1 on a developer's screen, that text has to come with it — otherwise
+// the dialogs read larger relative to the window than they do on the terminal,
+// which is the one thing a device preview must not do.
+//
+// Set once at startup, before any dialog is built.
+inline qreal& scaleRef()
+{
+    static qreal value = 1.0;
+    return value;
+}
+
+inline void setScale(qreal scale)
+{
+    // A floor, because a dialog nobody can read is not a better preview.
+    scaleRef() = qBound(qreal(0.4), scale, qreal(1.0));
+}
+
+inline qreal scale() { return scaleRef(); }
+
+// A device pixel value, at the current scale.
+inline int px(int deviceValue)
+{
+    return qMax(1, int(qRound(deviceValue * scale())));
+}
+
 // The palette the Info dialog established: blue for the neutral/confirming
 // action, orange for one that interrupts service, red for destructive.
 namespace Colour {
@@ -39,16 +68,19 @@ inline QString neutral()   { return QStringLiteral("background: white; color: #3
 
 inline QString sheet()
 {
-    return QStringLiteral(
-        "QLabel { font-size: 20px; }"
-        "QPushButton { font-size: 20px; padding: 14px 24px; border-radius: 6px;"
-        "              min-height: 34px; min-width: 90px; border: none; }"
-        "QLineEdit { font-size: 22px; padding: 12px; border: 1px solid #bbb;"
+    return QString(
+        "QLabel { font-size: %1px; }"
+        "QPushButton { font-size: %1px; padding: %2px %3px; border-radius: 6px;"
+        "              min-height: %4px; min-width: %5px; border: none; }"
+        "QLineEdit { font-size: %6px; padding: %7px; border: 1px solid #bbb;"
         "            border-radius: 6px; }"
-        "QRadioButton { font-size: 26px; padding: 12px 0px; }"
-        "QRadioButton::indicator { width: 36px; height: 36px; }"
-        "QListWidget { font-size: 20px; background: white; }"
-        "QListWidget::item { padding: 16px 8px; }");
+        "QRadioButton { font-size: %8px; padding: %7px 0px; }"
+        "QRadioButton::indicator { width: %9px; height: %9px; }"
+        "QListWidget { font-size: %1px; background: white; }"
+        "QListWidget::item { padding: %10px %11px; }")
+        .arg(px(20)).arg(px(14)).arg(px(24)).arg(px(34)).arg(px(90))
+        .arg(px(22)).arg(px(12)).arg(px(26)).arg(px(36)).arg(px(16))
+        .arg(px(8));
 }
 
 // What a dialog should size and position itself against.

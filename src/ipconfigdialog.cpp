@@ -1,5 +1,6 @@
 #include "ipconfigdialog.h"
 #include "dialogstyle.h"
+#include <QString>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -22,7 +23,8 @@ IpConfigDialog::IpConfigDialog(const QString& devicePath, const QString& title,
     auto* layout = new QVBoxLayout(this);
 
     auto* header = new QLabel(title);
-    header->setStyleSheet("font-size: 28px; font-weight: bold;");
+    header->setStyleSheet(QString("font-size: %1px; font-weight: bold;")
+                              .arg(DialogStyle::px(28)));
     layout->addWidget(header);
 
     m_dhcpRadio = new QRadioButton("Automatic (DHCP)");

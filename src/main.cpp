@@ -163,6 +163,10 @@ int main(int argc, char** argv)
     const auto px = [&profile](int deviceValue) {
         return qMax(1, int(qRound(deviceValue * profile.scale)));
     };
+
+    // The dialogs read their own sizes from here, and they are built further
+    // down, so this has to be set before any of them exists.
+    DialogStyle::setScale(profile.scale);
     config.loadFile(configPath);
     if (profile.pinNetwork) {
         // A t440 profile shows WiFi and no LAN wherever it runs, because that
@@ -220,7 +224,8 @@ int main(int argc, char** argv)
         "the terminal is back in range.");
     offlineBanner->setWordWrap(true);
     offlineBanner->setStyleSheet(
-        "background: #ffa726; color: #4d4d4d; font-size: 20px; padding: 14px;");
+        QString("background: #ffa726; color: #4d4d4d; font-size: %1px; "
+                "padding: %2px;").arg(px(20)).arg(px(14)));
     offlineBanner->hide();
     centralLayout->addWidget(offlineBanner);
 
@@ -436,10 +441,12 @@ int main(int argc, char** argv)
 
         auto* headerRow = new QHBoxLayout;
         auto* head = new QLabel;
-        head->setPixmap(RobotHead::pixmap(56, scadaIndicator->variant()));
+        head->setPixmap(RobotHead::pixmap(DialogStyle::px(56),
+                                          scadaIndicator->variant()));
         headerRow->addWidget(head);
         auto* header = new QLabel("SCADA Server");
-        header->setStyleSheet("font-size: 28px; font-weight: bold;");
+        header->setStyleSheet(QString("font-size: %1px; font-weight: bold;")
+                                  .arg(DialogStyle::px(28)));
         headerRow->addWidget(header);
         headerRow->addStretch();
         layout->addLayout(headerRow);
@@ -457,7 +464,8 @@ int main(int argc, char** argv)
         body->setTextInteractionFlags(Qt::TextSelectableByMouse);
         body->setWordWrap(true);
         body->setStyleSheet(
-            "font-family: monospace; font-size: 19px; background: white; "
+            QString("font-family: monospace; font-size: %1px; background: white; ")
+                .arg(DialogStyle::px(19)) +
             "border: 1px solid #ccc; border-radius: 6px; padding: 14px;");
         layout->addWidget(body);
 
