@@ -93,7 +93,7 @@ struct RunProfile {
 
     static QStringList names()
     {
-        return {"kiosk", "t430", "t431", "t432", "t440", "desktop"};
+        return {"kiosk", "t430", "t431", "t432", "t440", "itpc200", "desktop"};
     }
 
     // Unknown names are the caller's mistake and are reported, not guessed at:
@@ -111,7 +111,7 @@ struct RunProfile {
         }
 
         if (name == "t430" || name == "t431" || name == "t432"
-            || name == "t440") {
+            || name == "t440" || name == "itpc200") {
             // A terminal reproduced on a PC, for someone writing a webapp for
             // it. Windowed at the panel's exact size; device chrome kept so the
             // space it takes is visible; nothing that would act on the
@@ -121,6 +121,7 @@ struct RunProfile {
             //   t431  7" panel,  1024x600  landscape — measured
             //   t432  10" panel, 1280x800  landscape — measured
             //   t440  7" ILI9881,  720x1280 portrait — measured
+            //   itpc200 19" HDMI,  1920x1080 landscape — measured
             //
             // The T430 family is one terminal with more than one panel, and
             // the difference is the whole point of a profile: a page laid out
@@ -138,7 +139,8 @@ struct RunProfile {
             // these four numbers had to be read off a running terminal; not
             // one of them was what the overlay name suggested.
             p.fullscreen = false;
-            p.windowSize = (name == "t440") ? QSize(720, 1280)
+            p.windowSize = (name == "itpc200") ? QSize(1920, 1080)
+                         : (name == "t440") ? QSize(720, 1280)
                          : (name == "t432") ? QSize(1280, 800)
                          : (name == "t431") ? QSize(1024, 600)
                                             : QSize(800, 480);
@@ -157,6 +159,10 @@ struct RunProfile {
             // browser.config.
             p.wifi = (name == "t440") ? AppConfig::On : AppConfig::Off;
             p.lan  = (name == "t440") ? AppConfig::Off : AppConfig::On;
+            // The ITPC-200 is an x86 panel PC on Xorg/XFCE rather than a Pi on
+            // labwc, and it is wired. Its panel is a full 1920x1080, so on most
+            // developer screens this profile is the one that will not fit 1:1
+            // and gets scaled.
             *out = p;
             return true;
         }

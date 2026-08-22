@@ -79,6 +79,7 @@ exist, and what is left out because it could not work:
 | `t431` | A Robot-T431, on a PC | 1024×600 viewport — same terminal, larger panel |
 | `t432` | A Robot-T432, on a PC | 1280×800 viewport — 10" panel, rotated to landscape |
 | `t440` | A Robot-T440, on a PC | 720×1280 viewport, WiFi control, no reboot |
+| `itpc200` | An ITPC-200, on a PC | 1920×1080 viewport — x86 panel PC |
 | `desktop` | An application on a PC | Resizable window, no on-screen keyboard, no device controls |
 
 The device profiles exist so somebody writing a webapp for a terminal can see

@@ -28,6 +28,7 @@ That is the whole interface: a profile, and two URLs.
 | `t431`  | Robot-T431, 7" panel, wired | 1024×600 landscape |
 | `t432`  | Robot-T432, 10" panel, wired | 1280×800 landscape |
 | `t440`  | Robot-T440, 7" panel, WiFi  | 720×1280 portrait |
+| `itpc200` | ITPC-200, 19" panel, wired | 1920×1080 landscape |
 | `desktop` | A plain PC application | Resizable window |
 | `kiosk` | The terminal itself — fullscreen on its panel | The panel |
 
