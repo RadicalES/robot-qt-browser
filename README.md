@@ -78,7 +78,7 @@ exist, and what is left out because it could not work:
 | `t430` | A Robot-T430, on a PC | 800×480 viewport, LAN control, no reboot |
 | `t431` | A Robot-T431, on a PC | 1024×600 viewport — same terminal, larger panel |
 | `t432` | A Robot-T432, on a PC | 1280×800 viewport — 10" panel, rotated to landscape |
-| `t440` | A Robot-T440, on a PC | 800×1280 viewport, WiFi control, no reboot |
+| `t440` | A Robot-T440, on a PC | 720×1280 viewport, WiFi control, no reboot |
 | `desktop` | An application on a PC | Resizable window, no on-screen keyboard, no device controls |
 
 The device profiles exist so somebody writing a webapp for a terminal can see
@@ -91,7 +91,7 @@ has it: it is told what it is by the file its deployment controls, and a kiosk
 whose settings an operator can change from the toolbar is not a kiosk.
 `--settings=on|off` overrides the profile's choice.
 
-A device that does not fit the screen — a T440's 800×1280 portrait panel on a
+A device that does not fit the screen — a T440's 720×1280 portrait panel on a
 1080-tall monitor — is drawn scaled rather than cropped: window, chrome and
 page are multiplied by one fraction and the page is zoomed by it, so the layout
 is still the device's. `--scale=1|fit|N` overrides the choice.

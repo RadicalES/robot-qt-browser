@@ -27,7 +27,7 @@ That is the whole interface: a profile, and two URLs.
 | `t430`  | Robot-T430, 7" panel, wired | 800×480 landscape |
 | `t431`  | Robot-T431, 7" panel, wired | 1024×600 landscape |
 | `t432`  | Robot-T432, 10" panel, wired | 1280×800 landscape |
-| `t440`  | Robot-T440, 7" panel, WiFi  | 800×1280 portrait |
+| `t440`  | Robot-T440, 7" panel, WiFi  | 720×1280 portrait |
 | `desktop` | A plain PC application | Resizable window |
 | `kiosk` | The terminal itself — fullscreen on its panel | The panel |
 
@@ -37,17 +37,17 @@ That is the whole interface: a profile, and two URLs.
 
 ### When the device is bigger than your screen
 
-A T440 is 800×1280 portrait, which does not fit above a taskbar on a 1080-tall
+A T440 is 720×1280 portrait, which does not fit above a taskbar on a 1080-tall
 monitor. Rather than crop the viewport — which would quietly change the thing
 you are trying to look at — the browser draws the whole device smaller:
 
 ```
-robot-browser: profile 't440' is 800x1280, drawn at 78% to fit this screen
-(1920x1080). The page still lays out as 800x1280.
+robot-browser: profile 't440' is 720x1280, drawn at 78% to fit this screen
+(1920x1080). The page still lays out as 720x1280.
 ```
 
 The window, the toolbar and the page are all multiplied by that fraction, and
-the page is given it as a zoom factor. Your CSS still sees `800x1280`; only the
+the page is given it as a zoom factor. Your CSS still sees `720x1280`; only the
 physical size on your monitor is smaller. A media query written for the device
 matches here, and a layout that overflows the device overflows here.
 

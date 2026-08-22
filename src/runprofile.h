@@ -42,12 +42,12 @@ struct RunProfile {
     // How much of 1:1 the device viewport is drawn at. Set at startup from the
     // screen it finds itself on, never in the table below.
     //
-    // A T440 is 800x1280 portrait, which does not fit on a 1080-tall desktop,
+    // A T440 is 720x1280 portrait, which does not fit on a 1080-tall desktop,
     // so 1:1 was clamped to whatever the screen allowed — quietly changing the
     // viewport the developer was trying to see. Scaling instead keeps the page
     // at the device's own CSS size and draws it smaller: the browser window,
     // the toolbar and the page are all multiplied by this, and the web view
-    // gets it as a zoom factor, so the page still lays out as 800x1280.
+    // gets it as a zoom factor, so the page still lays out as 720x1280.
     qreal scale = 1.0;
 
     bool toolbar = true;         // the bottom bar
@@ -120,7 +120,7 @@ struct RunProfile {
             //   t430  7" panel,   800x480  landscape — the standard terminal
             //   t431  7" panel,  1024x600  landscape — measured
             //   t432  10" panel, 1280x800  landscape — measured
-            //   t440  7" ILI9881, 800x1280 portrait  — NOT measured, inferred
+            //   t440  7" ILI9881,  720x1280 portrait — measured
             //
             // The T430 family is one terminal with more than one panel, and
             // the difference is the whole point of a profile: a page laid out
@@ -132,8 +132,13 @@ struct RunProfile {
             // 1280x800, which is what Qt sees and therefore what a page gets.
             // The number here is the rotated one for that reason — reading the
             // panel's own mode would give the size of a screen nobody uses.
+            //
+            // The T440 shares that ILI9881 panel but is 720 wide, not 800, and
+            // its session leaves it portrait (Transform: normal). Every one of
+            // these four numbers had to be read off a running terminal; not
+            // one of them was what the overlay name suggested.
             p.fullscreen = false;
-            p.windowSize = (name == "t440") ? QSize(800, 1280)
+            p.windowSize = (name == "t440") ? QSize(720, 1280)
                          : (name == "t432") ? QSize(1280, 800)
                          : (name == "t431") ? QSize(1024, 600)
                                             : QSize(800, 480);
