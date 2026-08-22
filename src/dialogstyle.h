@@ -4,6 +4,9 @@
 #include <QDialog>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QRect>
+#include <QEvent>
+#include <QObject>
 #include <QString>
 #include <QAbstractButton>
 #include <QLineEdit>
@@ -48,27 +51,79 @@ inline QString sheet()
         "QListWidget::item { padding: 16px 8px; }");
 }
 
-// Width across most of the screen, height left to the content. Use this for
+// What a dialog should size and position itself against.
+//
+// On a terminal that is the screen: the browser IS the screen, and a dialog
+// across 94% of it is right. Off a terminal the browser is a window among
+// others, and sizing to the screen gave an 1800px-wide dialog over an 800px
+// window, spilling past it on both sides. The window a dialog belongs to is
+// the honest reference in that case.
+inline QRect hostRect(const QDialog* dialog)
+{
+    const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+    const QWidget* parent = dialog->parentWidget();
+    if (!parent)
+        return screen;
+
+    const QWidget* host = parent->window();
+    if (!host || !host->isVisible())
+        return screen;
+    // Fullscreen means the kiosk: window and screen are the same thing, and
+    // the screen is the more stable of the two to measure.
+    if (host->isFullScreen() || host->isMaximized())
+        return screen;
+
+    return host->geometry();
+}
+
+// Re-applies the sizing when the dialog is shown.
+//
+// The dialogs are built at startup, before the main window exists on screen,
+// so asking then which window they belong to gets the wrong answer — and these
+// are long-lived objects that get shown again later, by which time the window
+// may have been resized or moved to another screen. Measuring at show time is
+// the only moment the answer is true.
+//
+// No Q_OBJECT: it overrides a virtual and needs no meta-object.
+class HostSizeGuard : public QObject {
+public:
+    HostSizeGuard(QDialog* dialog, qreal widthFraction, qreal heightFraction)
+        : QObject(dialog), m_width(widthFraction), m_height(heightFraction)
+    {
+        dialog->installEventFilter(this);
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
+private:
+    qreal m_width;
+    qreal m_height;
+};
+
+// Width across most of the host, height left to the content. Use this for
 // dialogs that are a few lines plus buttons — forcing a height fraction on
 // those leaves a large empty gap above the buttons.
 //
-// Fractions are of the screen rather than fixed pixels, so the dialogs keep
-// working if the panel changes.
+// Fractions rather than fixed pixels, so the dialogs keep working when the
+// panel changes or the window is resized.
 inline void widthToScreen(QDialog* dialog, qreal widthFraction)
 {
-    const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
-    dialog->setMinimumWidth(int(screen.width() * widthFraction));
-    dialog->setMaximumWidth(screen.width());
+    const QRect host = hostRect(dialog);
+    dialog->setMinimumWidth(int(host.width() * widthFraction));
+    dialog->setMaximumWidth(host.width());
+    new HostSizeGuard(dialog, widthFraction, 0.0);
 }
 
 // Width and height. Only for dialogs with a scrolling list that genuinely
 // wants the room, such as the WiFi network picker.
 inline void sizeToScreen(QDialog* dialog, qreal widthFraction, qreal heightFraction)
 {
-    const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
-    dialog->setMinimumSize(int(screen.width() * widthFraction),
-                           int(screen.height() * heightFraction));
-    dialog->setMaximumSize(screen.width(), screen.height());
+    const QRect host = hostRect(dialog);
+    dialog->setMinimumSize(int(host.width() * widthFraction),
+                           int(host.height() * heightFraction));
+    dialog->setMaximumSize(host.width(), host.height());
+    new HostSizeGuard(dialog, widthFraction, heightFraction);
 }
 
 // Nothing in a kiosk dialog takes focus except its text fields.
@@ -92,14 +147,44 @@ inline void takeNoFocusExceptFields(QDialog* dialog)
     }
 }
 
-// Centre a dialog on the screen. Qt centres on the parent, which is unhelpful
-// once a dialog has been clamped to the screen: it can still end up straddling
-// an edge with half its controls unreachable. Call from showEvent, after the
-// size is settled.
+// Centre a dialog on the window it belongs to, or on the screen in a kiosk.
+// Qt's own centring is on the parent, which is unhelpful once a dialog has
+// been clamped to the screen: it can still end up straddling an edge with half
+// its controls unreachable. Call from showEvent, after the size is settled.
 inline void centerOnScreen(QDialog* dialog)
 {
+    const QRect host = hostRect(dialog);
+    QRect target(QPoint(0, 0), dialog->size());
+    target.moveCenter(host.center());
+
+    // Never off the screen, whatever the host says: a window dragged half off
+    // the desktop must not take its dialogs with it.
     const QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
-    dialog->move(screen.center() - dialog->rect().center());
+    if (target.right() > screen.right())   target.moveRight(screen.right());
+    if (target.bottom() > screen.bottom()) target.moveBottom(screen.bottom());
+    if (target.left() < screen.left())     target.moveLeft(screen.left());
+    if (target.top() < screen.top())       target.moveTop(screen.top());
+
+    dialog->move(target.topLeft());
+}
+
+inline bool HostSizeGuard::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::Show) {
+        QDialog* dialog = qobject_cast<QDialog*>(watched);
+        if (dialog) {
+            const QRect host = hostRect(dialog);
+            dialog->setMaximumWidth(host.width());
+            dialog->setMinimumWidth(int(host.width() * m_width));
+            if (m_height > 0.0) {
+                dialog->setMaximumHeight(host.height());
+                dialog->setMinimumHeight(int(host.height() * m_height));
+            }
+            dialog->adjustSize();
+            centerOnScreen(dialog);
+        }
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 // Close the on-screen keyboard before opening a dialog.
