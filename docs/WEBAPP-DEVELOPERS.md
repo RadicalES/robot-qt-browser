@@ -25,11 +25,14 @@ That is the whole interface: a profile, and two URLs.
 | Profile | Reproduces | Viewport |
 |---------|-----------|----------|
 | `t430`  | Robot-T430, 7" panel, wired | 800×480 landscape |
+| `t431`  | Robot-T431, 7" panel, wired | 1024×600 landscape |
 | `t440`  | Robot-T440, 7" panel, WiFi  | 800×1280 portrait |
 | `desktop` | A plain PC application | Resizable window |
 | `kiosk` | The terminal itself — fullscreen on its panel | The panel |
 
-> The `t430` and `t440` sizes are taken from the panel each terminal ships with.
+> The sizes are the panel each terminal ships with. The T430 family is one
+> terminal with more than one panel — a page laid out for a T430's 800×480 has
+> 224 more pixels to fill on a T431 — so check which one your customer has.
 
 ### When the device is bigger than your screen
 

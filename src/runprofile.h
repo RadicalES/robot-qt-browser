@@ -93,7 +93,7 @@ struct RunProfile {
 
     static QStringList names()
     {
-        return {"kiosk", "t430", "t440", "desktop"};
+        return {"kiosk", "t430", "t431", "t440", "desktop"};
     }
 
     // Unknown names are the caller's mistake and are reported, not guessed at:
@@ -110,21 +110,30 @@ struct RunProfile {
             return true;
         }
 
-        if (name == "t430" || name == "t440") {
+        if (name == "t430" || name == "t431" || name == "t440") {
             // A terminal reproduced on a PC, for someone writing a webapp for
             // it. Windowed at the panel's exact size; device chrome kept so the
             // space it takes is visible; nothing that would act on the
             // developer's own machine.
             //
-            // GEOMETRY IS PROVISIONAL. These are read off the panel overlays in
-            // the rootfs repos, not measured on hardware:
-            //   t430  vc4-kms-dsi-7inch         official 7" DSI, 800x480
-            //   t440  vc4-kms-dsi-ili9881-7inch ILI9881 7", 800x1280 portrait
-            // Confirm with QScreen::geometry() on each terminal — a profile
-            // whose whole purpose is an exact viewport must not ship on a
-            // guess. See issue #8.
+            //   t430  7" panel,  800x480  landscape — the standard terminal
+            //   t431  7" panel, 1024x600  landscape — measured on a unit
+            //   t440  7" ILI9881, 800x1280 portrait — NOT yet measured
+            //
+            // The T430 family is one terminal with more than one panel, and
+            // the difference is the whole point of a profile: a page laid out
+            // for 800x480 has 224 more pixels to fill on a T431. Adding a
+            // panel means adding a name here, not stretching an existing one.
+            //
+            // A T432 exists with a 10" panel. It is deliberately absent until
+            // somebody reads QScreen::geometry() off one — a profile whose
+            // purpose is an exact viewport must not ship on a guess, which is
+            // exactly how the T430 came to be listed at 800x480 from an
+            // overlay name until a real unit answered 1024x600.
             p.fullscreen = false;
-            p.windowSize = (name == "t430") ? QSize(800, 480) : QSize(800, 1280);
+            p.windowSize = (name == "t440") ? QSize(800, 1280)
+                         : (name == "t431") ? QSize(1024, 600)
+                                            : QSize(800, 480);
             p.toolbar = true;
             p.keyboard = true;
             p.scadaIndicator = true;
@@ -135,10 +144,11 @@ struct RunProfile {
             // run the kiosk profile.
             p.settings = true;
             p.pinNetwork = true;
-            // A T430 is wired and has no radio; a T440 roams on WiFi and its
-            // wired port is off. Same two lines as their browser.config.
+            // The T430 family is wired and has no radio; a T440 roams on WiFi
+            // and its wired port is off. Same two lines as their
+            // browser.config.
             p.wifi = (name == "t440") ? AppConfig::On : AppConfig::Off;
-            p.lan  = (name == "t430") ? AppConfig::On : AppConfig::Off;
+            p.lan  = (name == "t440") ? AppConfig::Off : AppConfig::On;
             *out = p;
             return true;
         }
