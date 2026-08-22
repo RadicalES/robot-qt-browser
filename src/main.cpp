@@ -310,6 +310,30 @@ int main(int argc, char** argv)
     // sharing the central area so it pushes content up rather than covering it.
     QMainWindow window;
 
+    // Say which device this window is, in the title bar.
+    //
+    // A developer comparing a page across terminals ends up with several of
+    // these open at once, and two portrait windows of similar size are not
+    // told apart by looking at them. The scale is part of the name because a
+    // profile drawn at 78% is a fair preview and a profile drawn at 40% is
+    // worth knowing about before drawing conclusions from it.
+    //
+    // The kiosk profile keeps the plain name: it is fullscreen on a terminal
+    // with no title bar to read, and "Robot Browser" is what a window list
+    // shows if anything ever shows one.
+    if (profile.name == "kiosk") {
+        window.setWindowTitle("Robot Browser");
+    } else {
+        QString title = "Robot Browser — " + RunProfile::label(profile.name);
+        const QString size = RunProfile::viewport(profile.name);
+        if (!size.isEmpty()) {
+            title += profile.scale < 1.0
+                   ? QString(" (%1 at %2%)").arg(size).arg(int(profile.scale * 100 + 0.5))
+                   : QString(" (%1)").arg(size);
+        }
+        window.setWindowTitle(title);
+    }
+
     // Where the keyboard goes, and how tall the toolbar is, both follow the
     // shape of the panel.
     //

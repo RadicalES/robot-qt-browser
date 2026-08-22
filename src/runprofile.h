@@ -106,16 +106,39 @@ struct RunProfile {
         return qMin(qreal(1.0), qMin(byWidth, byHeight));
     }
 
-    // What to call a profile in front of a person.
+    // What to call a profile in front of a person: the product name on its
+    // own, and the viewport separately, so a caller with somewhere to put each
+    // is not left picking a compound string apart.
+    static QString label(const QString& name)
+    {
+        if (name == "t430")    return QStringLiteral("Robot-T430");
+        if (name == "t431")    return QStringLiteral("Robot-T431");
+        if (name == "t432")    return QStringLiteral("Robot-T432");
+        if (name == "t440")    return QStringLiteral("Robot-T440");
+        if (name == "itpc200") return QStringLiteral("ITPC-200");
+        if (name == "desktop") return QStringLiteral("Desktop");
+        if (name == "kiosk")   return QStringLiteral("Kiosk");
+        return name;
+    }
+
+    // The viewport a profile reproduces, empty where it reproduces none: a
+    // desktop window is whatever size its user drags it to, and a kiosk is
+    // whatever panel it is running on.
+    static QString viewport(const QString& name)
+    {
+        if (name == "t430")    return QStringLiteral("800 x 480");
+        if (name == "t431")    return QStringLiteral("1024 x 600");
+        if (name == "t432")    return QStringLiteral("1280 x 800");
+        if (name == "t440")    return QStringLiteral("720 x 1280 portrait");
+        if (name == "itpc200") return QStringLiteral("1920 x 1080");
+        return QString();
+    }
+
     static QString describe(const QString& name)
     {
-        if (name == "t430")    return QStringLiteral("Robot-T430 — 800 x 480");
-        if (name == "t431")    return QStringLiteral("Robot-T431 — 1024 x 600");
-        if (name == "t432")    return QStringLiteral("Robot-T432 — 1280 x 800");
-        if (name == "t440")    return QStringLiteral("Robot-T440 — 720 x 1280, portrait");
-        if (name == "itpc200") return QStringLiteral("ITPC-200 — 1920 x 1080");
-        if (name == "desktop") return QStringLiteral("Desktop — a plain window");
-        return name;
+        const QString size = viewport(name);
+        return size.isEmpty() ? label(name)
+                              : label(name) + QStringLiteral(" — ") + size;
     }
 
     static QStringList names()
