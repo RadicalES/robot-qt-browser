@@ -4,6 +4,102 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.4.0] - 2026-08-22
+
+### Added
+
+- **Run profiles.** `--profile=kiosk|t430|t431|t432|t440|itpc200|desktop` says what
+  this instance is meant to be, instead of a growing pile of flags a caller has
+  to get consistently right. A device profile reproduces that terminal on a PC —
+  its panel's exact viewport, the network controls it actually has, and none of
+  the buttons that would act on the developer's own machine. Written up for
+  people outside the company in `docs/WEBAPP-DEVELOPERS.md`.
+
+- **Every profile geometry measured on hardware.** Not one matched what its
+  panel overlay name suggested: the T430 is 800x480, a T431 1024x600, a T432
+  1280x800 (a portrait panel the session rotates), a T440 720x1280 and an
+  ITPC-200 1920x1080.
+
+- **Scaled mode.** A T440's 800-wide portrait panel does not fit above a taskbar
+  on a 1080-tall monitor. Rather than crop the viewport — quietly changing the
+  thing a developer is trying to look at — the whole device is drawn smaller and
+  the page still lays out at the device's size. `--scale=1|fit|N` overrides it.
+
+- **Three keyboards, chosen by `--keyboard=auto|full|standard|narrow|off`.**
+  `auto` asks the panel: a short landscape screen gets a four-across keyboard
+  docked down the side, because ten keys across a third of 1024px is 34px each
+  and no scaling fixes that; a wide screen gets a single keypad with letters,
+  numpad and symbols side by side and nothing behind a mode key; everything else
+  keeps the ten-across layout. Sized from the panel's physical dimensions where
+  it reports them — a finger is the same size whatever the display is.
+
+- **A Settings dialog**, reached from System Info on a PC, editing both URLs and
+  saving them per user in `~/.config/robot-browser/browser.config`. Never on a
+  terminal: it is told what it is by the file its deployment controls, and a
+  kiosk whose address an operator can retype is not a kiosk.
+
+- **Desktop builds.** bookworm, trixie, Ubuntu 24.04 and Ubuntu 26.04, each
+  built inside its own distro because each ships a different Qt 6 and a binary
+  built against one does not run on another. The package version carries the
+  suite it was built for. `docker/run-desktop.sh` installs the built package in
+  a bare image of that distro and puts a window on the local desktop, so the
+  dependency list is under test too.
+
+- **A menu entry** on a PC install, in `/usr/share/applications` for every user
+  on the machine, with the device profiles as right-click actions.
+
+- **The terminal's MAC in the LAN dialog**, connected or not. It is what a site
+  needs to write a DHCP reservation, which is exactly the job someone is doing
+  when the address is wrong or the cable is not in yet.
+
+- **Contact details in System Info.** A terminal in a packhouse is a long way
+  from whoever supports it, and that dialog is where somebody already goes when
+  something is wrong.
+
+### Changed
+
+- **The toolbar follows the panel** — a tenth of its height, capped at 60px on a
+  landscape screen where height is shared with the page and the keyboard, and
+  unchanged at 76px on a portrait panel or a desktop.
+
+- **Dialogs size and centre on the window they belong to**, not on the screen.
+  On a terminal those are the same thing; in a window they are not, and the old
+  arithmetic gave an 1800px-wide dialog over an 800px window.
+
+- **The `[Remote]` icon** is Material Symbols' "dataset". It was a cloud on a
+  122x79 viewBox, so it rendered at 48x30 beside solid 48x48 neighbours and read
+  as a missing icon rather than a faint one.
+
+- **The orange robot head** is the product's mark: the application icon and the
+  face in System Info. That dialog used to recolour it from the SCADA
+  connection, so opening System Info on an unprovisioned terminal showed a
+  warning about something nobody had asked about.
+
+### Fixed
+
+- **The keyboard would not stay hidden.** Dismissing it while a text field still
+  held focus made it flicker and come straight back — the field is an
+  input-method client and Qt re-shows the panel for it. The focused element is
+  blurred first.
+
+- **`auto` now means what it says for WiFi.** It is documented as "offer it when
+  NetworkManager reports the device", and the LAN button always worked that way,
+  but the WiFi button was shown unconditionally — so an ITPC-200, which has no
+  radio at all, offered a WiFi dialog with nothing in it.
+
+- **`--profile=t440` on a machine with a config file** no longer lands on
+  `127.0.0.1`. The package installs `browser.config` everywhere, its URL lines
+  are commented out now, and unset means "nobody has said" rather than a value
+  that outranks the profile.
+
+### Notes
+
+Window decorations are the compositor's business. `Qt::FramelessWindowHint` and
+`Qt::CustomizeWindowHint` change nothing under labwc and cost a stuck WiFi
+dialog and a modal child dialog that opened behind its parent. The titlebar
+button layout belongs in the rootfs `rc.xml`.
+
+
 ## [3.2.2] - 2026-08-21
 
 ### Added
