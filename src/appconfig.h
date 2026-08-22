@@ -41,6 +41,10 @@ public:
 
     Availability wifi() const { return m_wifi; }
     Availability lan() const { return m_lan; }
+    // The profile named in the config file, if any. Only the developer build
+    // writes this — a terminal is told what it is by its launcher.
+    QString profileName() const { return m_profileName; }
+
     QString remoteUrl() const { return m_remoteUrl; }
     QString localUrl() const { return m_localUrl; }
 
@@ -57,6 +61,7 @@ private:
     bool m_localUrlSet = false;
     Availability m_wifi;
     Availability m_lan;
+    QString m_profileName;
     QString m_remoteUrl;
     QString m_localUrl;
 };

@@ -11,6 +11,7 @@
 #include <QHBoxLayout>
 #include <QTimer>
 #include <QAction>
+#include <QProcess>
 #include <QScreen>
 #include <QSizeF>
 #include <QDir>
@@ -85,6 +86,7 @@ int main(int argc, char** argv)
     double scaleFlag = -1.0;        // < 0 means "not given"
     int settingsFlag = -1;          // < 0 means "not given"
     QString keyboardFlag;
+    bool profileFlagGiven = false;
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
@@ -93,6 +95,7 @@ int main(int argc, char** argv)
             configPath = arg.mid(strlen("--config="));
         else if (arg.startsWith("--profile=")) {
             const QString name = arg.section('=', 1);
+            profileFlagGiven = true;
             if (!RunProfile::lookup(name, &profile)) {
                 // Not guessed at: a typo would otherwise hand a developer a
                 // window of the wrong size and a wrong impression of their page.
@@ -220,6 +223,15 @@ int main(int argc, char** argv)
     // the file its deployment controls, and nothing else.
     if (profile.settings)
         config.loadFile(SettingsDialog::savePath());
+
+    // A profile saved by the Settings dialog, applied when the command line did
+    // not name one. The flag still wins: a launcher that says --profile=t440
+    // means it, whatever a developer last picked in the dialog.
+    if (!profileFlagGiven && !config.profileName().isEmpty()) {
+        RunProfile saved;
+        if (RunProfile::lookup(config.profileName(), &saved))
+            profile = saved;
+    }
     if (profile.pinNetwork) {
         // A t440 profile shows WiFi and no LAN wherever it runs, because that
         // is what a T440 has. Reading it from this machine's config file would
@@ -493,11 +505,23 @@ int main(int argc, char** argv)
     InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
     infoDialog->setSystemActionsVisible(profile.systemActions);
     if (profile.settings) {
-        infoDialog->addSettingsButton([&window, &config, &webPageController]() {
-            SettingsDialog dialog(config.remoteUrl(), config.localUrl(), &window);
+        infoDialog->addSettingsButton([&window, &config, &webPageController,
+                                       &profile, &app]() {
+            SettingsDialog dialog(config.remoteUrl(), config.localUrl(),
+                                  profile.name, &window);
             DialogStyle::closeKeyboard();
             if (dialog.exec() != QDialog::Accepted)
                 return;
+
+            // Changing the device means starting again: geometry, chrome and
+            // keyboard layout are all settled at startup, and pretending
+            // otherwise would show a half-changed terminal.
+            if (dialog.profileName() != profile.name) {
+                QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                                        {"--profile=" + dialog.profileName()});
+                app.quit();
+                return;
+            }
 
             config.setRemoteUrl(dialog.remoteUrl());
             config.setLocalUrl(dialog.localUrl());

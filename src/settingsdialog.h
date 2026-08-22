@@ -7,6 +7,7 @@
 class QLineEdit;
 class QLabel;
 class QVBoxLayout;
+class QComboBox;
 
 // Settings a person can change while the browser is running.
 //
@@ -28,10 +29,15 @@ public:
     // Values are passed in and read back out rather than written directly, so
     // this dialog knows nothing about who owns them.
     SettingsDialog(const QString& remoteUrl, const QString& localUrl,
-                   QWidget* parent = nullptr);
+                   const QString& profileName, QWidget* parent = nullptr);
 
     QString remoteUrl() const;
     QString localUrl() const;
+
+    // The device profile chosen in the dialog, or empty if it was left alone.
+    // Applying it means restarting: geometry, chrome and keyboard layout are
+    // all settled at startup.
+    QString profileName() const;
 
     // Where settings are saved, shown in the dialog so it is obvious what this
     // changes and what to delete to undo it.
@@ -40,7 +46,7 @@ public:
     // Saves for the next run. False with a reason if the file cannot be
     // written.
     static bool save(const QString& remoteUrl, const QString& localUrl,
-                     QString* error = nullptr);
+                     const QString& profileName, QString* error = nullptr);
 
 private slots:
     void onAccept();
@@ -51,6 +57,7 @@ private:
     QVBoxLayout* addSection(const QString& title);
 
     QVBoxLayout* m_layout;
+    QComboBox* m_profile;
     QLineEdit* m_remote;
     QLineEdit* m_local;
     QLabel* m_error;

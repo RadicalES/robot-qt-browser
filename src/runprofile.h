@@ -106,6 +106,18 @@ struct RunProfile {
         return qMin(qreal(1.0), qMin(byWidth, byHeight));
     }
 
+    // What to call a profile in front of a person.
+    static QString describe(const QString& name)
+    {
+        if (name == "t430")    return QStringLiteral("Robot-T430 — 800 x 480");
+        if (name == "t431")    return QStringLiteral("Robot-T431 — 1024 x 600");
+        if (name == "t432")    return QStringLiteral("Robot-T432 — 1280 x 800");
+        if (name == "t440")    return QStringLiteral("Robot-T440 — 720 x 1280, portrait");
+        if (name == "itpc200") return QStringLiteral("ITPC-200 — 1920 x 1080");
+        if (name == "desktop") return QStringLiteral("Desktop — a plain window");
+        return name;
+    }
+
     static QStringList names()
     {
         return {"kiosk", "t430", "t431", "t432", "t440", "itpc200", "desktop"};

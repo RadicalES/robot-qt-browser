@@ -65,6 +65,10 @@ void AppConfig::loadFile(const QString& path)
 
         // WB_* names match what the launcher scripts already source from this
         // same file, so one file serves both.
+        if (key == "WB_PROFILE") {
+            m_profileName = value;
+            continue;
+        }
         if (key == "WB_REMOTE_URL") {
             if (!value.isEmpty()) {
                 m_remoteUrl = value;

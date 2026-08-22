@@ -1,11 +1,13 @@
 #include "settingsdialog.h"
 #include "dialogstyle.h"
 #include "appconfig.h"
+#include "runprofile.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QPushButton>
 #include <QDir>
 #include <QFile>
@@ -16,6 +18,7 @@
 
 SettingsDialog::SettingsDialog(const QString& remoteUrl,
                                const QString& localUrl,
+                               const QString& profileName,
                                QWidget* parent)
     : QDialog(parent)
 {
@@ -29,6 +32,24 @@ SettingsDialog::SettingsDialog(const QString& remoteUrl,
     header->setStyleSheet(QString("font-size: %1px; font-weight: bold;")
                               .arg(DialogStyle::px(28)));
     m_layout->addWidget(header);
+
+    // --- Device ----------------------------------------------------------
+    // Which terminal to imitate. The whole point of the developer build is
+    // seeing a page at the device's own viewport, and switching device should
+    // not mean going back to a terminal to retype a command line.
+    QVBoxLayout* device = addSection("Device");
+
+    device->addWidget(new QLabel("Reproduce this terminal — its screen size, "
+                                 "its network controls and its keyboard"));
+    m_profile = new QComboBox;
+    for (const QString& name : RunProfile::names()) {
+        if (name == "kiosk")
+            continue;   // that is a terminal being itself, not a PC imitating one
+        m_profile->addItem(RunProfile::describe(name), name);
+    }
+    const int current = m_profile->findData(profileName);
+    m_profile->setCurrentIndex(current >= 0 ? current : 0);
+    device->addWidget(m_profile);
 
     // --- Pages -----------------------------------------------------------
     // Labelled as the toolbar buttons are, not as the config keys are:
@@ -95,6 +116,11 @@ QVBoxLayout* SettingsDialog::addSection(const QString& title)
     return section;
 }
 
+QString SettingsDialog::profileName() const
+{
+    return m_profile->currentData().toString();
+}
+
 QString SettingsDialog::remoteUrl() const { return m_remote->text().trimmed(); }
 QString SettingsDialog::localUrl() const  { return m_local->text().trimmed(); }
 
@@ -117,7 +143,7 @@ void SettingsDialog::onAccept()
     }
 
     QString error;
-    if (!save(remote, local, &error)) {
+    if (!save(remote, local, profileName(), &error)) {
         m_error->setText(error);
         m_error->show();
         return;
@@ -141,7 +167,7 @@ QString SettingsDialog::savePath()
 }
 
 bool SettingsDialog::save(const QString& remoteUrl, const QString& localUrl,
-                          QString* error)
+                          const QString& profileName, QString* error)
 {
     const QString path = savePath();
     const QString dir = QFileInfo(path).absolutePath();
@@ -163,7 +189,8 @@ bool SettingsDialog::save(const QString& remoteUrl, const QString& localUrl,
         << "# dialog; delete this file to go back to the system settings in\n"
         << "# " << AppConfig::defaultPath() << ".\n"
         << "WB_REMOTE_URL=" << remoteUrl << "\n"
-        << "WB_LOCAL_URL=" << localUrl << "\n";
+        << "WB_LOCAL_URL=" << localUrl << "\n"
+        << "WB_PROFILE=" << profileName << "\n";
     file.close();
     return true;
 }
