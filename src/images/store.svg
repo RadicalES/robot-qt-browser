@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- [Remote] — the transaction page, served from somewhere else. A filled
-     cloud with an arrow into it.
+<!-- [Remote] - the transaction page.
 
-     Square viewBox on purpose. The icon this replaces was a 122x79 outline
-     drawing, so QIcon scaled it to 48x30 and drew hairlines: beside the solid
-     48x48 Home and Back icons it read as a missing icon rather than a faint
-     one, which is exactly how it was reported. Same box and same visual weight
-     as its neighbours is the whole requirement. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <g fill="#d9d9d9">
-    <!-- Cloud, solid. -->
-    <path d="M36.5 38h-24C6.7 38 2 33.3 2 27.5c0-5.2 3.8-9.6 8.9-10.4C12.4 11.3 17.7 7 24 7c7.2 0 13.2 5.6 13.9 12.7
-             C42.6 20.5 46 24.4 46 29.1 46 34 42 38 36.5 38z"/>
-    <!-- Arrow down into the cloud: content arriving from the remote site. -->
-    <path d="M24 15.5c1.1 0 2 .9 2 2v7.6l2.6-2.6c.8-.8 2-.8 2.8 0 .8.8.8 2 0 2.8l-6 6c-.8.8-2 .8-2.8 0l-6-6
-             c-.8-.8-.8-2 0-2.8.8-.8 2-.8 2.8 0l2.6 2.6v-7.6c0-1.1.9-2 2-2z" fill="#4d4d4d"/>
-  </g>
-</svg>
+     Google Material Symbols "dataset", Apache License 2.0, recoloured #d9d9d9
+     for the toolbar (the download is #1f1f1f, drawn for light surfaces).
+
+     Replaces a cloud, which said "somewhere else" rather than "the data the
+     operator is there to work with" - and was an outline drawing on a 122x79
+     viewBox, so it rendered at 48x30 beside solid 48x48 neighbours and read as
+     a missing icon rather than a faint one. -->
+<svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960" width="48px" fill="#d9d9d9"><path d="M290-290h140v-140H290v140Zm240 0h140v-140H530v140ZM290-530h140v-140H290v140Zm240 0h140v-140H530v140ZM180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm0-60h600v-600H180v600Zm0-600v600-600Z"/></svg>

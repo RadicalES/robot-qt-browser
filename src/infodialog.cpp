@@ -24,7 +24,11 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     m_head = new QLabel;
     m_head->setFixedSize(56, 56);
-    setStatus(RobotHead::Off);
+    // The product mark, not the SCADA state. This used to be recoloured from
+    // the connection, so opening System Info on an unprovisioned terminal
+    // showed an orange-then-grey face that looked like a warning about
+    // whatever the operator had just clicked.
+    m_head->setPixmap(RobotHead::pixmap(56, RobotHead::Standard));
     headerRow->addWidget(m_head);
 
     auto* header = new QLabel("System Info");
@@ -79,10 +83,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     DialogStyle::takeNoFocusExceptFields(this);
 }
 
-void InfoDialog::setStatus(RobotHead::Variant variant)
-{
-    m_head->setPixmap(RobotHead::pixmap(56, variant));
-}
+
 
 void InfoDialog::setSystemActionsVisible(bool visible)
 {

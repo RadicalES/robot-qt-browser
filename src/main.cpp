@@ -326,10 +326,8 @@ int main(int argc, char** argv)
         refocusPage();
     });
     QObject::connect(infoAction, &QAction::triggered,
-                     [infoDialog, scadaIndicator, refocusPage]() {
+                     [infoDialog, refocusPage]() {
         DialogStyle::closeKeyboard();
-        infoDialog->setStatus(scadaIndicator ? scadaIndicator->variant()
-                                             : RobotHead::Off);
         infoDialog->exec();
         refocusPage();
     });

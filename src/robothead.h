@@ -4,7 +4,8 @@
 #include <QPixmap>
 #include <QIcon>
 
-// The Robot mascot head, in the three states the kiosk can be in.
+// The Robot mascot head: the product's standard mark, and the three states the
+// SCADA indicator can be in.
 //
 // Traced from the 48px tray pixmaps robot-scada-client ships so the kiosk and
 // the desktop show the same mark. Kept as SVG because the toolbar wants 48px
@@ -13,16 +14,23 @@
 namespace RobotHead {
 
 enum Variant {
-    Off,    // no server or service detected
-    Warn,   // terminal not provisioned
-    Ok      // talking to a SCADA server
+    Off,      // no server or service detected
+    Warn,     // terminal not provisioned
+    Ok,       // talking to a SCADA server
+    Standard  // the orange product mark — not a status
 };
+
+// Standard is what the application icon and the Info dialog show. It is
+// deliberately not derived from the SCADA state: the mark identifies the
+// product, and a dialog whose face changes colour with the network reads as a
+// warning about something the operator did not ask about.
 
 inline QPixmap pixmap(int size, Variant variant)
 {
-    const char* name = variant == Ok   ? ":/images/robot-head-ok.svg"
-                     : variant == Warn ? ":/images/robot-head-warn.svg"
-                                       : ":/images/robot-head-off.svg";
+    const char* name = variant == Ok       ? ":/images/robot-head-ok.svg"
+                     : variant == Warn     ? ":/images/robot-head-warn.svg"
+                     : variant == Standard ? ":/images/robot-head.svg"
+                                           : ":/images/robot-head-off.svg";
     return QIcon(QString::fromLatin1(name)).pixmap(size, size);
 }
 

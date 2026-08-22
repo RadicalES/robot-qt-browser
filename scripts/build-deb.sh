@@ -122,7 +122,7 @@ chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 
 cp "${PROJECT_DIR}/packaging/desktop/robot-browser.desktop" "$STAGE/usr/share/applications/robot-browser.desktop"
 chmod 644 "$STAGE/usr/share/applications/robot-browser.desktop"
-cp "${PROJECT_DIR}/src/images/robot-head-ok.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
+cp "${PROJECT_DIR}/src/images/robot-head.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
 chmod 644 "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
 
 # Custom virtual keyboard style (red lettering, from the T420 terminal).

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Robot mascot head - THE STANDARD MARK (orange)
+
+     This is the application icon and the face in the Info dialog. It is a
+     brand mark, not a status: it does not change colour with the SCADA
+     connection. The status variants live in robot-head-{ok,warn,off}.svg,
+     which the toolbar indicator uses.
+
+     Identical artwork to robot-head-warn.svg today. Kept as its own file so
+     that recolouring a status state cannot silently restyle the product.
+
+     Original note follows.
+     Robot mascot head, traced from robot-scada-client's 48px tray pixmaps
+     (robot-head-{ok,warn,error,off}.png) so the kiosk shows the same mark at
+     any size. warn variant: terminal not provisioned. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <g fill="#ff9800">
+    <!-- Antennae: bulb, neck, base block — one either side of the head. -->
+    <circle cx="2.5" cy="5.5" r="2.5"/>
+    <rect x="1.5" y="5.5" width="2" height="14"/>
+    <rect x="0.5" y="19" width="4" height="12" rx="1.2"/>
+    <circle cx="45.5" cy="5.5" r="2.5"/>
+    <rect x="44.5" y="5.5" width="2" height="14"/>
+    <rect x="43.5" y="19" width="4" height="12" rx="1.2"/>
+  </g>
+  <rect x="6.5" y="8.5" width="35" height="35.5" rx="1.5"
+        fill="#ff9800" stroke="#1a1a1a" stroke-width="1"/>
+  <!-- Eyes -->
+  <circle cx="15" cy="20" r="4.6" fill="#ffffff"/>
+  <circle cx="33" cy="20" r="4.6" fill="#ffffff"/>
+  <circle cx="15" cy="20" r="1.9" fill="#1a1a1a"/>
+  <circle cx="33" cy="20" r="1.9" fill="#1a1a1a"/>
+  <!-- Nose and mouth, in a lighter tint of the body colour. -->
+  <polygon points="24,24.6 20.2,30 27.8,30" fill="#ffcc80"/>
+  <rect x="11.5" y="32.8" width="25" height="4.8" rx="0.8"
+        fill="none" stroke="#ffcc80" stroke-width="1.4"/>
+</svg>

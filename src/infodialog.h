@@ -13,10 +13,6 @@ class InfoDialog : public QDialog {
 public:
     explicit InfoDialog(SystemController* sysCtrl, QWidget* parent = nullptr);
 
-    // Recolours the mascot to the current SCADA state. Called before the dialog
-    // is shown, so the head agrees with the toolbar indicator behind it.
-    void setStatus(RobotHead::Variant variant);
-
     // Reboot and Reset Defaults act on the machine this is running on. That is
     // the terminal in a kiosk, and somebody's workstation when the browser is
     // reproducing a terminal on a PC — where neither belongs.
