@@ -120,8 +120,17 @@ chmod 644 "$STAGE/etc/robot-browser/browser.config"
 cp "${PROJECT_DIR}/packaging/udev/99-robot-input.rules" "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 chmod 644 "$STAGE/etc/udev/rules.d/99-robot-input.rules"
 
-cp "${PROJECT_DIR}/packaging/desktop/robot-browser.desktop" "$STAGE/usr/share/applications/robot-browser.desktop"
-chmod 644 "$STAGE/usr/share/applications/robot-browser.desktop"
+# The entry is named for the application ID, reverse-DNS, which is what a
+# desktop matches a window to and what it keys its own cache on.
+#
+# It was robot-browser.desktop until 3.5.0, and the rename is deliberate:
+# GNOME Shell caches an app by that id for the life of a session, so a machine
+# that had seen an older entry kept launching the old Exec and drawing the old
+# icon no matter what the package installed - for months, on a workstation that
+# is never logged out. A new id is one the shell has never seen.
+DESKTOP_ID="za.co.radicalsystems.RobotBrowser"
+cp "${PROJECT_DIR}/packaging/desktop/${DESKTOP_ID}.desktop" "$STAGE/usr/share/applications/${DESKTOP_ID}.desktop"
+chmod 644 "$STAGE/usr/share/applications/${DESKTOP_ID}.desktop"
 cp "${PROJECT_DIR}/src/images/robot-head.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
 chmod 644 "$STAGE/usr/share/icons/hicolor/scalable/apps/robot-browser.svg"
 
