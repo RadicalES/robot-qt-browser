@@ -59,7 +59,8 @@ workflow.
 
 ```sh
 robot-browser [--profile=kiosk|t430|t440|desktop] [--config=PATH]
-              [--wifi=auto|on|off] [--lan=...]
+              [--wifi=auto|on|off] [--lan=...] [--scale=N|fit|1]
+              [--settings=on|off]
               [--windowed[=WxH]] [--no-toolbar] [remote_url] [local_url]
 ```
 
@@ -81,6 +82,12 @@ exist, and what is left out because it could not work:
 The device profiles exist so somebody writing a webapp for a terminal can see
 it at the terminal's exact viewport without having a terminal — see
 [docs/WEBAPP-DEVELOPERS.md](docs/WEBAPP-DEVELOPERS.md).
+
+On a PC, System Info offers a **Settings…** button for editing the two URLs,
+saved per user in `~/.config/robot-browser/browser.config`. A terminal never
+has it: it is told what it is by the file its deployment controls, and a kiosk
+whose settings an operator can change from the toolbar is not a kiosk.
+`--settings=on|off` overrides the profile's choice.
 
 A device that does not fit the screen — a T440's 800×1280 portrait panel on a
 1080-tall monitor — is drawn scaled rather than cropped: window, chrome and

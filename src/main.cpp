@@ -28,6 +28,7 @@
 #include "pagefocusguard.h"
 #include "scadaindicator.h"
 #include "runprofile.h"
+#include "settingsdialog.h"
 #include "robothead.h"
 #include "dialogstyle.h"
 #include "kioskstyle.h"
@@ -65,6 +66,7 @@ int main(int argc, char** argv)
     //
     //   --profile=NAME     kiosk (default), t430, t440, desktop
     //   --scale=N|fit|1    how large to draw a device profile (see below)
+    //   --settings=on|off  offer "Settings…" in System Info
     //   --windowed[=WxH]   a normal window the compositor can decorate and close
     //   --no-toolbar       drop the bottom bar; the page is the whole point
     RunProfile profile;
@@ -73,6 +75,7 @@ int main(int argc, char** argv)
     bool noToolbarFlag = false;
     QSize windowSizeFlag;
     double scaleFlag = -1.0;        // < 0 means "not given"
+    int settingsFlag = -1;          // < 0 means "not given"
     QString configPath = AppConfig::defaultPath();
     const QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
@@ -100,6 +103,14 @@ int main(int argc, char** argv)
         }
         else if (arg == "--no-toolbar")
             noToolbarFlag = true;
+        else if (arg.startsWith("--settings=")) {
+            const QString value = arg.section('=', 1);
+            if (value != "on" && value != "off") {
+                fprintf(stderr, "robot-browser: --settings wants on or off\n");
+                return 2;
+            }
+            settingsFlag = (value == "on") ? 1 : 0;
+        }
         else if (arg.startsWith("--scale=")) {
             const QString value = arg.section('=', 1);
             if (value == "fit")
@@ -128,6 +139,8 @@ int main(int argc, char** argv)
     }
     if (noToolbarFlag)
         profile.toolbar = false;
+    if (settingsFlag >= 0)
+        profile.settings = (settingsFlag == 1);
 
     // How large to draw a device profile.
     //
@@ -168,6 +181,11 @@ int main(int argc, char** argv)
     // down, so this has to be set before any of them exists.
     DialogStyle::setScale(profile.scale);
     config.loadFile(configPath);
+    // Then this user's own settings, which the Settings dialog writes. Only
+    // where that dialog exists: a terminal must take its configuration from
+    // the file its deployment controls, and nothing else.
+    if (profile.settings)
+        config.loadFile(SettingsDialog::savePath());
     if (profile.pinNetwork) {
         // A t440 profile shows WiFi and no LAN wherever it runs, because that
         // is what a T440 has. Reading it from this machine's config file would
@@ -346,6 +364,24 @@ int main(int argc, char** argv)
     // that is the terminal; on a developer's PC it is their workstation.
     InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
     infoDialog->setSystemActionsVisible(profile.systemActions);
+    if (profile.settings) {
+        infoDialog->addSettingsButton([&window, &config, &webPageController]() {
+            SettingsDialog dialog(config.remoteUrl(), config.localUrl(), &window);
+            DialogStyle::closeKeyboard();
+            if (dialog.exec() != QDialog::Accepted)
+                return;
+
+            config.setRemoteUrl(dialog.remoteUrl());
+            config.setLocalUrl(dialog.localUrl());
+            webPageController.setUrls(QUrl(config.localUrl()),
+                                      QUrl(config.remoteUrl()));
+            // Straight to the new remote page: the reason to change these is
+            // to look at what they point at.
+            webPageController.loadRemote();
+            window.raise();
+            window.activateWindow();
+        });
+    }
 
     // Connect toolbar actions to controllers
     QObject::connect(homeAction, &QAction::triggered,

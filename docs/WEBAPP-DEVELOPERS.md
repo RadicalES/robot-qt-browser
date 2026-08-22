@@ -58,6 +58,17 @@ robot-browser --profile=t440 --scale=fit   # the default
 `--scale=1` is worth using on a tall monitor, or with the window moved, when
 you want real device pixels.
 
+## Changing the URLs without restarting
+
+The toolbar's **i** button opens System Info, which has a **Settings…** button.
+It edits the same two URLs, applies them straight away, and remembers them for
+next time in `~/.config/robot-browser/browser.config`. Delete that file to go
+back to the defaults.
+
+The terminals do not have this button. They are told where they point by the
+file their deployment controls, and an operator who can retype a kiosk's
+address is not looking at a kiosk any more.
+
 ## The two URLs
 
 A terminal shows two fixed pages and has no address bar:

@@ -62,6 +62,7 @@ add_executable(robot-browser
     systemcontroller.cpp
     wifidialog.cpp
     infodialog.cpp
+    settingsdialog.cpp
     rebootdialog.cpp
     landialog.cpp
     ipconfigdialog.cpp

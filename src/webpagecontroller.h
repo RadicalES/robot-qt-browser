@@ -20,6 +20,11 @@ public:
     ~WebPageController() override;
 
     void init(const QUrl& localUrl, const QUrl& remoteUrl, WebsockServer* debugger);
+
+    // Repoint the two buttons. Only used where the URLs can be edited at run
+    // time, which is a developer's machine — a terminal is told once, at
+    // startup, by whatever owns its configuration.
+    void setUrls(const QUrl& localUrl, const QUrl& remoteUrl);
     QWebEngineView* webView() { return m_webView; }
 
     QString currentUrl() const;

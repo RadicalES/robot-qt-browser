@@ -54,6 +54,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 
     // Action buttons
     auto* buttonRow = new QHBoxLayout;
+    m_buttonRow = buttonRow;
 
     auto* resetBtn = new QPushButton("Reset Defaults");
     m_resetBtn = resetBtn;
@@ -89,6 +90,20 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 }
 
 
+
+void InfoDialog::addSettingsButton(const std::function<void()>& open)
+{
+    auto* button = new QPushButton("Settings…");
+    button->setStyleSheet(DialogStyle::Colour::neutral());
+    connect(button, &QPushButton::clicked, this, [this, open]() {
+        // Close first: the settings dialog is modal on this one, and two stacked
+        // modal dialogs is how the input method ends up pointed at a window
+        // nobody can see.
+        accept();
+        open();
+    });
+    m_buttonRow->insertWidget(0, button);
+}
 
 void InfoDialog::setSystemActionsVisible(bool visible)
 {

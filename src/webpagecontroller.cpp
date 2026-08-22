@@ -109,6 +109,12 @@ QString WebPageController::currentUrl() const
     return m_page->url().toString();
 }
 
+void WebPageController::setUrls(const QUrl& localUrl, const QUrl& remoteUrl)
+{
+    m_localUrl = localUrl;
+    m_remoteUrl = remoteUrl;
+}
+
 void WebPageController::loadLocal()
 {
     if (m_page->url().isValid() && m_page->url() == m_localUrl) {

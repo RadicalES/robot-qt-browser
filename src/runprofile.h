@@ -55,6 +55,14 @@ struct RunProfile {
     bool scadaIndicator = true;  // SCADA state from /run/robot
     bool systemActions = true;   // Reboot and Reset Defaults
 
+    // Whether the Settings dialog is reachable from System Info.
+    //
+    // Never on a terminal: it is told what it is by its config file and by the
+    // layer that provisions it, and a kiosk whose settings an operator can
+    // change from the toolbar is not a kiosk. Always on a PC, where pointing
+    // the browser at a dev server is the entire workflow.
+    bool settings = false;
+
     // Network controls. A device profile pins these to what the device has; the
     // kiosk profile leaves them to the config file, which is what a deployment
     // uses to say what the terminal IS.
@@ -123,6 +131,9 @@ struct RunProfile {
             // The terminal's Reboot reboots the terminal. Here it would reboot
             // the developer's workstation.
             p.systemActions = false;
+            // These profiles only ever run on a PC — the terminals themselves
+            // run the kiosk profile.
+            p.settings = true;
             p.pinNetwork = true;
             // A T430 is wired and has no radio; a T440 roams on WiFi and its
             // wired port is off. Same two lines as their browser.config.
@@ -146,6 +157,7 @@ struct RunProfile {
             p.keyboard = false;
             p.scadaIndicator = false;
             p.systemActions = false;
+            p.settings = true;
             p.pinNetwork = true;
             p.wifi = AppConfig::Off;
             p.lan = AppConfig::Off;
