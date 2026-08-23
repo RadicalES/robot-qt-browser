@@ -4,6 +4,54 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.5.0] - 2026-08-23
+
+### Added
+
+- **A device profile is pickable from Settings, and it sticks.** The developer
+  build exists so a page can be seen at a terminal's own viewport; switching
+  terminal meant restarting from a shell with a different `--profile`. The
+  Settings dialog lists every device by name and size, and choosing one
+  restarts the browser into it.
+- **`--profile=user`**, which means "whatever Settings last saved, `desktop`
+  until it has saved anything". The menu entry passes it, so a device chosen in
+  Settings survives a restart; naming any real profile still outranks it,
+  because a terminal is what its launcher says it is.
+- **The device is named in the title bar**, with the scale when it is drawn
+  smaller than 1:1 — `Robot Browser — Robot-T440 (720 x 1280 portrait at 78%)`.
+  Comparing a page across terminals means several of these open at once, and
+  two portrait windows of similar size are not told apart by looking at them.
+
+### Changed
+
+- **A device profile reproduces the viewport and nothing else.** No WiFi
+  indicator for a radio the PC does not have, no SCADA head reading a
+  `/run/robot` that is not there, no on-screen keyboard over a real keyboard.
+  The keyboard is still available with `--keyboard=full` to see what it costs.
+- **The menu entry is `io.radsys.RobotBrowser`**, matching the domain the
+  product is published under, and the icon is installed and named for the same
+  ID.
+- **Setup instructions point at `cdn.radsys.io`.** The same bucket under a new
+  name; `packages.radicales.net` still serves it, so terminals already in the
+  field keep updating.
+
+### Fixed
+
+- **The saved profile was applied after the fit-to-screen calculation**, so a
+  saved T440 opened at a full 720x1280 on a 1080-tall screen while
+  `--profile=t440` was drawn at 78% — the same profile behaving two different
+  ways depending on how it was chosen.
+- **The application set no window icon at all**, so a taskbar had nothing to
+  read from the window. It sets one now, and sets the desktop file name too:
+  Wayland ignores the window icon and matches the surface's app-id to a
+  `.desktop` file instead.
+- **The launcher icon was unreadable to GTK.** `robot-head.svg` opened with a
+  700-byte comment, which pushed `<svg` past the bytes gdk-pixbuf sniffs to
+  identify a file, so every GTK consumer rejected it and the menu drew nothing.
+  Qt has its own parser and never noticed.
+- **`applicationVersion` was hardcoded to "2.1"**; it comes from `APP_VERSION`.
+
+
 ## [3.4.0] - 2026-08-22
 
 ### Added

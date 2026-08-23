@@ -1,3 +1,19 @@
+robot-browser (3.5.0-1) bookworm; urgency=medium
+
+  * Pick a device profile from the Settings dialog; --profile=user applies
+    whatever was saved, so the choice survives a restart
+  * A device profile reproduces the viewport only - no WiFi indicator, SCADA
+    state or on-screen keyboard on a machine that is not a terminal
+  * The device and its scale are named in the title bar
+  * Menu entry and icon are named io.radsys.RobotBrowser
+  * Fix: a saved profile was resolved after the fit-to-screen calculation, so
+    it opened at a different size than the same profile named on the command
+    line
+  * Fix: no window icon was ever set, and the icon file could not be read by
+    GTK at all - a comment ahead of <svg pushed it past what gdk-pixbuf sniffs
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Sun, 23 Aug 2026 18:00:00 +0200
+
 robot-browser (3.2.2-1) bookworm; urgency=medium
 
   * Add --windowed[=WxH] and --no-toolbar, for opening the browser from a
