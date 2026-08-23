@@ -86,11 +86,27 @@ The device profiles exist so somebody writing a webapp for a terminal can see
 it at the terminal's exact viewport without having a terminal — see
 [docs/WEBAPP-DEVELOPERS.md](docs/WEBAPP-DEVELOPERS.md).
 
-On a PC, System Info offers a **Settings…** button for editing the two URLs,
-saved per user in `~/.config/robot-browser/browser.config`. A terminal never
-has it: it is told what it is by the file its deployment controls, and a kiosk
-whose settings an operator can change from the toolbar is not a kiosk.
-`--settings=on|off` overrides the profile's choice.
+On a PC, System Info offers a **Settings…** button for the two URLs *and the
+device profile*, saved per user in `~/.config/robot-browser/browser.config`.
+Choosing a device restarts the browser into it — geometry, chrome and keyboard
+layout are settled at startup, and a half-changed terminal would be a worse lie
+than a one-second restart. A terminal never has the dialog: it is told what it
+is by the file its deployment controls, and a kiosk whose settings an operator
+can change from the toolbar is not a kiosk. `--settings=on|off` overrides the
+profile's choice.
+
+`--profile=user` means "whatever Settings last saved, `desktop` until it has
+saved anything". The menu entry passes it, which is what makes the choice
+survive a restart; naming any real profile on the command line still wins,
+because a terminal is what its launcher says it is.
+
+A device profile reproduces the **viewport** and nothing else: no WiFi
+indicator for a radio the PC does not have, no SCADA state reading a
+`/run/robot` that is not there, no on-screen keyboard over a real one. Ask for
+the keyboard with `--keyboard=full` to see what it costs the page. The window
+title names the device and, when it is drawn smaller than 1:1, the scale —
+`Robot Browser — Robot-T440 (720 x 1280 portrait at 78%)` — because comparing a
+page across terminals means several of these open at once.
 
 A device that does not fit the screen — a T440's 720×1280 portrait panel on a
 1080-tall monitor — is drawn scaled rather than cropped: window, chrome and
@@ -98,7 +114,11 @@ page are multiplied by one fraction and the page is zoomed by it, so the layout
 is still the device's. `--scale=1|fit|N` overrides the choice.
 
 On a PC the package installs a menu entry (**Robot Browser**) for every user on
-the machine, with the two device profiles as right-click actions on it.
+the machine, with the device profiles as right-click actions on it. The entry
+and its icon are named for the application ID, `io.radsys.RobotBrowser`: a
+desktop caches an app by that ID and by icon name for the life of a session, so
+an entry that changes under a name the shell has already seen keeps launching
+and drawing the old one — on a workstation, for months.
 
 ## Installing
 
