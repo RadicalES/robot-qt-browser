@@ -4,6 +4,15 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.4] - 2026-08-24
+
+### Changed
+
+- **The clock sits at the end of the toolbar.** It was between the keyboard
+  button and the Lock and Info actions, which put a read-only display in the
+  middle of the things you press. The controls read as a group now.
+
+
 ## [3.6.3] - 2026-08-24
 
 ### Fixed

@@ -563,7 +563,11 @@ int main(int argc, char** argv)
     // Clock
     DigitalClock* clock = new DigitalClock;
     clock->setFontPixels(px(24));
-    toolbar->addWidget(clock);
+    // The clock goes on last, after Lock and Info.
+    //
+    // It sat between the keyboard button and the two actions, which put a
+    // read-only display in the middle of things you press. The controls read
+    // as a group now, and the time sits at the end where a clock belongs.
 
     // --- signing on ---------------------------------------------------------
     //
@@ -617,6 +621,8 @@ int main(int argc, char** argv)
 
     // Info button
     QAction* infoAction = toolbar->addAction(QIcon(":/images/info.png"), "");
+
+    toolbar->addWidget(clock);
 
     // Dialogs
     WifiDialog* wifiDialog = new WifiDialog(&networkController, &window);
