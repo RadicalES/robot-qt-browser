@@ -1,15 +1,47 @@
 #include "lockscreen.h"
 
+#include <QPainter>
+#include <QPixmap>
+#include <QPushButton>
+
 #include "dialogstyle.h"
 #include "robothead.h"
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
+namespace {
+
+// The shared icons are stroked in #4d4d4d, drawn for the light dialogs. On the
+// lock screen's black they are all but invisible, so they are recoloured
+// rather than duplicated: one eye in the resources, tinted for wherever it is
+// used.
+QIcon tinted(const QString& path, const QColor& colour, int size)
+{
+    QPixmap source = QIcon(path).pixmap(size, size);
+    if (source.isNull())
+        return QIcon(path);
+
+    QPixmap result(source.size());
+    result.setDevicePixelRatio(source.devicePixelRatio());
+    result.fill(Qt::transparent);
+
+    QPainter painter(&result);
+    painter.drawPixmap(0, 0, source);
+    // Keeps the icon's shape and replaces its colour.
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(result.rect(), colour);
+    painter.end();
+
+    return QIcon(result);
+}
+
+}  // namespace
+
 LockScreen::LockScreen(QWidget* parent)
     : QWidget(parent)
 {
-    const int pad = DialogStyle::px(24);
+    const int pad = DialogStyle::px(40);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(pad, pad, pad, pad);
@@ -54,12 +86,51 @@ LockScreen::LockScreen(QWidget* parent)
     methods->addStretch(1);
     layout->addWidget(m_entryRow);
 
-    m_key = new QLineEdit(this);
+    // The field and its reveal button, side by side.
+    //
+    // The button is a widget rather than a QLineEdit action: an action inside
+    // the field renders at the style's small-icon size and sits hard against
+    // the border, which on a 19" terminal is a target nobody can hit and an
+    // icon nobody can see. Beside the field it can be the size of a finger.
+    m_keyRow = new QWidget(this);
+    QHBoxLayout* keyLayout = new QHBoxLayout(m_keyRow);
+    keyLayout->setContentsMargins(0, 0, 0, 0);
+    keyLayout->setSpacing(DialogStyle::px(12));
+
+    m_key = new QLineEdit(m_keyRow);
     m_key->setAlignment(Qt::AlignCenter);
     m_key->setEchoMode(QLineEdit::Password);
     m_key->setMaxLength(64);
     connect(m_key, &QLineEdit::returnPressed, this, &LockScreen::onSubmit);
-    layout->addWidget(m_key, 0, Qt::AlignCenter);
+    keyLayout->addWidget(m_key);
+
+    // Show what was typed.
+    //
+    // A worker code is long, keyed on a virtual keyboard, in a packhouse, and
+    // hidden behind dots the whole way. Getting it wrong fails as "Worker not
+    // found", which reads as a card problem rather than a typo - so the only
+    // way to tell those apart is to be able to look.
+    m_reveal = new QPushButton(m_keyRow);
+    m_reveal->setObjectName("reveal");
+    m_reveal->setCheckable(true);
+    m_reveal->setFocusPolicy(Qt::NoFocus);
+    const int eyeSize = DialogStyle::px(34);
+    m_reveal->setIcon(tinted(":/images/eye.svg", QColor("#d9d9d9"), eyeSize));
+    m_reveal->setIconSize(QSize(eyeSize, eyeSize));
+    m_reveal->setFixedSize(DialogStyle::px(62), DialogStyle::px(62));
+    m_reveal->setToolTip(tr("Show code"));
+    connect(m_reveal, &QPushButton::toggled, this, [this](bool shown) {
+        m_key->setEchoMode(shown ? QLineEdit::Normal : QLineEdit::Password);
+        // Orange while the code is showing, so the state reads at a glance
+        // from the icon as well as the border.
+        const int size = DialogStyle::px(34);
+        m_reveal->setIcon(shown ? tinted(":/images/eye-off.svg", QColor("#ff9800"), size)
+                                : tinted(":/images/eye.svg", QColor("#d9d9d9"), size));
+        m_reveal->setToolTip(shown ? tr("Hide code") : tr("Show code"));
+    });
+    keyLayout->addWidget(m_reveal);
+
+    layout->addWidget(m_keyRow, 0, Qt::AlignCenter);
 
     m_signOn = new QPushButton(tr("Sign on"), this);
     connect(m_signOn, &QPushButton::clicked, this, &LockScreen::onSubmit);
@@ -87,21 +158,32 @@ void LockScreen::applyStyle()
         "QLabel#station { color: #ffffff; font-size: %2px; font-weight: bold; }"
         "QLabel#message { color: #ff9800; font-size: %3px; }"
         "QLineEdit { background: #1a1a1a; color: #ffffff; border: %4px solid #4d4d4d;"
-        "  border-radius: %5px; padding: %6px; font-size: %7px; min-width: %8px; }"
+        "  border-radius: %5px; padding: %6px %10px; font-size: %7px;"
+        "  min-width: %8px; }"
         "QLineEdit:focus { border-color: #ff9800; }"
         "QPushButton { background: #4d4d4d; color: #ffffff; border: none;"
         "  border-radius: %5px; padding: %6px %9px; font-size: %3px; }"
         "QPushButton:checked { background: #ff9800; color: #1a1a1a; }"
+        // Showing the code is a state, not a press: the button stays dark
+        // like the field it belongs to and marks itself with the accent
+        // border. Filling it grey read as disabled, which is the opposite of
+        // what it means.
+        "QPushButton#reveal { background: #1a1a1a; border: %4px solid #4d4d4d; padding: 0; }"
+        "QPushButton#reveal:checked { background: #1a1a1a; border-color: #ff9800; }"
+        "QPushButton#reveal:pressed { background: #2a2a2a; }"
         "QPushButton:pressed { background: #ff9800; color: #1a1a1a; }")
         .arg(DialogStyle::px(20))
         .arg(DialogStyle::px(26))
         .arg(DialogStyle::px(18))
         .arg(DialogStyle::px(2))
         .arg(DialogStyle::px(6))
-        .arg(DialogStyle::px(10))
-        .arg(DialogStyle::px(28))
-        .arg(DialogStyle::px(260))
-        .arg(DialogStyle::px(24)));
+        .arg(DialogStyle::px(16))
+        .arg(DialogStyle::px(34))
+        .arg(DialogStyle::px(560))
+        .arg(DialogStyle::px(24))
+        // Room down the sides so a long code does not run under the eye, and
+        // so the field does not sit hard against the screen edge.
+        .arg(DialogStyle::px(28)));
 }
 
 void LockScreen::setStation(const QString& station)
@@ -135,7 +217,7 @@ void LockScreen::setMethod(Method method)
     // The key is hidden for a card, because there is nothing to type and a
     // field the operator cannot fill invites them to try.
     const bool typing = (method == Keypad);
-    m_key->setVisible(typing);
+    m_keyRow->setVisible(typing);
     m_signOn->setVisible(typing);
     m_prompt->setText(typing ? tr("Enter your worker code")
                              : tr("Present your card to the reader"));
@@ -194,6 +276,16 @@ void LockScreen::showBusy(const QString& message)
 void LockScreen::clearMessage()
 {
     m_message->clear();
+}
+
+void LockScreen::focusKey()
+{
+    // Typing implies the keypad: an operator who reaches for the keyboard has
+    // told us which method they want.
+    if (m_method != Keypad)
+        setMethod(Keypad);
+
+    m_key->setFocus(Qt::OtherFocusReason);
 }
 
 void LockScreen::reset()

@@ -1,6 +1,7 @@
 #include "workersession.h"
 
 #include <QDebug>
+#include <QEventLoop>
 #include <QFile>
 #include <QJsonDocument>
 #include <QNetworkReply>
@@ -16,6 +17,10 @@ namespace {
 // A worker who cannot get an answer needs to be told that quickly, because
 // their next move is to call somebody.
 constexpr int kTimeoutMs = 8000;
+
+// Shorter, because this one is between a person pressing the power button and
+// the terminal going off. A sign-off worth waiting for, but not for long.
+constexpr int kShutdownTimeoutMs = 3000;
 
 // Reads the wording the server sent back. A responseStation carries up to four
 // LCD lines, meant for a terminal with a four-line display; here they are one
@@ -105,6 +110,49 @@ void WorkerSession::signOff()
     }
 
     qInfo() << "signed off:" << key;
+    emit signedOff();
+}
+
+void WorkerSession::signOffBlocking()
+{
+    if (m_currentKey.isEmpty())
+        return;
+
+    const QJsonObject config = setup();
+    const QString key = m_currentKey;
+    m_currentKey.clear();
+
+    const QString url = config.value("serverURL").toString();
+    if (url.isEmpty()) {
+        emit signedOff();
+        return;
+    }
+
+    QJsonObject logoff;
+    logoff["MAC"] = config.value("MAC").toString();
+    logoff["session"] = config.value("session").toString();
+
+    QJsonObject payload;
+    payload["publishLogoff"] = logoff;
+
+    QNetworkRequest request{QUrl(url)};
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setTransferTimeout(kShutdownTimeoutMs);
+
+    QNetworkReply* reply =
+            m_network.post(request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
+    reply->setProperty("expectReply", false);
+
+    // A local event loop, because the application's is about to stop. Bounded
+    // by the transfer timeout above, so a dead server delays a shutdown by
+    // seconds rather than hanging it.
+    QEventLoop wait;
+    connect(reply, &QNetworkReply::finished, &wait, &QEventLoop::quit);
+    QTimer::singleShot(kShutdownTimeoutMs, &wait, &QEventLoop::quit);
+    wait.exec();
+
+    qInfo() << "signed off at shutdown:" << key
+            << (reply->error() == QNetworkReply::NoError ? "(sent)" : "(not sent)");
     emit signedOff();
 }
 

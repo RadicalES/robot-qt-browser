@@ -7,6 +7,7 @@
 #include <QString>
 #include <QWidget>
 
+class QAction;
 class QVBoxLayout;
 class QHBoxLayout;
 
@@ -59,6 +60,14 @@ public:
     // Focus and clear, ready for the next worker.
     void reset();
 
+    // Put the caret in the code field.
+    //
+    // The virtual keyboard raises itself for whatever holds focus, so anything
+    // that brings the keyboard up while the terminal is locked has to point it
+    // here - otherwise the panel appears and the keystrokes go to the page
+    // behind the lock, which is hidden and which nobody has signed on to see.
+    void focusKey();
+
 signals:
     // A key the operator wants to sign on with. Whether it is accepted is not
     // this widget's business — it asks the server (see the Robot API's
@@ -77,6 +86,8 @@ private:
     QLabel* m_prompt;
     QLabel* m_message;
     QLineEdit* m_key;
+    QPushButton* m_reveal;
+    QWidget* m_keyRow;
     QPushButton* m_signOn;
     QPushButton* m_keypadButton;
     QPushButton* m_cardButton;

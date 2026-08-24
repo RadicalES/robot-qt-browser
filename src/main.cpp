@@ -711,6 +711,15 @@ int main(int argc, char** argv)
             lockScreen->setStation(ScadaIndicator::stationName());
             lockScreen->reset();
             keyReader->start();
+
+            // The input method follows the ACTIVE WINDOW, so the window has to
+            // be the active one before the code field can raise the keyboard -
+            // the same rule every dialog here obeys. Without this, locking
+            // while a dialog was open left the keyboard bound to a window that
+            // is no longer on screen.
+            window.raise();
+            window.activateWindow();
+            lockScreen->focusKey();
         } else {
             // The page keeps its state behind the lock, so unlocking returns
             // the operator to exactly where they were - mid-transaction
@@ -774,6 +783,24 @@ int main(int argc, char** argv)
     // Activity is anything a person does - a touch, a key, a click - watched
     // application-wide, because the page is where the work happens and its
     // events belong to the web view, not to the window.
+    // Shutting down signs the worker off too.
+    //
+    // A terminal switched off mid-shift would otherwise leave a session that
+    // nobody ever closes - the worker stays signed on at a machine that is not
+    // running, and the record says they never went home. SIGTERM already
+    // reaches quit() through UnixSignalNotifier, so this covers a systemctl
+    // stop, a lightdm restart and a clean reboot.
+    //
+    // Sent synchronously: aboutToQuit is the last moment the event loop turns,
+    // so a queued POST would be destroyed with the network manager before it
+    // left the machine.
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, session, [session]() {
+        if (session->isSignedOn()) {
+            qInfo() << "shutting down: signing the worker off";
+            session->signOffBlocking();
+        }
+    });
+
     if (locksEnabled) {
         QObject::connect(idleTimer, &QTimer::timeout, &app, [setLocked]() {
             qInfo() << "locking: idle";
@@ -920,7 +947,7 @@ int main(int argc, char** argv)
     }
 
     QObject::connect(keyboardButton, &QToolButton::clicked,
-                     [keyboard, &webPageController]() {
+                     [keyboard, &webPageController, lockScreen]() {
         if (!keyboard)
             return;
         if (keyboard->isShowing()) {
@@ -939,9 +966,18 @@ int main(int argc, char** argv)
             QGuiApplication::inputMethod()->commit();
             QGuiApplication::inputMethod()->hide();
         } else {
-            // Focus the page first: with the panel up and nothing focused,
+            // Focus something first: with the panel up and nothing focused,
             // keystrokes would go nowhere.
-            webPageController.webView()->setFocus();
+            //
+            // While the terminal is locked that something is the code field,
+            // not the page. The page is hidden behind the lock and nobody has
+            // signed on to see it - focusing it raised the keyboard and sent
+            // every keystroke into a page nobody could see, which looked like
+            // a keyboard that did not work.
+            if (lockScreen->isVisible())
+                lockScreen->focusKey();
+            else
+                webPageController.webView()->setFocus();
             keyboard->setForceVisible(true);
             QGuiApplication::inputMethod()->show();
         }

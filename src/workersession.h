@@ -55,6 +55,15 @@ public slots:
     // stale session on its own terms anyway.
     void signOff();
 
+    // The same thing, but waiting for it to leave the machine.
+    //
+    // Only for shutdown. aboutToQuit is the last turn of the event loop, so a
+    // POST queued there would be destroyed along with the network manager
+    // before it was sent - and the session would stay open on the server for a
+    // worker whose terminal is off. A short wait at shutdown is worth a
+    // correct record.
+    void signOffBlocking();
+
 signals:
     void signedOn(const QString& key);
     void signedOff();
