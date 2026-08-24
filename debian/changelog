@@ -1,3 +1,20 @@
+robot-browser (3.6.0-1) bookworm; urgency=medium
+
+  * A terminal marked "Secure Terminal" on the SCADA server locks itself and
+    asks a worker to sign on; switching it back to Open removes the lock within
+    seconds, without a restart
+  * A worker signs on with one value - keyed, or presented as a card through
+    the wsrobot reader bridge
+  * Signing on posts publishLogon and shows the server's own wording when it is
+    refused; locking, the lock button and shutdown all sign the worker off with
+    publishLogoff
+  * The lock timeout is in Settings, defaulting to five minutes
+  * Fix: a page asking for HTTP credentials could open a dialog over the lock
+  * Fix: the on-screen keyboard sent keystrokes to the hidden page while locked
+  * Fix: the idle countdown ran from the last touch instead of from the sign-on
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Mon, 24 Aug 2026 14:00:00 +0200
+
 robot-browser (3.5.0-1) bookworm; urgency=medium
 
   * Pick a device profile from the Settings dialog; --profile=user applies

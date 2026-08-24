@@ -4,6 +4,64 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.0] - 2026-08-24
+
+### Added
+
+- **A terminal can lock, and ask who is signing on.** A terminal in a packhouse
+  is a shared machine: it runs unattended between transactions, and whoever
+  walks past gets whatever the last operator left open. It now behaves like a
+  desktop — it asks who you are before showing the page, and locks itself again
+  when nobody has touched it.
+- **The site decides, on the server.** A terminal marked **Secure Terminal**
+  has `security=SECURE` in the setup `robot-scada-client` publishes, and that
+  is what turns this on. Switching it back to Open removes the lock within
+  seconds, with no restart and no visit — the setting is followed while the
+  terminal runs, not read once at boot. `WB_SECURITY` only decides for a
+  terminal the server has never spoken to.
+- **A worker signs on with one value**, keyed on the pad or presented as a
+  card. Cards and scanned badges arrive from `wsrobot`'s websocket, which
+  serves every reader on the terminal over one socket, and the `[0]` a
+  multi-reader terminal prefixes is stripped — it is decoration on a card
+  number, not a different card. The card option only appears when a reader is
+  actually connected.
+- **Signing on is a check, not an authentication.** It posts the Robot API's
+  `publishLogon` and reads the answer; a refusal shows the server's own wording,
+  because "Invalid Card Number / Worker not found" is what whoever the operator
+  calls will recognise. Being refused and being unable to ask are different
+  states and read differently.
+- **Locking signs the worker off**, with `publishLogoff` — on the idle timeout,
+  on the toolbar's lock button, and on shutdown. A terminal switched off
+  mid-shift would otherwise leave a session nobody closes, and the record would
+  say the worker never went home.
+- **The lock timeout is in Settings**, defaulting to five minutes. Whether a
+  terminal locks is not a setting there: a terminal that could switch its own
+  lock off would not be a secure terminal.
+
+### Changed
+
+- The lock covers the page and not the toolbar. WiFi, LAN, SCADA state and Info
+  stay reachable without signing on, because a terminal whose network has died
+  has to be fixable at the terminal, and none of those show a customer's data.
+- The page keeps its state behind the lock, so unlocking returns the operator to
+  exactly where they were. An idle lock never costs somebody their work.
+
+### Fixed
+
+- **A page could put a dialog on top of the lock.** A page asking for HTTP
+  credentials does it in a modal dialog, so a terminal meant to be asking who
+  you are instead showed a password box for a page nobody had signed on to see.
+  The request is refused while locked and the page reloaded on unlock, when
+  there is somebody to answer it.
+- **The keyboard swallowed every keystroke on the lock screen.** The Keyboard
+  button focused the web view unconditionally, and while locked that view is
+  hidden — so the panel appeared and the typing went into a page nobody could
+  see, which reads exactly like a keyboard that does not work.
+- **The idle countdown ran from the last touch rather than from the sign-on**,
+  so a terminal observed on hardware locked three minutes after a worker signed
+  on instead of five. The five minutes belong to their session.
+
+
 ## [3.5.0] - 2026-08-23
 
 ### Added
