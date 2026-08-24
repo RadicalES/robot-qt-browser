@@ -54,6 +54,7 @@ add_executable(robot-browser
     virtualkeyboardpanel.h
     activitywatch.h
     workerkeyreader.h
+    workersession.h
     securitypolicy.h
     lockscreen.h
 
@@ -67,6 +68,7 @@ add_executable(robot-browser
     wifidialog.cpp
     infodialog.cpp
     settingsdialog.cpp
+    workersession.cpp
     lockscreen.cpp
     rebootdialog.cpp
     landialog.cpp

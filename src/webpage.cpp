@@ -116,6 +116,16 @@ void WebPage::javaScriptConsoleMessage(JavaScriptConsoleMessageLevel level,
 
 void WebPage::onAuthenticationRequired(const QUrl& requestUrl, QAuthenticator* authenticator)
 {
+    if (m_locked) {
+        // Nobody has signed on, so there is nobody to ask. Refusing leaves the
+        // page showing its own error behind the lock, which is why the reload
+        // on unlock exists.
+        qWarning() << "authentication requested while locked, refused:" << requestUrl;
+        m_authSuppressed = true;
+        *authenticator = QAuthenticator();
+        return;
+    }
+
     QDialog* dialog = new QDialog(m_dialogParent ? m_dialogParent
                                                  : QApplication::activeWindow());
     dialog->setWindowTitle("HTTP Authentication");

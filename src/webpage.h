@@ -59,6 +59,25 @@ public:
     // child widget, so the page cannot reliably find the top-level window itself.
     void setDialogParent(QWidget* parent) { m_dialogParent = parent; }
 
+    // While the terminal is locked, the page may not put anything on screen.
+    //
+    // A page that asks for HTTP credentials does it in a modal dialog, and a
+    // dialog opens over the lock screen - so a terminal that is meant to be
+    // asking who you are instead shows a password box belonging to a page
+    // nobody has signed on to see. Whether it is exploitable hardly matters;
+    // it is the lock screen not being the only thing on a locked terminal.
+    //
+    // The request is refused rather than queued: the page is behind the lock
+    // and nobody is waiting for it. If that happened, the page is reloaded on
+    // unlock, when there is somebody to answer.
+    void setLocked(bool locked) { m_locked = locked; }
+    bool takeSuppressedAuth()
+    {
+        const bool suppressed = m_authSuppressed;
+        m_authSuppressed = false;
+        return suppressed;
+    }
+
 Q_SIGNALS:
     // Navigation was blocked because no network interface is up. Reported
     // rather than shown from here: a modal over the kiosk is a poor fit for a
@@ -74,6 +93,8 @@ private:
 
     WebsockServer* m_debugServer;
     QWidget* m_dialogParent;
+    bool m_locked = false;
+    bool m_authSuppressed = false;
 };
 
 #endif

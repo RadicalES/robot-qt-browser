@@ -34,6 +34,7 @@
 #include "activitywatch.h"
 #include "lockscreen.h"
 #include "workerkeyreader.h"
+#include "workersession.h"
 #include "securitypolicy.h"
 #include "runprofile.h"
 #include "settingsdialog.h"
@@ -583,6 +584,9 @@ int main(int argc, char** argv)
     WorkerKeyReader* keyReader =
             new WorkerKeyReader(QUrl("ws://localhost:8100"), &app);
 
+    // Who is signed on, and telling the server about it.
+    WorkerSession* session = new WorkerSession(&app);
+
     QAction* lockAction = nullptr;
     if (locksEnabled) {
         lockScreen->setStation(ScadaIndicator::stationName());
@@ -671,14 +675,24 @@ int main(int argc, char** argv)
     // the same things: show or hide the page, start or stop listening for a
     // card, and — once the server side lands (#14) — sign the worker on or
     // off. A second copy of this would be a second copy to forget.
-    const auto setLocked = [&, lockScreen, keyReader](bool locked) {
+    const auto setLocked = [&, lockScreen, keyReader, session](bool locked) {
         if (!locksEnabled)
             return;
 
         webPageController.webView()->setVisible(!locked);
         lockScreen->setVisible(locked);
 
+        // The page may not put a dialog on screen while nobody is signed on.
+        if (WebPage* page = webPageController.page())
+            page->setLocked(locked);
+
         if (locked) {
+            // A locked terminal must never leave a session open: whoever
+            // walked away is off shift as far as the record is concerned, and
+            // the next person to present a card is a new session. This is the
+            // whole reason the idle lock exists.
+            session->signOff();
+
             lockScreen->setStation(ScadaIndicator::stationName());
             lockScreen->reset();
             keyReader->start();
@@ -687,6 +701,15 @@ int main(int argc, char** argv)
             // the operator to exactly where they were - mid-transaction
             // included. An idle lock must never cost somebody their work.
             keyReader->stop();
+
+            // If the page asked for credentials while it was behind the lock,
+            // that request was refused and the page is showing its own error.
+            // Now there is somebody to answer it.
+            if (WebPage* page = webPageController.page()) {
+                if (page->takeSuppressedAuth())
+                    webPageController.reload();
+            }
+
             refocusPage();
         }
     };
@@ -696,25 +719,24 @@ int main(int argc, char** argv)
     QObject::connect(keyReader, &WorkerKeyReader::availabilityChanged,
                      lockScreen, &LockScreen::setCardAvailable);
 
-    QObject::connect(lockScreen, &LockScreen::keyEntered, &app,
-                     [lockScreen, setLocked](const QString& key) {
-        // TODO(#14): ask the server. A worker sign-on is a check, not an
-        // authentication: POST {"publishLogon": {MAC, id, session}} to the
-        // serverURL in /run/robot/setup.json and read the responseStation's
-        // status - OK signs them on, DENIED and FAIL refuse with the server's
-        // own wording in its LCD lines.
-        //
-        // Until that lands this accepts any key, which is NOT access control.
-        // It is here so the screen, the readers and the idle lock can be built
-        // and tested against real hardware; the terminal says so at startup.
-        if (key.isEmpty()) {
-            lockScreen->showError(QObject::tr("Enter your worker code"));
-            return;
-        }
+    // Asking the server whether this worker may use this terminal.
+    //
+    // A sign-on is a check, not an authentication: publishLogon carries the
+    // key and the terminal's session, and the responseStation's status
+    // decides. Everything it needs is already in /run/robot/setup.json.
+    QObject::connect(lockScreen, &LockScreen::keyEntered,
+                     session, &WorkerSession::signOn);
 
-        qInfo() << "sign-on accepted without checking (no server check yet):" << key;
-        setLocked(false);
-    });
+    QObject::connect(session, &WorkerSession::signedOn, &app,
+                     [setLocked](const QString&) { setLocked(false); });
+
+    // Refused and unreachable are different states, and an operator will be
+    // told the difference by whoever they call - so they read differently on
+    // screen. A refusal shows the server's own wording.
+    QObject::connect(session, &WorkerSession::refused,
+                     lockScreen, &LockScreen::showError);
+    QObject::connect(session, &WorkerSession::unreachable,
+                     lockScreen, &LockScreen::showError);
 
     if (lockAction) {
         QObject::connect(lockAction, &QAction::triggered, &app,
@@ -752,7 +774,13 @@ int main(int argc, char** argv)
         setLocked(true);
         if (config.security() == SecurityPolicy::Auto)
             qInfo() << "security: on, from the server's setup";
-        qWarning() << "sign-on is NOT checked yet - any key is accepted (see #14)";
+        if (!session->isConfigured()) {
+            // Not onboarded: there is nobody to ask, so nobody gets in. Said
+            // once at startup, because the first person to present a card
+            // deserves better than a terminal that simply refuses them.
+            qWarning() << "security: on, but this terminal has no server -"
+                       << "no worker will be able to sign on";
+        }
     }
 
     QObject::connect(wifiButton, &QToolButton::clicked,

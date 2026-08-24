@@ -27,6 +27,10 @@ public:
     void setUrls(const QUrl& localUrl, const QUrl& remoteUrl);
     QWebEngineView* webView() { return m_webView; }
 
+    // The page itself, so the lock can stop it putting dialogs on screen while
+    // nobody is signed on.
+    WebPage* page() const { return m_page; }
+
     QString currentUrl() const;
     bool loading() const { return m_loading; }
 
