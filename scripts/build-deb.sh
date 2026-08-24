@@ -176,7 +176,6 @@ Installed-Size: ${INSTALLED_SIZE}
 Depends: libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6dbus6, libqt6websockets6, libqt6svg6, libqt6webenginewidgets6, libqt6quickwidgets6, libqt6qml6, libqt6quick6, qt6-virtualkeyboard-plugin, qml6-module-qtquick-virtualkeyboard, qml6-module-qtqml-workerscript, qml6-module-qt-labs-folderlistmodel, qml6-module-qtquick-layouts, qml6-module-qtquick-window, qml6-module-qtquick-controls, qml6-module-qtquick-templates, network-manager
 Section: misc
 Priority: optional
-X-Radical-Products: Robot-T430, Robot-T431, Robot-T432, Robot-T440, ITPC-200
 Description: Kiosk browser for industrial terminals
  Turns a touchscreen terminal into a single-purpose appliance: two fixed
  pages, no address bar, and nothing to wander off into. Operators sign on
