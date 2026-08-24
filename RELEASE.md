@@ -4,6 +4,17 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.3] - 2026-08-24
+
+### Fixed
+
+- **The lock screen ran off a short panel.** It was laid out for a tall one — a
+  T440 at 720x1280 looked right, a T431 at 1024x600 lost its field and button
+  off the bottom once the toolbar had taken its share. Every size now follows
+  the height actually available, and on a very short panel the product mark is
+  dropped rather than the field: the mark is decoration, the field is not.
+
+
 ## [3.6.2] - 2026-08-24
 
 ### Fixed

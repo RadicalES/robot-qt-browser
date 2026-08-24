@@ -93,11 +93,23 @@ echo "Package file: $(basename "$DEB")"
 
 # --- Publish ----------------------------------------------------------------
 
-# Only one version of a package belongs in the pool: apt offers the newest it
-# is told about, and leaving the old file behind means it stays on the CDN and
-# in the metadata for a version nobody should install.
+# Older versions of this package in the pool.
+#
+# KEPT, not removed. The download portal offers several versions of a product
+# deliberately - a site running last season's terminals needs the build that
+# matches them - and a product manifest listing a version whose file has been
+# deleted is a broken download on a customer-facing page. apt still offers the
+# newest; the older files simply stay downloadable.
+#
+# Excluded by the file's REAL name, not a rebuilt one. It used to exclude
+# "${PACKAGE}_${VERSION}-1_${ARCH}.deb", which never matches anything: a
+# package version carries the suite it was built for, so the file is
+# robot-browser_3.6.2-1~bookworm_arm64.deb. Nothing was excluded, and because
+# this list is taken BEFORE the copy, a re-run of a failed publish found its
+# own file already in the pool and deleted it immediately after copying it -
+# leaving the repository with no package at all.
 OLD=$(find "$POOL" -maxdepth 1 -name "${PACKAGE}_*_${ARCH}.deb" \
-        ! -name "${PACKAGE}_${VERSION}-1_${ARCH}.deb")
+        ! -name "$(basename "$DEB")")
 
 if [ "$DRY_RUN" = true ]; then
     echo "[DRY RUN] Would copy:   $(basename "$DEB") -> ${POOL}/"
@@ -111,8 +123,7 @@ fi
 cp "$DEB" "${POOL}/"
 echo "Copied:  $(basename "$DEB")"
 [ -n "$OLD" ] && echo "$OLD" | while read -r f; do
-    rm -f "$f"
-    echo "Removed: $(basename "$f")"
+    echo "Kept:    $(basename "$f")"
 done
 
 echo ""

@@ -8,6 +8,7 @@
 #include <QWidget>
 
 class QAction;
+class QResizeEvent;
 class QVBoxLayout;
 class QHBoxLayout;
 
@@ -78,8 +79,21 @@ private slots:
     void onSubmit();
     void onMethodChanged();
 
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
-    void applyStyle();
+    // Sizes follow the panel.
+    //
+    // Terminals run from 800x480 to 1920x1080, and a lock screen laid out for
+    // the tall ones runs off the bottom of the short ones - the mark, the
+    // field and the button simply do not fit in 600px once the toolbar has
+    // taken its share. Everything here is derived from the height actually
+    // available rather than from a number that suited the panel it was written
+    // on.
+    void applyMetrics();
+
+    void applyStyle(qreal fit = 1.0);
     void setMethod(Method method);
 
     QLabel* m_station;
@@ -93,6 +107,8 @@ private:
     QPushButton* m_cardButton;
     QWidget* m_entryRow;
     Method m_method = Keypad;
+    QLabel* m_mark;
+    int m_metricsFor = -1;
     bool m_cardAvailable = false;
 };
 

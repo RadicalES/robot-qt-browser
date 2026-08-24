@@ -1,3 +1,10 @@
+robot-browser (3.6.3-1) bookworm; urgency=medium
+
+  * Fix: the lock screen ran off the bottom of a short panel - sizes now follow
+    the height available, so a 1024x600 terminal fits as well as a 720x1280 one
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Mon, 24 Aug 2026 17:30:00 +0200
+
 robot-browser (3.6.2-1) bookworm; urgency=medium
 
   * Fix: a terminal switched to Secure while running had no lock button - it

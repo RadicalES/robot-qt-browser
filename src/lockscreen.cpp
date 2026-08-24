@@ -1,6 +1,7 @@
 #include "lockscreen.h"
 
 #include <QPainter>
+#include <QResizeEvent>
 #include <QPixmap>
 #include <QPushButton>
 
@@ -51,10 +52,9 @@ LockScreen::LockScreen(QWidget* parent)
     // The product mark, at the size the Info dialog uses. A locked terminal is
     // the screen a site sees most of, so it should look like the product
     // rather than like an error.
-    QLabel* mark = new QLabel(this);
-    mark->setPixmap(RobotHead::pixmap(DialogStyle::px(72), RobotHead::Standard));
-    mark->setAlignment(Qt::AlignCenter);
-    layout->addWidget(mark);
+    m_mark = new QLabel(this);
+    m_mark->setAlignment(Qt::AlignCenter);
+    layout->addWidget(m_mark);
 
     m_station = new QLabel(this);
     m_station->setAlignment(Qt::AlignCenter);
@@ -145,10 +145,50 @@ LockScreen::LockScreen(QWidget* parent)
     layout->addStretch(2);
 
     applyStyle();
+    applyMetrics();
     setMethod(Keypad);
 }
 
-void LockScreen::applyStyle()
+void LockScreen::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    applyMetrics();
+}
+
+void LockScreen::applyMetrics()
+{
+    const int available = height();
+    if (available <= 0 || available == m_metricsFor)
+        return;   // nothing has changed; restyling on every paint is wasteful
+
+    m_metricsFor = available;
+
+    // 720 is the height this was laid out for. A shorter panel gets everything
+    // in proportion rather than the same layout with its bottom cut off; the
+    // floor stops a very short panel producing text nobody can read, at which
+    // point the mark is dropped instead - it is decoration, and the field is
+    // not.
+    const qreal fit = qBound(qreal(0.55), available / qreal(720), qreal(1.0));
+
+    const bool showMark = available >= 420;
+    m_mark->setVisible(showMark);
+    if (showMark)
+        m_mark->setPixmap(RobotHead::pixmap(int(DialogStyle::px(72) * fit),
+                                            RobotHead::Standard));
+
+    const int pad = int(DialogStyle::px(40) * fit);
+    layout()->setContentsMargins(pad, pad, pad, pad);
+    layout()->setSpacing(int(DialogStyle::px(14) * fit));
+
+    const int eye = int(DialogStyle::px(34) * fit);
+    m_reveal->setIconSize(QSize(eye, eye));
+    const int button = int(DialogStyle::px(62) * fit);
+    m_reveal->setFixedSize(button, button);
+
+    applyStyle(fit);
+}
+
+void LockScreen::applyStyle(qreal fit)
 {
     // Black, like the view behind it, so locking does not flash a different
     // colour at somebody walking past.
@@ -172,18 +212,18 @@ void LockScreen::applyStyle()
         "QPushButton#reveal:checked { background: #1a1a1a; border-color: #ff9800; }"
         "QPushButton#reveal:pressed { background: #2a2a2a; }"
         "QPushButton:pressed { background: #ff9800; color: #1a1a1a; }")
-        .arg(DialogStyle::px(20))
-        .arg(DialogStyle::px(26))
-        .arg(DialogStyle::px(18))
+        .arg(int(DialogStyle::px(20) * fit))
+        .arg(int(DialogStyle::px(26) * fit))
+        .arg(int(DialogStyle::px(18) * fit))
         .arg(DialogStyle::px(2))
         .arg(DialogStyle::px(6))
-        .arg(DialogStyle::px(16))
-        .arg(DialogStyle::px(34))
-        .arg(DialogStyle::px(560))
-        .arg(DialogStyle::px(24))
+        .arg(int(DialogStyle::px(16) * fit))
+        .arg(int(DialogStyle::px(34) * fit))
+        .arg(int(DialogStyle::px(560) * fit))
+        .arg(int(DialogStyle::px(24) * fit))
         // Room down the sides so a long code does not run under the eye, and
         // so the field does not sit hard against the screen edge.
-        .arg(DialogStyle::px(28)));
+        .arg(int(DialogStyle::px(28) * fit)));
 }
 
 void LockScreen::setStation(const QString& station)
