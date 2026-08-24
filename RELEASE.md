@@ -4,6 +4,20 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.1] - 2026-08-24
+
+### Changed
+
+- **The package describes what it actually is.** The description had been
+  written for a different product — "Kiosk browser for embedded Linux robots …
+  for Raspberry Pi CM4 and Raspberry Pi 5" — naming neither amd64 nor the
+  ITPC-200, and none of what a buyer chooses it for. This is not only apt
+  metadata: the catalogue on `cdn.radsys.io` builds its download listing from
+  this field, so editing the website would not have changed it.
+- **The package says which terminals it runs on**, in `X-Radical-Products`, so
+  the catalogue can show it without a second list on the website that drifts.
+
+
 ## [3.6.0] - 2026-08-24
 
 ### Added

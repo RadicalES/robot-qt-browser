@@ -1,3 +1,12 @@
+robot-browser (3.6.1-1) bookworm; urgency=medium
+
+  * Description rewritten: it described a Raspberry-Pi-only product and none of
+    what the browser is chosen for. The download catalogue builds its listing
+    from this field
+  * X-Radical-Products lists the terminals the package runs on
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Mon, 24 Aug 2026 15:30:00 +0200
+
 robot-browser (3.6.0-1) bookworm; urgency=medium
 
   * A terminal marked "Secure Terminal" on the SCADA server locks itself and
