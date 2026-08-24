@@ -176,10 +176,15 @@ Installed-Size: ${INSTALLED_SIZE}
 Depends: libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6dbus6, libqt6websockets6, libqt6svg6, libqt6webenginewidgets6, libqt6quickwidgets6, libqt6qml6, libqt6quick6, qt6-virtualkeyboard-plugin, qml6-module-qtquick-virtualkeyboard, qml6-module-qtqml-workerscript, qml6-module-qt-labs-folderlistmodel, qml6-module-qtquick-layouts, qml6-module-qtquick-window, qml6-module-qtquick-controls, qml6-module-qtquick-templates, network-manager
 Section: misc
 Priority: optional
-Description: Kiosk browser for embedded Linux robots
- Two-URL kiosk browser with WiFi management, system info, and virtual
- keyboard. Built with Qt 6 and QtWebEngine for Raspberry Pi CM4 and
- Raspberry Pi 5.
+Description: Kiosk browser for industrial terminals
+ Turns a touchscreen terminal into a single-purpose appliance: two fixed
+ pages, no address bar, and nothing to wander off into. Operators sign on
+ with a card or a worker code, and the terminal locks itself and signs them
+ off when it is left alone. WiFi, wired networking and server status are
+ built in, so a terminal can be set up and diagnosed at the terminal.
+ .
+ Built with Qt 6 and QtWebEngine for Debian 12 on arm64 (Raspberry Pi CM4
+ and Pi 5) and amd64 (ITPC-200 and PC).
 EOF
 
 # Step 6: Install maintainer scripts
