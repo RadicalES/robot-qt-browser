@@ -182,11 +182,16 @@ void WorkerSession::onLogonReply(QNetworkReply* reply)
     m_pendingKey.clear();
 
     if (reply->error() != QNetworkReply::NoError) {
-        // Could not ask, which is not the same as being refused. #18 decides
-        // whether a terminal may let a worker on regardless and queue the
-        // event; until that is settled, no answer means no sign-on.
+        // Could not ask, which is not the same as being refused.
+        //
+        // A terminal that cannot reach its server does not let anybody on. It
+        // was considered whether to sign a worker on anyway and queue the
+        // event for later, so a switch reboot does not stop the line - and
+        // rejected: a terminal that cannot check is a terminal that cannot
+        // know, and letting a revoked worker through is a worse outcome than
+        // making somebody wait for the network. Offline means offline.
         qWarning() << "sign-on could not reach the server:" << reply->errorString();
-        emit unreachable(tr("Cannot reach the server"));
+        emit unreachable(tr("Terminal offline — cannot sign on"));
         return;
     }
 
