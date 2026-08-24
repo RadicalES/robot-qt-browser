@@ -1,4 +1,6 @@
 #include "settingsdialog.h"
+#include <QSpinBox>
+#include "securitypolicy.h"
 #include "dialogstyle.h"
 #include "appconfig.h"
 #include "runprofile.h"
@@ -19,6 +21,7 @@
 SettingsDialog::SettingsDialog(const QString& remoteUrl,
                                const QString& localUrl,
                                const QString& profileName,
+                               int lockMinutes,
                                QWidget* parent)
     : QDialog(parent)
 {
@@ -67,6 +70,34 @@ SettingsDialog::SettingsDialog(const QString& remoteUrl,
     m_local = new QLineEdit(localUrl);
     m_local->setPlaceholderText("http://localhost:3000");
     pages->addWidget(m_local);
+
+    // --- Security ---------------------------------------------------------
+    // Whether this terminal locks at all is not set here. That is the site's
+    // decision, taken on the SCADA server as "Secure Terminal" and delivered
+    // in the setup it publishes — a terminal that could turn its own lock off
+    // would not be a secure terminal. The only thing left to say is how long
+    // it waits, and the server will send that too in time.
+    QVBoxLayout* security = addSection("Security");
+
+    security->addWidget(new QLabel("On a secure terminal, how long before it "
+                                   "locks itself and signs the worker off"));
+
+    QWidget* minutesRow = new QWidget;
+    QHBoxLayout* minutesLayout = new QHBoxLayout(minutesRow);
+    minutesLayout->setContentsMargins(0, 0, 0, 0);
+    minutesLayout->addWidget(new QLabel("Lock after"));
+
+    m_lockMinutes = new QSpinBox;
+    // One minute is the floor: zero would mean locking the instant somebody
+    // stops touching it, which is a terminal nobody can use. Two hours is the
+    // ceiling for the same reason in the other direction.
+    m_lockMinutes->setRange(1, 120);
+    m_lockMinutes->setValue(lockMinutes > 0 ? lockMinutes
+                                            : SecurityPolicy::kDefaultIdleMinutes);
+    m_lockMinutes->setSuffix(" minutes");
+    minutesLayout->addWidget(m_lockMinutes);
+    minutesLayout->addStretch(1);
+    security->addWidget(minutesRow);
 
     // --- Footer ----------------------------------------------------------
     m_error = new QLabel;
@@ -121,6 +152,8 @@ QString SettingsDialog::profileName() const
     return m_profile->currentData().toString();
 }
 
+int SettingsDialog::lockMinutes() const { return m_lockMinutes->value(); }
+
 QString SettingsDialog::remoteUrl() const { return m_remote->text().trimmed(); }
 QString SettingsDialog::localUrl() const  { return m_local->text().trimmed(); }
 
@@ -143,7 +176,7 @@ void SettingsDialog::onAccept()
     }
 
     QString error;
-    if (!save(remote, local, profileName(), &error)) {
+    if (!save(remote, local, profileName(), lockMinutes(), &error)) {
         m_error->setText(error);
         m_error->show();
         return;
@@ -167,7 +200,8 @@ QString SettingsDialog::savePath()
 }
 
 bool SettingsDialog::save(const QString& remoteUrl, const QString& localUrl,
-                          const QString& profileName, QString* error)
+                          const QString& profileName, int lockMinutes,
+                          QString* error)
 {
     const QString path = savePath();
     const QString dir = QFileInfo(path).absolutePath();
@@ -190,7 +224,8 @@ bool SettingsDialog::save(const QString& remoteUrl, const QString& localUrl,
         << "# " << AppConfig::defaultPath() << ".\n"
         << "WB_REMOTE_URL=" << remoteUrl << "\n"
         << "WB_LOCAL_URL=" << localUrl << "\n"
-        << "WB_PROFILE=" << profileName << "\n";
+        << "WB_PROFILE=" << profileName << "\n"
+        << "WB_LOCK_MINUTES=" << lockMinutes << "\n";
     file.close();
     return true;
 }

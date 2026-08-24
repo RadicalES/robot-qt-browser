@@ -97,12 +97,6 @@ void AppConfig::loadFile(const QString& path)
                 m_security = mode;
             continue;
         }
-        if (key == "WB_LOCK_IDLE") {
-            Availability idle;
-            if (parseAvailability(value, &idle))
-                m_lockWhenIdle = (idle != Off);
-            continue;
-        }
         if (key == "WB_LOCK_MINUTES") {
             bool ok = false;
             const int minutes = value.toInt(&ok);

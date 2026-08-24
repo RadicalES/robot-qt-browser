@@ -5,6 +5,7 @@
 #include <QString>
 
 class QLineEdit;
+class QSpinBox;
 class QLabel;
 class QVBoxLayout;
 class QComboBox;
@@ -29,7 +30,8 @@ public:
     // Values are passed in and read back out rather than written directly, so
     // this dialog knows nothing about who owns them.
     SettingsDialog(const QString& remoteUrl, const QString& localUrl,
-                   const QString& profileName, QWidget* parent = nullptr);
+                   const QString& profileName, int lockMinutes,
+                   QWidget* parent = nullptr);
 
     QString remoteUrl() const;
     QString localUrl() const;
@@ -39,6 +41,10 @@ public:
     // all settled at startup.
     QString profileName() const;
 
+    // How long a secure terminal waits before locking itself. Whether it
+    // locks at all is the server's decision, not a setting here.
+    int lockMinutes() const;
+
     // Where settings are saved, shown in the dialog so it is obvious what this
     // changes and what to delete to undo it.
     static QString savePath();
@@ -46,7 +52,8 @@ public:
     // Saves for the next run. False with a reason if the file cannot be
     // written.
     static bool save(const QString& remoteUrl, const QString& localUrl,
-                     const QString& profileName, QString* error = nullptr);
+                     const QString& profileName, int lockMinutes,
+                     QString* error = nullptr);
 
 private slots:
     void onAccept();
@@ -58,6 +65,7 @@ private:
 
     QVBoxLayout* m_layout;
     QComboBox* m_profile;
+    QSpinBox* m_lockMinutes;
     QLineEdit* m_remote;
     QLineEdit* m_local;
     QLabel* m_error;

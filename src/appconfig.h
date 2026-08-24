@@ -51,10 +51,8 @@ public:
     // actually locks is SecurityPolicy::locksEnabled(), which lets the server
     // decide when the file says "auto".
     SecurityPolicy::Mode security() const { return m_security; }
-    bool lockWhenIdle() const { return m_lockWhenIdle; }
     int lockMinutes() const { return m_lockMinutes; }
     void setSecurity(SecurityPolicy::Mode mode) { m_security = mode; }
-    void setLockWhenIdle(bool idle) { m_lockWhenIdle = idle; }
     void setLockMinutes(int minutes) { m_lockMinutes = minutes; }
 
     QString remoteUrl() const { return m_remoteUrl; }
@@ -75,7 +73,6 @@ private:
     Availability m_lan;
     QString m_profileName;
     SecurityPolicy::Mode m_security = SecurityPolicy::Auto;
-    bool m_lockWhenIdle = true;
     int m_lockMinutes = SecurityPolicy::kDefaultIdleMinutes;
     QString m_remoteUrl;
     QString m_localUrl;

@@ -587,6 +587,13 @@ int main(int argc, char** argv)
     // Who is signed on, and telling the server about it.
     WorkerSession* session = new WorkerSession(&app);
 
+    // Locking itself when nobody is there. Created here because setLocked
+    // drives it: the countdown belongs to a signed-on session, so it starts
+    // when a worker signs on and stops while the terminal is locked.
+    QTimer* idleTimer = new QTimer(&app);
+    idleTimer->setSingleShot(true);
+    idleTimer->setInterval(config.lockMinutes() * 60 * 1000);
+
     QAction* lockAction = nullptr;
     if (locksEnabled) {
         lockScreen->setStation(ScadaIndicator::stationName());
@@ -607,9 +614,9 @@ int main(int argc, char** argv)
     infoDialog->setSystemActionsVisible(profile.systemActions);
     if (profile.settings) {
         infoDialog->addSettingsButton([&window, &config, &webPageController,
-                                       &profile, &app]() {
+                                       &profile, &app, idleTimer, lockScreen]() {
             SettingsDialog dialog(config.remoteUrl(), config.localUrl(),
-                                  profile.name, &window);
+                                  profile.name, config.lockMinutes(), &window);
             DialogStyle::closeKeyboard();
             if (dialog.exec() != QDialog::Accepted)
                 return;
@@ -628,6 +635,13 @@ int main(int argc, char** argv)
                 app.quit();
                 return;
             }
+
+            // Applied without a restart: a timeout is the kind of number
+            // somebody adjusts twice in a row to find the one they want.
+            config.setLockMinutes(dialog.lockMinutes());
+            idleTimer->setInterval(config.lockMinutes() * 60 * 1000);
+            if (!lockScreen->isVisible())
+                idleTimer->start();
 
             config.setRemoteUrl(dialog.remoteUrl());
             config.setLocalUrl(dialog.localUrl());
@@ -692,6 +706,7 @@ int main(int argc, char** argv)
             // the next person to present a card is a new session. This is the
             // whole reason the idle lock exists.
             session->signOff();
+            idleTimer->stop();
 
             lockScreen->setStation(ScadaIndicator::stationName());
             lockScreen->reset();
@@ -701,6 +716,12 @@ int main(int argc, char** argv)
             // the operator to exactly where they were - mid-transaction
             // included. An idle lock must never cost somebody their work.
             keyReader->stop();
+
+            // The countdown starts now, not whenever the last person happened
+            // to touch the screen. It locked three minutes after a sign-on
+            // once because the timer was already part-way through when the
+            // worker signed on - the five minutes belong to their session.
+            idleTimer->start();
 
             // If the page asked for credentials while it was behind the lock,
             // that request was refused and the page is showing its own error.
@@ -753,18 +774,13 @@ int main(int argc, char** argv)
     // Activity is anything a person does - a touch, a key, a click - watched
     // application-wide, because the page is where the work happens and its
     // events belong to the web view, not to the window.
-    QTimer* idleTimer = nullptr;
-    if (locksEnabled && config.lockWhenIdle()) {
-        idleTimer = new QTimer(&app);
-        idleTimer->setSingleShot(true);
-        idleTimer->setInterval(config.lockMinutes() * 60 * 1000);
+    if (locksEnabled) {
         QObject::connect(idleTimer, &QTimer::timeout, &app, [setLocked]() {
             qInfo() << "locking: idle";
             setLocked(true);
         });
 
         app.installEventFilter(new ActivityWatch(idleTimer, lockScreen, &app));
-        idleTimer->start();
     }
 
     // Locked before the first page is shown, so a terminal that reboots
