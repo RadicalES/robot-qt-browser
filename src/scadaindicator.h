@@ -25,6 +25,17 @@ class ScadaIndicator : public QToolButton {
     Q_OBJECT
 
 public:
+    // The terminal's name, as the server knows it. Shown on the lock screen:
+    // a site runs rows of identical terminals and an operator signing on
+    // should see which one they are at.
+    static QString stationName()
+    {
+        QFile file("/run/robot/station");
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+            return QString();
+        return QString::fromUtf8(file.readAll()).trimmed();
+    }
+
     enum State { Offline, Unprovisioned, Online };
 
     explicit ScadaIndicator(QWidget* parent = nullptr)

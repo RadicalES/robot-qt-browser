@@ -31,6 +31,10 @@
 #include "virtualkeyboardpanel.h"
 #include "pagefocusguard.h"
 #include "scadaindicator.h"
+#include "activitywatch.h"
+#include "lockscreen.h"
+#include "workerkeyreader.h"
+#include "securitypolicy.h"
 #include "runprofile.h"
 #include "settingsdialog.h"
 #include "robothead.h"
@@ -426,6 +430,15 @@ int main(int argc, char** argv)
 
     centralLayout->addWidget(webPageController.webView(), 1);
 
+    // The lock screen takes the page's place — same layout slot, so the
+    // toolbar and the keyboard below it stay exactly where they are. It is not
+    // a window of its own: the virtual keyboard binds to the active window,
+    // and a lock screen in its own window would take the keyboard with it and
+    // leave an operator unable to type their code.
+    LockScreen* lockScreen = new LockScreen;
+    lockScreen->hide();
+    centralLayout->addWidget(lockScreen, 1);
+
     // Load progress, sitting on the bottom edge of the page. Without it,
     // tapping Remote on a slow link looks like nothing happened and the
     // operator taps again.
@@ -551,6 +564,33 @@ int main(int argc, char** argv)
     clock->setFontPixels(px(24));
     toolbar->addWidget(clock);
 
+    // --- signing on ---------------------------------------------------------
+    //
+    // A terminal in a packhouse is a shared machine. It runs unattended
+    // between transactions, and whoever walks past gets whatever the last
+    // operator left open — so it behaves like a desktop: it asks who you are
+    // before it shows the page, and locks itself again when nobody has touched
+    // it.
+    //
+    // Whether it does that is the site's decision, taken on the SCADA server
+    // and delivered in /run/robot/setup.json. The config file only decides for
+    // a terminal the server has never spoken to.
+    const bool locksEnabled = profile.toolbar
+            && SecurityPolicy::locksEnabled(config.security());
+
+    // The reader bridge, for a card or a scanned badge. wsrobot serves every
+    // reader on the terminal over this one socket.
+    WorkerKeyReader* keyReader =
+            new WorkerKeyReader(QUrl("ws://localhost:8100"), &app);
+
+    QAction* lockAction = nullptr;
+    if (locksEnabled) {
+        lockScreen->setStation(ScadaIndicator::stationName());
+
+        lockAction = toolbar->addAction(QIcon(":/images/lock.svg"), "");
+        lockAction->setToolTip(QObject::tr("Sign off and lock"));
+    }
+
     // Info button
     QAction* infoAction = toolbar->addAction(QIcon(":/images/info.png"), "");
 
@@ -626,6 +666,95 @@ int main(int argc, char** argv)
             webPageController.webView()->setFocus();
         });
     };
+
+    // Locking and unlocking is one place, because every path into it has to do
+    // the same things: show or hide the page, start or stop listening for a
+    // card, and — once the server side lands (#14) — sign the worker on or
+    // off. A second copy of this would be a second copy to forget.
+    const auto setLocked = [&, lockScreen, keyReader](bool locked) {
+        if (!locksEnabled)
+            return;
+
+        webPageController.webView()->setVisible(!locked);
+        lockScreen->setVisible(locked);
+
+        if (locked) {
+            lockScreen->setStation(ScadaIndicator::stationName());
+            lockScreen->reset();
+            keyReader->start();
+        } else {
+            // The page keeps its state behind the lock, so unlocking returns
+            // the operator to exactly where they were - mid-transaction
+            // included. An idle lock must never cost somebody their work.
+            keyReader->stop();
+            refocusPage();
+        }
+    };
+
+    QObject::connect(keyReader, &WorkerKeyReader::keyRead,
+                     lockScreen, &LockScreen::submitKey);
+    QObject::connect(keyReader, &WorkerKeyReader::availabilityChanged,
+                     lockScreen, &LockScreen::setCardAvailable);
+
+    QObject::connect(lockScreen, &LockScreen::keyEntered, &app,
+                     [lockScreen, setLocked](const QString& key) {
+        // TODO(#14): ask the server. A worker sign-on is a check, not an
+        // authentication: POST {"publishLogon": {MAC, id, session}} to the
+        // serverURL in /run/robot/setup.json and read the responseStation's
+        // status - OK signs them on, DENIED and FAIL refuse with the server's
+        // own wording in its LCD lines.
+        //
+        // Until that lands this accepts any key, which is NOT access control.
+        // It is here so the screen, the readers and the idle lock can be built
+        // and tested against real hardware; the terminal says so at startup.
+        if (key.isEmpty()) {
+            lockScreen->showError(QObject::tr("Enter your worker code"));
+            return;
+        }
+
+        qInfo() << "sign-on accepted without checking (no server check yet):" << key;
+        setLocked(false);
+    });
+
+    if (lockAction) {
+        QObject::connect(lockAction, &QAction::triggered, &app,
+                         [setLocked]() { setLocked(true); });
+    }
+
+    // Locking itself when nobody is there.
+    //
+    // The timer is the whole point of the feature: an operator who walks away
+    // is off shift as far as the record is concerned, and the next person to
+    // present a card is a new session. A terminal that only locked at boot
+    // would be unlocked for weeks.
+    //
+    // Activity is anything a person does - a touch, a key, a click - watched
+    // application-wide, because the page is where the work happens and its
+    // events belong to the web view, not to the window.
+    QTimer* idleTimer = nullptr;
+    if (locksEnabled && config.lockWhenIdle()) {
+        idleTimer = new QTimer(&app);
+        idleTimer->setSingleShot(true);
+        idleTimer->setInterval(config.lockMinutes() * 60 * 1000);
+        QObject::connect(idleTimer, &QTimer::timeout, &app, [setLocked]() {
+            qInfo() << "locking: idle";
+            setLocked(true);
+        });
+
+        app.installEventFilter(new ActivityWatch(idleTimer, lockScreen, &app));
+        idleTimer->start();
+    }
+
+    // Locked before the first page is shown, so a terminal that reboots
+    // mid-shift comes back asking who is there rather than showing the last
+    // operator's screen to whoever is standing at it.
+    if (locksEnabled) {
+        setLocked(true);
+        if (config.security() == SecurityPolicy::Auto)
+            qInfo() << "security: on, from the server's setup";
+        qWarning() << "sign-on is NOT checked yet - any key is accepted (see #14)";
+    }
+
     QObject::connect(wifiButton, &QToolButton::clicked,
                      [wifiDialog, refocusPage]() {
         DialogStyle::closeKeyboard();

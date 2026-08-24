@@ -10,6 +10,7 @@
         <file alias="images/eye.svg">images/eye.svg</file>
         <file alias="images/eye-off.svg">images/eye-off.svg</file>
         <file alias="images/robot-head.svg">images/robot-head.svg</file>
+        <file alias="images/lock.svg">images/lock.svg</file>
         <file alias="images/robot-head-off.svg">images/robot-head-off.svg</file>
         <file alias="images/robot-head-warn.svg">images/robot-head-warn.svg</file>
         <file alias="images/robot-head-ok.svg">images/robot-head-ok.svg</file>

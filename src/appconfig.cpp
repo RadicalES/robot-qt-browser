@@ -1,5 +1,7 @@
 #include "appconfig.h"
 
+#include "securitypolicy.h"
+
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
@@ -81,6 +83,33 @@ void AppConfig::loadFile(const QString& path)
                 m_localUrl = value;
                 m_localUrlSet = true;
             }
+            continue;
+        }
+
+        // --- security ---------------------------------------------------
+        //
+        // Whether a terminal locks is normally the server's decision, carried
+        // in /run/robot/setup.json; these exist for the cases it cannot cover
+        // — a terminal that is not onboarded yet, and a developer's PC.
+        if (key == "WB_SECURITY") {
+            SecurityPolicy::Mode mode;
+            if (SecurityPolicy::parseMode(value, &mode))
+                m_security = mode;
+            continue;
+        }
+        if (key == "WB_LOCK_IDLE") {
+            Availability idle;
+            if (parseAvailability(value, &idle))
+                m_lockWhenIdle = (idle != Off);
+            continue;
+        }
+        if (key == "WB_LOCK_MINUTES") {
+            bool ok = false;
+            const int minutes = value.toInt(&ok);
+            // Zero would mean "lock the moment nobody is touching it", which
+            // is a terminal nobody can use. Refuse it rather than obey it.
+            if (ok && minutes > 0)
+                m_lockMinutes = minutes;
             continue;
         }
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+<!-- Sign off and lock, on the toolbar.
+
+     Drawn in the toolbar's own #d9d9d9 rather than the product orange: it is
+     a control, not a mark, and it sits beside Home, Remote and Back.
+
+     The comment lives inside the element on purpose - see robot-head.svg. -->
+<path fill="#d9d9d9" d="M24 4c-6.1 0-11 4.9-11 11v6h-2c-2.2 0-4 1.8-4 4v17c0 2.2 1.8 4 4 4h26c2.2 0 4-1.8 4-4V25c0-2.2-1.8-4-4-4h-2v-6c0-6.1-4.9-11-11-11zm0 5c3.3 0 6 2.7 6 6v6H18v-6c0-3.3 2.7-6 6-6zm0 20c2.2 0 4 1.8 4 4 0 1.5-.8 2.8-2 3.4V40c0 1.1-.9 2-2 2s-2-.9-2-2v-3.6c-1.2-.7-2-1.9-2-3.4 0-2.2 1.8-4 4-4z"/>
+</svg>

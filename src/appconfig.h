@@ -3,6 +3,8 @@
 
 #include <QString>
 
+#include "securitypolicy.h"
+
 // Deployment settings for the browser itself.
 //
 // Read from /etc/robot-browser/browser.config, a shell-style KEY=VALUE file
@@ -45,6 +47,16 @@ public:
     // writes this — a terminal is told what it is by its launcher.
     QString profileName() const { return m_profileName; }
 
+    // Security. The mode is what the file asks for; whether the terminal
+    // actually locks is SecurityPolicy::locksEnabled(), which lets the server
+    // decide when the file says "auto".
+    SecurityPolicy::Mode security() const { return m_security; }
+    bool lockWhenIdle() const { return m_lockWhenIdle; }
+    int lockMinutes() const { return m_lockMinutes; }
+    void setSecurity(SecurityPolicy::Mode mode) { m_security = mode; }
+    void setLockWhenIdle(bool idle) { m_lockWhenIdle = idle; }
+    void setLockMinutes(int minutes) { m_lockMinutes = minutes; }
+
     QString remoteUrl() const { return m_remoteUrl; }
     QString localUrl() const { return m_localUrl; }
 
@@ -62,6 +74,9 @@ private:
     Availability m_wifi;
     Availability m_lan;
     QString m_profileName;
+    SecurityPolicy::Mode m_security = SecurityPolicy::Auto;
+    bool m_lockWhenIdle = true;
+    int m_lockMinutes = SecurityPolicy::kDefaultIdleMinutes;
     QString m_remoteUrl;
     QString m_localUrl;
 };
