@@ -4,6 +4,18 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.5] - 2026-08-24
+
+### Fixed
+
+- **The lock screen forced a window wider than a narrow panel.** Its code field
+  asked for a fixed 560px, and with the reveal button and margins that came to
+  more than a 720x1280 T440 has — so the window could not be as small as the
+  screen, and the compositor gave it decorations and pushed part of it off the
+  edge. The field now follows the width available, as the rest of the screen
+  already followed the height.
+
+
 ## [3.6.4] - 2026-08-24
 
 ### Changed

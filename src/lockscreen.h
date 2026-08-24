@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSize>
 #include <QString>
 #include <QWidget>
 
@@ -108,7 +109,7 @@ private:
     QWidget* m_entryRow;
     Method m_method = Keypad;
     QLabel* m_mark;
-    int m_metricsFor = -1;
+    QSize m_metricsFor;
     bool m_cardAvailable = false;
 };
 

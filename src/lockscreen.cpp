@@ -158,10 +158,10 @@ void LockScreen::resizeEvent(QResizeEvent* event)
 void LockScreen::applyMetrics()
 {
     const int available = height();
-    if (available <= 0 || available == m_metricsFor)
+    if (available <= 0 || size() == m_metricsFor)
         return;   // nothing has changed; restyling on every paint is wasteful
 
-    m_metricsFor = available;
+    m_metricsFor = size();
 
     // 720 is the height this was laid out for. A shorter panel gets everything
     // in proportion rather than the same layout with its bottom cut off; the
@@ -179,6 +179,19 @@ void LockScreen::applyMetrics()
     const int pad = int(DialogStyle::px(40) * fit);
     layout()->setContentsMargins(pad, pad, pad, pad);
     layout()->setSpacing(int(DialogStyle::px(14) * fit));
+
+    // The field is sized here rather than by a minimum width in the stylesheet.
+    //
+    // It asked for 560px, and with the reveal button and the margins that came
+    // to more than a 720px panel has - so the window could not be as small as
+    // the screen, and a compositor that is asked for a window bigger than the
+    // display gives it decorations and puts part of it off the edge. A lock
+    // screen is the last place that should happen.
+    const int reveal = int(DialogStyle::px(62) * fit);
+    const int usable = width() - 2 * pad - reveal - int(DialogStyle::px(12) * fit);
+    m_key->setFixedWidth(qBound(DialogStyle::px(160),
+                                int(DialogStyle::px(560) * fit),
+                                qMax(DialogStyle::px(160), usable)));
 
     const int eye = int(DialogStyle::px(34) * fit);
     m_reveal->setIconSize(QSize(eye, eye));
@@ -198,8 +211,7 @@ void LockScreen::applyStyle(qreal fit)
         "QLabel#station { color: #ffffff; font-size: %2px; font-weight: bold; }"
         "QLabel#message { color: #ff9800; font-size: %3px; }"
         "QLineEdit { background: #1a1a1a; color: #ffffff; border: %4px solid #4d4d4d;"
-        "  border-radius: %5px; padding: %6px %10px; font-size: %7px;"
-        "  min-width: %8px; }"
+        "  border-radius: %5px; padding: %6px %10px; font-size: %7px; }"
         "QLineEdit:focus { border-color: #ff9800; }"
         "QPushButton { background: #4d4d4d; color: #ffffff; border: none;"
         "  border-radius: %5px; padding: %6px %9px; font-size: %3px; }"
@@ -219,7 +231,6 @@ void LockScreen::applyStyle(qreal fit)
         .arg(DialogStyle::px(6))
         .arg(int(DialogStyle::px(16) * fit))
         .arg(int(DialogStyle::px(34) * fit))
-        .arg(int(DialogStyle::px(560) * fit))
         .arg(int(DialogStyle::px(24) * fit))
         // Room down the sides so a long code does not run under the eye, and
         // so the field does not sit hard against the screen edge.
