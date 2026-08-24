@@ -1,3 +1,11 @@
+robot-browser (3.6.2-1) bookworm; urgency=medium
+
+  * Fix: a terminal switched to Secure while running had no lock button - it
+    was created only when security was on at startup
+  * Fix: Home, Remote and Back navigated the page behind the lock
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Mon, 24 Aug 2026 17:00:00 +0200
+
 robot-browser (3.6.1-1) bookworm; urgency=medium
 
   * Description rewritten: it described a Raspberry-Pi-only product and none of

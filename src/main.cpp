@@ -597,12 +597,22 @@ int main(int argc, char** argv)
     idleTimer->setSingleShot(true);
     idleTimer->setInterval(config.lockMinutes() * 60 * 1000);
 
+    // The lock button is created whenever the terminal has a toolbar, and
+    // hidden while security is off - not created only when security is on.
+    //
+    // It used to be built inside "if (locksEnabled)", which is true only at
+    // startup: a terminal that booted Open and was switched to Secure locked
+    // itself correctly and had no button to sign off with, because the code
+    // that reveals it had nothing to reveal. Security is a setting that
+    // changes while the terminal runs, so nothing may depend on its value at
+    // startup.
     QAction* lockAction = nullptr;
-    if (locksEnabled) {
+    if (profile.toolbar) {
         lockScreen->setStation(ScadaIndicator::stationName());
 
         lockAction = toolbar->addAction(QIcon(":/images/lock.svg"), "");
         lockAction->setToolTip(QObject::tr("Sign off and lock"));
+        lockAction->setVisible(locksEnabled);
     }
 
     // Info button
@@ -698,6 +708,16 @@ int main(int argc, char** argv)
 
         webPageController.webView()->setVisible(!locked);
         lockScreen->setVisible(locked);
+
+        // Home, Remote and Back keep working while the lock is up otherwise -
+        // and they work on the page BEHIND it, so anybody can navigate a
+        // terminal they have not signed on to, and the operator does not come
+        // back to what they left. WiFi, LAN, SCADA and Info stay reachable on
+        // purpose; those fix a terminal rather than drive it.
+        for (QAction* action : {homeAction, remoteAction, backAction}) {
+            if (action)
+                action->setEnabled(!locked);
+        }
 
         // The page may not put a dialog on screen while nobody is signed on.
         if (WebPage* page = webPageController.page())

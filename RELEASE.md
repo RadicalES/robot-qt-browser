@@ -4,6 +4,22 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.2] - 2026-08-24
+
+### Fixed
+
+- **A terminal switched to Secure while running had no way to sign off.** The
+  lock button was created only when security was on *at startup*, so a terminal
+  that booted Open and was later marked Secure locked itself correctly and then
+  offered nothing to lock it again. Security is a setting that changes while the
+  terminal runs, so nothing may depend on its value at startup.
+- **Home, Remote and Back worked while the terminal was locked**, on the page
+  behind the lock — so anybody could navigate a terminal they had not signed on
+  to, and the operator did not come back to what they left. They are disabled
+  while locked. WiFi, LAN, SCADA state and Info stay reachable on purpose:
+  those fix a terminal rather than drive it.
+
+
 ## [3.6.1] - 2026-08-24
 
 ### Changed
