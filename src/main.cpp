@@ -576,7 +576,10 @@ int main(int argc, char** argv)
     // Whether it does that is the site's decision, taken on the SCADA server
     // and delivered in /run/robot/setup.json. The config file only decides for
     // a terminal the server has never spoken to.
-    const bool locksEnabled = profile.toolbar
+    // Not const: a site can change a terminal from Secure to Open on the
+    // server while it is running, and the lock has to go away when they do -
+    // without somebody driving to the packhouse to restart it.
+    bool locksEnabled = profile.toolbar
             && SecurityPolicy::locksEnabled(config.security());
 
     // The reader bridge, for a card or a scanned badge. wsrobot serves every
@@ -783,6 +786,49 @@ int main(int argc, char** argv)
     // Activity is anything a person does - a touch, a key, a click - watched
     // application-wide, because the page is where the work happens and its
     // events belong to the web view, not to the window.
+    // Follow the server's setting while running.
+    //
+    // "Secure Terminal" is a site's decision and they change it on the server,
+    // not on the terminal. A terminal switched to Open has to stop locking
+    // there and then; one switched to Secure has to start. Polled rather than
+    // watched, because robot-scada-client rewrites setup.json wholesale and a
+    // file watcher loses its target the first time it does.
+    if (profile.toolbar) {
+        QTimer* securityPoll = new QTimer(&app);
+        securityPoll->setInterval(5000);
+        QObject::connect(securityPoll, &QTimer::timeout, &app,
+                         [&locksEnabled, &config, setLocked, lockAction,
+                          lockScreen, idleTimer, session]() {
+            const bool wanted = SecurityPolicy::locksEnabled(config.security());
+            if (wanted == locksEnabled)
+                return;
+
+            if (wanted) {
+                qInfo() << "security: turned on by the server - locking";
+                locksEnabled = true;
+                if (lockAction)
+                    lockAction->setVisible(true);
+                setLocked(true);
+            } else {
+                qInfo() << "security: turned off by the server - unlocking";
+                // Unlocked while the flag still allows it, then the flag goes:
+                // setLocked does nothing once locking is off.
+                setLocked(false);
+                locksEnabled = false;
+                idleTimer->stop();
+                if (lockAction)
+                    lockAction->setVisible(false);
+                // The session belongs to the lock. With no lock there is
+                // nobody to sign off, and leaving it open would have the
+                // server holding a session against a terminal that has stopped
+                // asking who is at it.
+                session->signOff();
+                lockScreen->hide();
+            }
+        });
+        securityPoll->start();
+    }
+
     // Shutting down signs the worker off too.
     //
     // A terminal switched off mid-shift would otherwise leave a session that
