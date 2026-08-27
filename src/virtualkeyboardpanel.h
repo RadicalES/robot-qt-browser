@@ -76,6 +76,15 @@ public:
         // heightChanged and setting a fixed height re-runs the layout the
         // moment the real height is known.
         connect(root, SIGNAL(heightChanged()), this, SLOT(onRootHeightChanged()));
+
+        // Seed the height from the root now. heightChanged only fires on a
+        // CHANGE, and the root is already zero-high when it loads — nothing
+        // asked for the keyboard yet — so without this the widget is never
+        // given a height at all and the layout falls back to its size hint.
+        // That reserved an empty black band under the page on first load,
+        // which went away the moment the keyboard had been raised once and
+        // the first real heightChanged arrived.
+        onRootHeightChanged();
     }
 
     // Show the keyboard regardless of the input context, and hide it again.
