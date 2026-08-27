@@ -195,7 +195,14 @@ public:
 
         m_sideDocked = true;
         m_panelWidth = width;
-        setFixedWidth(width);
+        // Collapsed until the keyboard is actually up. Down the side it is the
+        // WIDTH that is given back and taken away, by onKeyboardActiveChanged
+        // — and that fires only on a CHANGE. Taking the width here left the
+        // column standing empty beside the page from the moment the window
+        // opened: a black band with no keys in it, because the input panel was
+        // inactive, which corrected itself the first time the keyboard was
+        // raised and then behaved perfectly.
+        setFixedWidth(isShowing() ? width : 0);
         // A maximum, not a fixed size: if the layout has less to give — a
         // banner is showing, or the window is smaller than the screen — the
         // keyboard has to shrink rather than force the window taller.
