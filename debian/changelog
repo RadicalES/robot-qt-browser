@@ -1,3 +1,10 @@
+robot-browser (3.6.7-1) bookworm; urgency=medium
+
+  * Fix: the side-docked keyboard held an empty column on first load; 3.6.6
+    fixed only the bottom-docked one
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Thu, 27 Aug 2026 18:20:00 +0200
+
 robot-browser (3.6.6-1) bookworm; urgency=medium
 
   * Fix: the on-screen keyboard reserved an empty black band under the page

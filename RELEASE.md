@@ -4,6 +4,18 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.7] - 2026-08-27
+
+### Fixed
+
+- **The side-docked keyboard held its column before it had ever been raised.**
+  3.6.6 fixed this for the keyboard that docks along the bottom and missed the
+  one that docks down the side — which is what a 1024x600 panel uses, so on a
+  T431 the black band was still there on first load. Down the side it is the
+  width that is given and taken back, and that only happened on a change of
+  state; the column now starts collapsed, as the bottom one does.
+
+
 ## [3.6.6] - 2026-08-27
 
 ### Fixed
