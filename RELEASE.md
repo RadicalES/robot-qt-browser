@@ -4,6 +4,19 @@ All notable changes to robot-browser are documented in this file.
 
 ---
 
+## [3.6.6] - 2026-08-27
+
+### Fixed
+
+- **The keyboard reserved an empty black band before it had ever been raised.**
+  On first load the space under the page was taken but no keys were drawn. The
+  panel's height is set from the QML root's `heightChanged`, which fires on a
+  change, and the root loads already zero-high — so no height was ever set and
+  the layout used the size hint instead. Raising the keyboard once, by the
+  toolbar button or by tapping a field, corrected it, which is what made it
+  look like a state problem rather than a missing initial value.
+
+
 ## [3.6.5] - 2026-08-24
 
 ### Fixed

@@ -1,3 +1,10 @@
+robot-browser (3.6.6-1) bookworm; urgency=medium
+
+  * Fix: the on-screen keyboard reserved an empty black band under the page
+    until it had been raised once
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Thu, 27 Aug 2026 09:00:00 +0200
+
 robot-browser (3.6.5-1) bookworm; urgency=medium
 
   * Fix: the lock screen's field forced a window wider than a 720px panel, so
