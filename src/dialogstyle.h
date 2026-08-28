@@ -105,6 +105,12 @@ inline QString sheet()
         // starts and the page ends.
         "QDialog { border: %12px solid #4d4d4d; }"
         "QLabel { font-size: %1px; }"
+        // Horizontal padding and min-width are deliberately modest. A button
+        // is sized by its label plus room for a finger, and 24px of air on each
+        // side of "Close" buys nothing while pushing a row of three buttons
+        // wider than an 800x480 panel - at which point the labels themselves
+        // are what gets clipped. Height is what makes a touch target, and that
+        // is unchanged.
         "QPushButton { font-size: %1px; padding: %2px %3px; border-radius: 6px;"
         "              min-height: %4px; min-width: %5px; border: none; }"
         "QLineEdit { font-size: %6px; padding: %7px; border: 1px solid #bbb;"
@@ -113,7 +119,7 @@ inline QString sheet()
         "QRadioButton::indicator { width: %9px; height: %9px; }"
         "QListWidget { font-size: %1px; background: white; }"
         "QListWidget::item { padding: %10px %11px; }")
-        .arg(px(20)).arg(px(14)).arg(px(24)).arg(px(34)).arg(px(90))
+        .arg(px(20)).arg(px(14)).arg(px(12)).arg(px(34)).arg(px(56))
         .arg(px(22)).arg(px(12)).arg(px(26)).arg(px(36)).arg(px(16))
         .arg(px(8)).arg(px(3));
 }
