@@ -55,14 +55,12 @@ LanDialog::LanDialog(NetworkController* netCtrl, QWidget* parent)
                              .arg(DialogStyle::px(28)));
     header->addWidget(title);
     header->addStretch();
-    auto* closeHeaderBtn = new QPushButton(QString::fromUtf8("\xc3\x97"));
-    closeHeaderBtn->setFixedSize(DialogStyle::px(56), DialogStyle::px(56));
-    closeHeaderBtn->setStyleSheet(QString("font-size: %1px; border: none;"
-                                          "background: transparent;"
-                                          "min-width: 0px; padding: 0px;")
-                                      .arg(DialogStyle::px(30)));
-    connect(closeHeaderBtn, &QPushButton::clicked, this, &QDialog::accept);
-    header->addWidget(closeHeaderBtn);
+    // No × in the corner. It was drawn here while the dialogs were frameless
+    // and there was nothing else to close them with; the dialog has had an
+    // explicit Close button in its button row since, and with the compositor
+    // no longer drawing a title bar either, a lone × at the top right reads as
+    // a window control that escaped - which is exactly what an operator on a
+    // kiosk should never see. Info has never had one; now none of them do.
     layout->addLayout(header);
 
     m_statusBox = new QWidget;

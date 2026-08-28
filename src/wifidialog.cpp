@@ -27,14 +27,8 @@ WifiDialog::WifiDialog(NetworkController* netCtrl, QWidget* parent)
                              .arg(DialogStyle::px(28)));
     headerRow->addWidget(title);
     headerRow->addStretch();
-    auto* closeHeaderBtn = new QPushButton(QString::fromUtf8("\xc3\x97")); // ×
-    closeHeaderBtn->setFixedSize(DialogStyle::px(56), DialogStyle::px(56));
-    closeHeaderBtn->setStyleSheet(QString("font-size: %1px; border: none;"
-                                          "background: transparent;"
-                                          "min-width: 0px; padding: 0px;")
-                                      .arg(DialogStyle::px(30)));
-    connect(closeHeaderBtn, &QPushButton::clicked, this, &QDialog::reject);
-    headerRow->addWidget(closeHeaderBtn);
+    // No × in the corner - see landialog.cpp. The Close button in the button
+    // row is the way out, and it is the same way out in every dialog.
     layout->addLayout(headerRow);
 
     // --- Connection status ---
