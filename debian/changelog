@@ -1,3 +1,31 @@
+robot-browser (3.6.10-1) bookworm; urgency=medium
+
+  * The page can be drawn larger than it asks to be. The remote page belongs to
+    somebody else and is laid out for a desk, while a terminal is a small panel
+    an operator reads standing up at arm's length - so an operator sets the text
+    size at the terminal, in Info, with the page resizing as the buttons are
+    pressed. Remembered per terminal and re-applied after every load.
+  * WB_PAGE_ZOOM in browser.config, or --zoom=, sets the size a deployment
+    starts at; a size chosen at the terminal overrides it there.
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Thu, 03 Sep 2026 11:30:00 +0200
+
+robot-browser (3.6.9-1) bookworm; urgency=medium
+
+  * Fix: the LAN and WiFi dialogs drew their own close button in the top right.
+    It was put there while the dialogs were frameless; the frameless work was
+    reverted and both gained an explicit Close button, but the stray x stayed.
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Fri, 28 Aug 2026 17:10:00 +0200
+
+robot-browser (3.6.8-1) bookworm; urgency=medium
+
+  * Fix: dialog buttons kept desktop padding and a 90px minimum width on a
+    terminal, so on an 800x480 T430 the row was wider than it needed to be and
+    the labels were what got clipped when it ran out of room.
+
+ -- Jan Zwiegers <jan@radicalsystems.co.za>  Fri, 28 Aug 2026 16:50:00 +0200
+
 robot-browser (3.6.7-1) bookworm; urgency=medium
 
   * Fix: the side-docked keyboard held an empty column on first load; 3.6.6
