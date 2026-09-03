@@ -1,0 +1,16 @@
+{
+  "schema": "radical-product/1",
+  "id": "robot-browser",
+  "name": "Robot Browser",
+  "tagline": "Kiosk browser for industrial terminals",
+  "summary": "Turns a touchscreen terminal into a single-purpose appliance: two fixed pages, no address bar, and nothing to wander off into.",
+  "vendor": "Radical Electronic Systems",
+  "licence": "Proprietary",
+  "support": "info@radsys.io",
+  "homepage": "https://www.radsys.io/",
+  "links": {
+    "release_notes": "https://github.com/RadicalES/robot-qt-browser/blob/master/RELEASE.md",
+    "documentation": null,
+    "source": "https://github.com/RadicalES/robot-qt-browser"
+  }
+}

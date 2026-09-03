@@ -1,0 +1,79 @@
+{
+  "schema": "radical-product-version/1",
+  "id": "robot-browser",
+  "summary": "Turns a touchscreen terminal into a single-purpose appliance: two fixed pages, no address bar, and nothing to wander off into.",
+  "description": [
+    "A browser on a factory floor is a liability. It has an address bar, a back button to somewhere it should not be, and a settings screen an operator can reach by accident. Robot Browser has none of that: it shows the two pages a terminal is for - the transaction page your SCADA server serves, and the terminal's own web interface - and it is very difficult to leave.",
+    "Everything a terminal needs is on the terminal. WiFi setup, wired addressing, the time server, system information and the SCADA connection state are one tap away on a toolbar sized for gloved hands, with an on-screen keyboard that needs no keyboard attached. A terminal whose network has died can be fixed where it stands.",
+    "Mark a terminal secure on the server and it asks who is there before showing anything. A worker presents a card, scans a badge or keys their code; the terminal checks with the server, opens their session, and closes it the moment the terminal is left alone. Signing off is not something anyone has to remember."
+  ],
+  "highlights": [
+    "An operator sets the text size at the terminal, in Info, with the page resizing as they press",
+    "The size is remembered per terminal and re-applied after every load, so it survives Home, Remote, a reload and a restart",
+    "WB_PAGE_ZOOM sets the size a deployment starts at, for a fleet that already knows its panels",
+    "Dialog buttons and their labels fit an 800x480 panel instead of keeping desktop padding"
+  ],
+  "os": [
+    "Debian 12 (bookworm)"
+  ],
+  "architectures": [
+    "arm64",
+    "amd64"
+  ],
+  "products": [
+    "Robot-T430",
+    "Robot-T431",
+    "Robot-T432",
+    "Robot-T440",
+    "ITPC-200"
+  ],
+  "requires": [
+    "A GPU and a compositor - X11 or Wayland. QtWebEngine cannot run on a plain framebuffer.",
+    "NetworkManager, for the WiFi and wired network screens.",
+    "robot-scada-client, for the server status, the station name and secure sign-on.",
+    "wsrobot, to sign on with a card or a scanned badge."
+  ],
+  "features": [
+    {
+      "title": "Two fixed pages",
+      "detail": "Transaction page and local web UI on dedicated buttons. No address bar, no history, nowhere to wander."
+    },
+    {
+      "title": "Sized for whoever is reading it",
+      "detail": "The remote page is somebody else's, laid out for a desk. An operator makes it bigger from the toolbar, and the terminal remembers."
+    },
+    {
+      "title": "Sign-on by card, badge or code",
+      "detail": "RFID cards, scanned barcodes and keypad codes all reach the same check against your SCADA server."
+    },
+    {
+      "title": "Locks itself, signs them off",
+      "detail": "An unattended terminal locks after a set time and closes the worker's session, including at shutdown."
+    },
+    {
+      "title": "Network setup built in",
+      "detail": "WiFi scanning and connection, wired IP configuration and a time server, all from the toolbar."
+    },
+    {
+      "title": "Server status at a glance",
+      "detail": "The SCADA connection, the station name and the last contact time, without leaving the page."
+    },
+    {
+      "title": "On-screen keyboard",
+      "detail": "Three layouts sized for the panel it runs on, from a 7-inch terminal to a 19-inch panel PC."
+    },
+    {
+      "title": "Managed from the server",
+      "detail": "Which pages it shows, whether it locks and which application runs are set centrally and applied without a visit."
+    },
+    {
+      "title": "Build pages without hardware",
+      "detail": "Developer profiles reproduce each terminal's exact viewport on a PC, so a page can be laid out before a terminal exists."
+    }
+  ],
+  "notes": [
+    "A secure terminal needs its server: with the network down, nobody signs on. That is deliberate - a terminal that cannot check is a terminal that cannot know.",
+    "Staff sign-in with a username and password is not built yet. Worker sign-on is.",
+    "The text size is per terminal, not per operator. A terminal is shared, and a size that changed with whoever signed on would be a size nobody could rely on."
+  ]
+}
