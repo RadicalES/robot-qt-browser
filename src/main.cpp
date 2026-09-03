@@ -42,6 +42,7 @@
 #include "dialogstyle.h"
 #include "kioskstyle.h"
 #include "appconfig.h"
+#include "pagezoom.h"
 
 // Both bottom-docked keyboards are four rows, and a touch key wants about
 // 11mm — the size of a fingertip, not a fraction of whatever screen it is on.
@@ -631,6 +632,7 @@ int main(int argc, char** argv)
     // that is the terminal; on a developer's PC it is their workstation.
     InfoDialog* infoDialog = new InfoDialog(&systemController, &window);
     infoDialog->setSystemActionsVisible(profile.systemActions);
+
     if (profile.settings) {
         infoDialog->addSettingsButton([&window, &config, &webPageController,
                                        &profile, &app, idleTimer, lockScreen]() {
@@ -1110,7 +1112,30 @@ int main(int argc, char** argv)
     // remote page belongs to somebody else and is laid out for a desk, while a
     // terminal is a small panel read standing up at arm's length. Drawing it
     // larger is the only lever this browser has over a page it does not own.
-    webPageController.setZoom(profile.scale * config.pageZoom());
+    // The deployment's WB_PAGE_ZOOM is where a terminal starts; a size the
+    // operator chose at the terminal overrides it, on that terminal only.
+    const qreal chosen = PageZoom::saved();
+    webPageController.setZoom(profile.scale * (chosen > 0 ? chosen : config.pageZoom()));
+    // Text size, built here rather than with the rest of the dialog: the row
+    // opens showing the size the page is actually at, and that is not settled
+    // until the line above.
+    //
+    // Offered wherever there is a page to read, terminal included -
+    // unlike Settings, which a terminal must not have. It cannot point the
+    // terminal anywhere or change what it does; it decides whether the person
+    // standing in front of it can read the screen, and they are the only one
+    // who knows.
+    infoDialog->addZoomRow(webPageController.zoom(),
+                           [&webPageController, &profile](qreal zoom) {
+        webPageController.setZoom(zoom);
+        // Saved as the operator chose it, not as it was drawn: profile.scale
+        // is the developer's window fitting and has no business in a file that
+        // outlives this run.
+        if (!PageZoom::save(profile.scale > 0 ? zoom / profile.scale : zoom))
+            qWarning("Could not save the text size to %s; it will go back to "
+                     "the configured size at the next restart",
+                     qPrintable(PageZoom::path()));
+    });
 
     webPageController.loadRemote();
 

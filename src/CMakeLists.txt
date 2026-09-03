@@ -67,6 +67,7 @@ add_executable(robot-browser
     systemcontroller.cpp
     wifidialog.cpp
     infodialog.cpp
+    pagezoom.cpp
     settingsdialog.cpp
     workersession.cpp
     lockscreen.cpp

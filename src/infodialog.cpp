@@ -9,6 +9,9 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
+
+#include "pagezoom.h"
 
 InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     : QDialog(parent)
@@ -68,6 +71,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     // Action buttons
     auto* buttonRow = new QHBoxLayout;
     m_buttonRow = buttonRow;
+    m_layout = layout;
 
     auto* resetBtn = new QPushButton("Reset Defaults");
     m_resetBtn = resetBtn;
@@ -103,6 +107,68 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
 }
 
 
+
+void InfoDialog::addZoomRow(qreal current, const std::function<void(qreal)>& apply)
+{
+    auto* row = new QHBoxLayout;
+    row->setSpacing(DialogStyle::px(10));
+
+    auto* caption = new QLabel("Text size");
+    caption->setStyleSheet(QString("font-size: %1px;").arg(DialogStyle::px(19)));
+    row->addWidget(caption);
+    row->addStretch();
+
+    // The size as a percentage, because that is how everyone reads a zoom, and
+    // wide enough that the number changing does not move the buttons under the
+    // finger pressing them.
+    m_zoomLabel = new QLabel;
+    m_zoomLabel->setAlignment(Qt::AlignCenter);
+    m_zoomLabel->setMinimumWidth(DialogStyle::px(90));
+    m_zoomLabel->setStyleSheet(
+        QString("font-size: %1px; font-weight: 600;").arg(DialogStyle::px(22)));
+
+    // Big enough to hit with a thumb on a panel, which the ordinary dialog
+    // buttons are not - they are read and pressed once, these are pressed
+    // repeatedly while looking past the dialog at the page behind it.
+    const int side = DialogStyle::px(56);
+    auto* smaller = new QPushButton("A-");
+    auto* larger = new QPushButton("A+");
+    for (QPushButton* b : { smaller, larger }) {
+        b->setFixedSize(side, side);
+        b->setStyleSheet(DialogStyle::Colour::neutral() +
+                         QString("font-size: %1px; font-weight: 600;")
+                             .arg(DialogStyle::px(22)));
+    }
+
+    auto show = [this](qreal zoom) {
+        m_zoomLabel->setText(QString::number(int(zoom * 100 + 0.5)) + "%");
+    };
+    show(current);
+
+    // The current size lives in the lambdas rather than in a member: this row
+    // is the only thing that changes it, and the page is the only thing that
+    // has to agree.
+    auto* held = new qreal(current);
+    connect(smaller, &QPushButton::clicked, this, [held, show, apply]() {
+        *held = PageZoom::stepDown(*held);
+        show(*held);
+        apply(*held);
+    });
+    connect(larger, &QPushButton::clicked, this, [held, show, apply]() {
+        *held = PageZoom::stepUp(*held);
+        show(*held);
+        apply(*held);
+    });
+    connect(this, &QObject::destroyed, [held]() { delete held; });
+
+    row->addWidget(smaller);
+    row->addWidget(m_zoomLabel);
+    row->addWidget(larger);
+
+    // Above the buttons that close, reboot and reset: it is a setting, not an
+    // action, and it should not sit among things that end the conversation.
+    m_layout->insertLayout(m_layout->indexOf(m_buttonRow), row);
+}
 
 void InfoDialog::addSettingsButton(const std::function<void()>& open)
 {
