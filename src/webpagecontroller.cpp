@@ -154,11 +154,25 @@ void WebPageController::onLoadStarted()
     emit loadingChanged();
 }
 
+void WebPageController::setZoom(qreal zoom)
+{
+    m_zoom = zoom;
+    if (m_webView)
+        m_webView->setZoomFactor(zoom);
+}
+
 void WebPageController::onLoadFinished(bool ok)
 {
     Q_UNUSED(ok);
     m_loading = false;
     emit loadingChanged();
+
+    // The zoom belongs to the terminal, so it is re-applied rather than set
+    // once. A page kept over a restart, an authentication page, anything that
+    // replaces what is being shown - none of it should hand an operator a page
+    // in a size they cannot read.
+    if (m_webView && !qFuzzyCompare(m_webView->zoomFactor(), m_zoom))
+        m_webView->setZoomFactor(m_zoom);
 
     // Keep keyboard focus on the page. A load can leave the render widget
     // without Qt focus, and then tapping an input field never reaches the

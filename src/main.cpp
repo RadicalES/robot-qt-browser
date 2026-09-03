@@ -1098,11 +1098,19 @@ int main(int argc, char** argv)
 
     // Load initial page. Remote is the landing page: the transaction page is
     // where operators spend their time, Home is the exception.
-    // The page lays out at the device's size and is drawn smaller. Without
-    // this the window would simply be a smaller viewport, which is the thing a
-    // device profile exists to avoid.
-    if (profile.scale < 1.0 && webPageController.webView())
-        webPageController.webView()->setZoomFactor(profile.scale);
+    // Two different things multiply into one zoom factor.
+    //
+    // profile.scale is the developer's: a T440 viewport is 720x1280 and does
+    // not fit on a 1080-tall desktop, so the page lays out at the device's size
+    // and is drawn smaller. Without it the window would simply be a smaller
+    // viewport, which is the thing a device profile exists to avoid. It is 1.0
+    // on a terminal.
+    //
+    // config.pageZoom() is the deployment's, and points the other way: the
+    // remote page belongs to somebody else and is laid out for a desk, while a
+    // terminal is a small panel read standing up at arm's length. Drawing it
+    // larger is the only lever this browser has over a page it does not own.
+    webPageController.setZoom(profile.scale * config.pageZoom());
 
     webPageController.loadRemote();
 

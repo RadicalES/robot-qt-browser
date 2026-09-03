@@ -55,6 +55,22 @@ public:
     void setSecurity(SecurityPolicy::Mode mode) { m_security = mode; }
     void setLockMinutes(int minutes) { m_lockMinutes = minutes; }
 
+    // How much bigger the page is drawn than the page asks for.
+    //
+    // The remote page belongs to somebody else. It is laid out for a desk, and
+    // a terminal is a small panel an operator reads standing up, at arm's
+    // length, in a packhouse - so the only lever this browser has over a page
+    // it does not own is to draw it larger. Per deployment, because it depends
+    // on the page and the panel: 1.0 changes nothing.
+    qreal pageZoom() const { return m_pageZoom; }
+    void setPageZoom(qreal zoom) { m_pageZoom = zoom; }
+
+    // What a zoom may be. Below this a page is unreadable and above it a
+    // toolbar-sized page fits nothing, and either is more likely a typo than
+    // an intention.
+    static constexpr qreal kMinZoom = 0.5;
+    static constexpr qreal kMaxZoom = 3.0;
+
     QString remoteUrl() const { return m_remoteUrl; }
     QString localUrl() const { return m_localUrl; }
 
@@ -74,6 +90,7 @@ private:
     QString m_profileName;
     SecurityPolicy::Mode m_security = SecurityPolicy::Auto;
     int m_lockMinutes = SecurityPolicy::kDefaultIdleMinutes;
+    qreal m_pageZoom = 1.0;
     QString m_remoteUrl;
     QString m_localUrl;
 };

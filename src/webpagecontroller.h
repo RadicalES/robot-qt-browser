@@ -25,6 +25,12 @@ public:
     // time, which is a developer's machine — a terminal is told once, at
     // startup, by whatever owns its configuration.
     void setUrls(const QUrl& localUrl, const QUrl& remoteUrl);
+
+    // How much larger than 1:1 the page is drawn. Held here rather than set
+    // once on the view, and re-applied after every load: the zoom is a
+    // property of the terminal, not of whatever page happens to be open.
+    void setZoom(qreal zoom);
+    qreal zoom() const { return m_zoom; }
     QWebEngineView* webView() { return m_webView; }
 
     // The page itself, so the lock can stop it putting dialogs on screen while
@@ -51,6 +57,7 @@ private slots:
     void onLoadFinished(bool ok);
 
 private:
+    qreal m_zoom = 1.0;
     QWebEngineProfile* m_profile;
     // QPointer, not a raw pointer: the view is reparented into the main window,
     // which is destroyed before this controller, so a raw pointer would dangle

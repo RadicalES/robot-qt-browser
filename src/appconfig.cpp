@@ -107,6 +107,18 @@ void AppConfig::loadFile(const QString& path)
             continue;
         }
 
+        if (key == "WB_PAGE_ZOOM") {
+            bool ok = false;
+            const qreal zoom = value.toDouble(&ok);
+            if (ok && zoom >= kMinZoom && zoom <= kMaxZoom)
+                m_pageZoom = zoom;
+            else
+                qWarning("browser.config: ignoring WB_PAGE_ZOOM=%s; "
+                         "wanted a number between %.1f and %.1f",
+                         qPrintable(value), kMinZoom, kMaxZoom);
+            continue;
+        }
+
         Availability parsed;
         if (key == "NETWORK_WIFI") {
             if (parseAvailability(value, &parsed))
@@ -137,6 +149,17 @@ void AppConfig::applyArgument(const QString& argument)
     // here produced a warning about a value that is perfectly valid for the
     // argument it actually belongs to.
     const QString name = parts.at(0);
+    if (name == "--zoom") {
+        bool ok = false;
+        const qreal zoom = parts.at(1).toDouble(&ok);
+        if (ok && zoom >= kMinZoom && zoom <= kMaxZoom)
+            m_pageZoom = zoom;
+        else
+            qWarning("--zoom=%s ignored; wanted a number between %.1f and %.1f",
+                     qPrintable(parts.at(1)), kMinZoom, kMaxZoom);
+        return;
+    }
+
     if (name != "--wifi" && name != "--lan")
         return;
 
