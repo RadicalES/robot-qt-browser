@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: robot-browser
-Upstream-Contact: info@radicalsystems.co.za
+Upstream-Contact: info@radsys.io
 
 Files: *
 Copyright: 2017-2026 Radical Electronic Systems

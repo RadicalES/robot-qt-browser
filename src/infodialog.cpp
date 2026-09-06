@@ -61,7 +61,7 @@ InfoDialog::InfoDialog(SystemController* sysCtrl, QWidget* parent)
     // nobody has to hand.
     auto* contact = new QLabel(
         "Radical Electronic Systems\n"
-        "http://www.radicalsystems.co.za\n"
+        "https://www.radsys.io\n"
         "Tel: +27 76 224 2224");
     contact->setStyleSheet(QString("color: #555; font-size: %1px;")
                                .arg(DialogStyle::px(18)));

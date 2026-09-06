@@ -1,7 +1,7 @@
 Source: robot-browser
 Section: misc
 Priority: optional
-Maintainer: Radical Electronic Systems <info@radicalsystems.co.za>
+Maintainer: Radical Electronic Systems <info@radsys.io>
 Build-Depends: libqt6core6,
          libqt6gui6,
          libqt6widgets6,
