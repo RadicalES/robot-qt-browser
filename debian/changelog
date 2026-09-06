@@ -1,3 +1,12 @@
+robot-browser (3.6.11-1) bookworm; urgency=medium
+
+  * The System Information dialog names radsys.io. It carries the contact
+    details because it is where somebody already goes when a terminal is wrong,
+    and it still gave the old radicalsystems.co.za address. Package metadata and
+    the shipped browser.config comment as well.
+
+ -- Jan Zwiegers <jan@radsys.io>  Sun, 06 Sep 2026 20:15:00 +0200
+
 robot-browser (3.6.10-1) bookworm; urgency=medium
 
   * The page can be drawn larger than it asks to be. The remote page belongs to
